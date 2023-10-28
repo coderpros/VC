@@ -1,0 +1,180 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add property</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Country</label>
+                                <SfDropDownList @ref="Ddl_Countries" TValue="int?" TItem="Models.DropDownItem" Placeholder="Select a country" ShowClearButton="true" DataSource="@Countries" AllowFiltering="true" @bind-Value="@_form.Country_Id">
+                                    <DropDownListFieldSettings Text="Text" Value="Value_Int"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="int?" TItem="Models.DropDownItem" Filtering="Ddl_Countries_OnFilter" ValueChange="Ddl_Countries_ChangeState"></DropDownListEvents>
+                                </SfDropDownList>
+                            </div>
+                        </div>
+                        @if (Regions.Count > 0)
+                        {
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Region</label>
+                                    <SfDropDownList @ref="Ddl_Regions" TValue="int?" TItem="Models.DropDownItem" Placeholder="Select a region" ShowClearButton="true" DataSource="@Regions" AllowFiltering="true" @bind-Value="@_form.Region_Id">
+                                        <DropDownListFieldSettings Text="Text" Value="Value_Int"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="int?" TItem="Models.DropDownItem" Filtering="Ddl_Regions_OnFilter"></DropDownListEvents>
+                                    </SfDropDownList>
+                                </div>
+                            </div>
+                        }
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Group</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Group_Id">
+                                        @{
+                                            <option value="0">None</option>
+                                            foreach (var group in _groups)
+                                            {
+                                                <option value="@group.Id">@(group.Name)</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    SfDropDownList<int?, Models.DropDownItem>? Ddl_Countries { get; set; } = new SfDropDownList<int?, Models.DropDownItem>();
+    SfDropDownList<int?, Models.DropDownItem>? Ddl_Regions { get; set; } = new SfDropDownList<int?, Models.DropDownItem>();
+
+
+    private List<Models.DropDownItem> Countries { get; set; } = new List<Models.DropDownItem>();
+    private List<Models.DropDownItem> Regions { get; set; } = new List<Models.DropDownItem>();
+    private List<Core.Premises.Group> _groups = new();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+
+        public int? Country_Id { get; set; } = null;
+
+        public int? Region_Id { get; set; } = null;
+
+        public int Group_Id { get; set; } = 0;
+    }
+
+    public async Task OpenAsync()
+    {
+        _form = new ModalForm();
+
+        Countries = new List<Models.DropDownItem>();
+        foreach (var vCountry in await Core.Common.Country.FindAllAsync())
+        {
+            Countries.Add(new Models.DropDownItem
+                {
+                    Text = vCountry.Name,
+                    Value_Int = vCountry.Id
+                });
+        }
+
+        Regions = new List<Models.DropDownItem>();
+
+        _groups = await Core.Premises.Group.FindAllAsync();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task Ddl_Countries_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Countries, Countries, args); }
+
+    private async Task Ddl_Regions_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Regions, Regions, args); }
+
+    private async Task Ddl_Countries_ChangeState(Syncfusion.Blazor.DropDowns.ChangeEventArgs<int?, Models.DropDownItem> args)
+    {
+        _form.Region_Id = null;
+        Regions = new List<Models.DropDownItem>();
+
+        if (args.Value.HasValue)
+        {
+            foreach (var vRegion in await Core.Common.Region.FindAllBy_CountryAsync(args.Value.Value))
+            {
+                Regions.Add(new Models.DropDownItem
+                    {
+                        Text = vRegion.Name,
+                        Value_Int = vRegion.Id
+                    });
+            }
+        }
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Premises.Premise
+            {
+                Name = _form.Name.Trim(),
+                Country_Id = _form.Country_Id,
+                Region_Id = _form.Region_Id,
+                Group_Use_Contacts = false
+            };
+
+        if (_form.Group_Id != 0)
+        {
+            obj.Group_Id = _form.Group_Id;
+            obj.Group_Use_Contacts = true;
+        }
+
+        if (await obj.CreateAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

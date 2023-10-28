@@ -1,0 +1,248 @@
+﻿@using VC.Res.Core.Contacts;
+@using VC.Res.Core.Integrations.Zoho;
+@using VC.Res.Core.Settings;
+@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+@inject IConfiguration configuration
+
+<SfDialog Width="550px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add contact</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">First name</label>
+                                <InputText @bind-Value="_form.FirstName" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.FirstName)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Last name</label>
+                                <InputText @bind-Value="_form.LastName" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.LastName)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Company</label>
+                                <InputText @bind-Value="_form.CompanyName" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.CompanyName)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Email address</label>
+                                <InputText @bind-Value="_form.Email" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Email)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-5">
+                            <div class="form__item">
+                                <label class="form__label">Telephone Country Code</label>
+                                <InputText @bind-Value="_form.Telephone_CountryCode" class="form__input" type="text" maxlength="5" />
+                                <ValidationMessage For="@(() => _form.Telephone_CountryCode)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-7">
+                            <div class="form__item">
+                                <label class="form__label">Telephone Number</label>
+                                <InputText @bind-Value="_form.Telephone_Number" class="form__input" type="text" maxlength="30" />
+                                <ValidationMessage For="@(() => _form.Telephone_Number)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Role(s)</label>
+                                <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select role(s)" @bind-Value="_form.Categories" Mode="VisualMode.CheckBox" DataSource="@_categories">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Group(s)</label>
+                                <SfMultiSelect @ref="Ddl_PremiseGroups" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select groups" @bind-Value="_form.PremiseGroups" Mode="VisualMode.CheckBox" DataSource="@_premiseGroups" AllowFiltering="true">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                    <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_PremiseGroups_OnFilter"></MultiSelectEvents>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private List<Models.DropDownItem> _categories { get; set; } = new List<Models.DropDownItem>();
+    private List<Models.DropDownItem> _premiseGroups { get; set; } = new List<Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_PremiseGroups { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+
+    public class ModalForm
+    {
+        public string FirstName { get; set; } = "";
+
+        public string LastName { get; set; } = "";
+
+        public string CompanyName { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Email { get; set; } = "";
+
+        public string Telephone_CountryCode { get; set; } = "+44";
+        public string Telephone_Number { get; set; } = "";
+
+        public int[] Categories { get; set; } = new int[] { };
+
+        public int[] PremiseGroups { get; set; } = Array.Empty<int>();
+    }
+
+    private async Task Ddl_PremiseGroups_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_PremiseGroups, _premiseGroups, args); }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Category DDL
+        _categories = new List<Models.DropDownItem>();
+        foreach (Core.Enums.Contacts_Contact_Category enumContactCategory in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_Category)))
+        {
+            _categories.Add(new Models.DropDownItem
+                {
+                    Text = Core.Enums.Label(enumContactCategory),
+                    Value_Int = (int)enumContactCategory
+                });
+        }
+        _categories = _categories.OrderBy(r => r.Text).ToList();
+
+        // Premise Groups DDL
+        _premiseGroups = new List<Models.DropDownItem>();
+        foreach (var objPremiseGroup in await Core.Premises.Group.FindAllAsync())
+        {
+            _premiseGroups.Add(new Models.DropDownItem
+                {
+                    Text = objPremiseGroup.Name,
+                    Value_Int = objPremiseGroup.Id
+                });
+        }
+        _premiseGroups = _premiseGroups.OrderBy(r => r.Text).ToList();
+    }
+
+    public void Open()
+    {
+        _form = new ModalForm();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (string.IsNullOrWhiteSpace(_form.FirstName) && string.IsNullOrWhiteSpace(_form.LastName) && string.IsNullOrWhiteSpace(_form.CompanyName))
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_form.Email))
+        {
+            if (!Core.Utilities.General.Validate_EmailAddress(_form.Email))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please enter a valid email address." });
+                return;
+            }
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Contacts.Contact
+            {
+                Name_First = _form.FirstName.Trim(),
+                Name_Last = _form.LastName.Trim(),
+                CompanyName = _form.CompanyName.Trim(),
+                Categories = Core.Utilities.General.ConvertToListEnums<Core.Enums.Contacts_Contact_Category>(_form.Categories.ToList()),
+            };
+
+        if (await obj.CreateAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+
+            // add email address
+            var objEmail = new Core.Contacts.Email
+                {
+                    Address = _form.Email.Trim()
+                };
+
+            _ = await objEmail.CreateAsync(obj.Id, SessionInfo.Current_User.Name_Full);
+
+            if (!string.IsNullOrWhiteSpace(_form.Telephone_Number))
+            {
+                var objTel = new Core.Contacts.TelephoneNo
+                    {
+                        CountryCode = _form.Telephone_CountryCode.Trim(),
+                        Number = _form.Telephone_Number.Trim()
+                    };
+
+                _ = await objTel.CreateAsync(obj.Id, SessionInfo.Current_User.Name_Full);
+            }
+            ZConfigurationOption.ZConfig = configuration.GetSection("ZohoCredential").Get<ZConfigurationOption>();
+            List<ZohoContactRequest> args = new List<ZohoContactRequest>(){
+                new ZohoContactRequest(){
+                    First_Name = _form.FirstName.Trim(),
+                    Last_Name = _form.LastName.Trim(),
+                    Full_Name = _form.FirstName.Trim()+" "+_form.LastName.Trim(),
+                    Email = _form.Email,
+                    Phone = string.Format("{0}{1}", _form.Telephone_CountryCode.Trim(), _form.Telephone_Number.Trim()),
+                } };
+            string zohoId = await obj.CreateOrUpdateZohoContactAsync(args,obj.Id);
+
+
+            foreach (var iPremiseGroupId in _form.PremiseGroups)
+            {
+                var objPremiseContact = new Core.Premises.Contact();
+                _ = await objPremiseContact.CreateAsync(null, iPremiseGroupId, obj.Id, SessionInfo.Current_User.Name_Full);
+            }
+
+            objEmail = null;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

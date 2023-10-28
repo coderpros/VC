@@ -1,0 +1,13 @@
+﻿////
+//// TRANSITIONS
+//// @include transition(background .2s ease); // single transitions
+//// @include transition(background .2s ease, color .2s ease); // multiple transitions
+////
+
+@mixin transition($args...) {
+    -webkit-transition: $args;
+    -moz-transition: $args;
+    -ms-transition: $args;
+    -o-transition: $args;
+    transition: $args;
+}

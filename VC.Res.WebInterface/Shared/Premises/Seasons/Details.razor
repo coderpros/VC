@@ -1,0 +1,190 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_formDetails">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">General</h4>
+        </div>
+
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Name</label>
+                            <InputText @bind-Value="_formDetails.Name" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _formDetails.Name)" />
+                        </div>
+                    </div>
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Internal notes</label>
+                            <InputTextArea @bind-Value="_formDetails.Note_Internal" class="form__textarea" />
+                            <ValidationMessage For="@(() => _formDetails.Name)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Dates</label>
+                            <SfGrid DataSource="@_formDetails.Dates" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" AllowTextWrap="true">
+                                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                                <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+                                <GridEvents OnActionBegin="GridActionBeginHandler" OnActionComplete="GridActionCompleteHandler" TValue="Core.Premises.Seasons.Date"></GridEvents>
+                                <GridColumns>
+                                    <GridColumn Field=@nameof(Core.Premises.Seasons.Date.Id_Guid) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" AllowEditing="false"></GridColumn>
+                                    <GridColumn HeaderText="Start">
+                                        <Template Context="datesContext">
+                                            @{
+                                                var obj = (datesContext as Core.Premises.Seasons.Date);
+                                                if (obj != null)
+                                                {
+                                                    @(obj.Start.ToString("dd MMM yyyy"))
+                                                }
+                                            }
+                                        </Template>
+                                        <EditTemplate Context="datesContext">
+                                            <SfDatePicker @bind-Value="@((datesContext as Core.Premises.Seasons.Date).Start)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                        </EditTemplate>
+                                    </GridColumn>
+                                    <GridColumn HeaderText="End">
+                                        <Template Context="datesContext">
+                                            @{
+                                                var obj = (datesContext as Core.Premises.Seasons.Date);
+                                                if (obj != null)
+                                                {
+                                                    @(obj.End.ToString("dd MMM yyyy"))
+                                                }
+                                            }
+                                        </Template>
+                                        <EditTemplate Context="datesContext">
+                                            <SfDatePicker @bind-Value="@((datesContext as Core.Premises.Seasons.Date).End)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                        </EditTemplate>
+                                    </GridColumn>
+                                </GridColumns>
+                            </SfGrid>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12 align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save" @onclick="@Details_SaveAsync">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Premises.Seasons.Season SelectedItem { get; set; } = new Core.Premises.Seasons.Season();
+
+    [Parameter] public EventCallback OnSelectedItemChanged { get; set; }
+
+    private FormDetails _formDetails = new FormDetails();
+
+    public class FormDetails
+    {
+        public string Name { get; set; } = "";
+        public string Note_Internal { get; set; } = "";
+        public List<Core.Premises.Seasons.Date> Dates = new List<Core.Premises.Seasons.Date>();
+    }
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        _formDetails = new FormDetails
+            {
+                Name = SelectedItem.Name,
+                Note_Internal = SelectedItem.Note_Internal,
+                Dates = SelectedItem.Dates
+            };
+    }
+
+    public void GridActionBeginHandler(ActionEventArgs<Core.Premises.Seasons.Date> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
+        {
+            Args.Data.Start = DateTime.Today.Date;
+            Args.Data.End = Args.Data.Start.AddMonths(3);
+
+            if (_formDetails.Dates.Count > 0)
+            {
+                Args.Data.Start = _formDetails.Dates.Max(r => r.End).AddDays(1);
+                Args.Data.End = Args.Data.Start.AddMonths(3).AddDays(-1);
+            }
+        }
+    }
+
+    public void GridActionCompleteHandler(ActionEventArgs<Core.Premises.Seasons.Date> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            _formDetails.Dates = _formDetails.Dates.OrderBy(r => r.Start).ToList();
+        }
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _formDetails.Name.Trim();
+        SelectedItem.Note_Internal = _formDetails.Note_Internal.Trim();
+        SelectedItem.Dates = _formDetails.Dates;
+
+        var lstValidationResults = await SelectedItem.ValidateAsync(SelectedItem.Premise_Id);
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (lstValidationResults.Count > 0)
+        {
+            objMessage.Type = Models.ToastNotification.Types.Warning;
+            objMessage.Message = string.Join("\n", lstValidationResults);
+        }
+        else
+        {
+            if (!await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Error;
+                objMessage.Message = "We're sorry but there has been an issue updating the item, please try again or contact support for further assistance.";
+            }
+            else
+            {
+                await OnSelectedItemChanged.InvokeAsync();
+
+                Details_Load();
+            }
+        }
+
+        lstValidationResults = null;
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        Details_Load();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

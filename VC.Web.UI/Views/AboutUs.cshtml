@@ -1,0 +1,139 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.AboutUs>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@{
+    Layout = "Master.cshtml";
+
+    var staffContent = Model.Children.FirstOrDefault(c => c.Name == "Team") as ContentModels.Team;
+    var serviceContent = Model.Children.FirstOrDefault(c => c.Name == "Services") as ContentModels.Services;
+}
+<section>
+    <div class="home-banner" style="background-image:url(@Model.BackgroundImage.LocalCrops.Src);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="banner-text">
+                        @Model.TextBlock
+
+                        @if (Model.IncludeSearchBar)
+                        {
+                            @await Umbraco.RenderMacroAsync("SearchForm")
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="who-we-are">
+        <div class="container">
+            <div class="row d-flex align-items-center">
+                <div class="who-we-are-cnt">
+                    @await Html.GetBlockGridHtmlAsync(Model.TopContent)
+                </div>
+            </div>
+        </div>
+    </div>
+    @if (staffContent != null)
+    {
+        <div class="meet-our-team">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-xxl-9">
+                        <div class="section-head text-center animate__animated animate__slideInUp">
+                            <span>@staffContent.Line1</span>
+                            <h2>@staffContent.Line2</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    @foreach (ContentModels.TeamMember teamMember in staffContent.ChildrenOfType(contentTypeAlias: "teamMember"))
+                    {
+                        <div class="col-sm-6 col-md-6 col-lg-3 col-xl-3 col-xxl-3">
+                            <div class="meet-our-team-box">
+                                <div class="meet-our-team-img" style="background-image: url(@teamMember.StaffPhoto.LocalCrops.Src)"></div>
+                                <div class="meet-our-team-cnt">
+                                    <h3>@teamMember.StaffName</h3>
+                                    <span>@teamMember.StaffPosition</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.MainContent != null)
+    {
+        @Model.MainContent
+    }
+
+    @if (serviceContent != null)
+    {
+        <div class="our-service">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xxl-12">
+                        <div class="section-head text-center animate__animated animate__slideInUp">
+                            <span>@serviceContent.Line1</span>
+                            <h2>@serviceContent.Line2</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    @for (var i = 0; i <= serviceContent.Children.Count() - 1; i++)
+                    {
+                        var service = serviceContent.Children.ElementAt(i) as ContentModels.Service;
+                        <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-4">
+                            <div class="our-service-box" style="background-color: @service.ServiceBackgroundColor">
+                                <h3>@(i + 1)</h3>
+                                <h5>@service.ServiceName</h5>
+                                <p>
+                                    @service.ServiceDescription
+                                </p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    <div class="why-book">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12 text-center">
+                    <div class="why-book-box">
+                        <h2>@Model.WhyHeaderText</h2>
+                        @Model.WhyContent
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="how-can-we">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12 animate__animated animate__slideInUp">
+                    <div class="how-can-we-box text-center">
+                        <div class="section-head">
+                            <span>@Model.HowLine1</span>
+                            <h2>@Model.HowLine2</h2>
+                        </div>
+                        @Model.HowBottomContent
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="press-about">
+        <div class="press">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xxl-12 animate__animated animate__slideInUp">
+                        @await Umbraco.RenderMacroAsync("PressBox", new { Verbose = true })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

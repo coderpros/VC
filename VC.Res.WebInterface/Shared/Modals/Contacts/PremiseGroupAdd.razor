@@ -1,0 +1,126 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add property group</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Group(s)</label>
+                                <SfMultiSelect @ref="Ddl_PremiseGroups" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select groups" @bind-Value="_form.PremiseGroups" Mode="VisualMode.CheckBox" DataSource="@_premiseGroups" AllowFiltering="true">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                    <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_PremiseGroups_OnFilter"></MultiSelectEvents>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int ContactId = 0;
+
+    private List<Models.DropDownItem> _premiseGroups { get; set; } = new List<Models.DropDownItem>();
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_PremiseGroups { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public int[] PremiseGroups { get; set; } = Array.Empty<int>();
+    }
+
+    private async Task Ddl_PremiseGroups_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_PremiseGroups, _premiseGroups, args); }
+
+    public async Task OpenAsync(int iContactId)
+    {
+        ContactId = iContactId;
+
+        // find all the groups the contact is already assigned to
+        var lstPremiseContact = (await Core.Premises.Contact.FindAllBy_ContactAsync(ContactId)).Where(r => r.Group_Id != null).ToList();
+
+        // Premise Groups DDL
+        _premiseGroups = new List<Models.DropDownItem>();
+        foreach (var objPremiseGroup in await Core.Premises.Group.FindAllAsync())
+        {
+            if (lstPremiseContact.Any(r => r.Group_Id == objPremiseGroup.Id)){ continue; }
+
+            _premiseGroups.Add(new Models.DropDownItem
+                {
+                    Text = objPremiseGroup.Name,
+                    Value_Int = objPremiseGroup.Id
+                });
+        }
+        _premiseGroups = _premiseGroups.OrderBy(r => r.Text).ToList();
+
+        _form = new ModalForm();
+
+        if (_premiseGroups.Count > 0)
+        {
+            _visible = true;
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional groups available." });
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (_form.PremiseGroups.Length < 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a group." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        foreach (var iPremiseGroupId in _form.PremiseGroups)
+        {
+            var objPremiseContact = new Core.Premises.Contact();
+            if (await objPremiseContact.CreateAsync(null, iPremiseGroupId, ContactId, SessionInfo.Current_User.Name_Full))
+            {
+                objResponse.Selected_Ids.Add(objPremiseContact.Id);
+            }
+        }
+
+        if (objResponse.Selected_Ids.Count > 0)
+        {
+            objResponse.Successful = true;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

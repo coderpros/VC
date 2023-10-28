@@ -1,0 +1,56 @@
+﻿////
+//// MAIN CONTENT
+////
+
+.main-content {
+    $self: &;
+
+    width: 100%;
+    color: $quinary-color;
+    padding: 24px 16px;
+    box-sizing: border-box;
+    position: relative;
+    //background-color: $tertiary-color;
+
+    @include breakpoint(md) {
+        padding: 40px 24px;
+        width: 1006px;
+    }
+
+    @include transition(left .2s ease);
+    margin-left: auto;
+    margin-right: auto;
+    /*@include breakpoint(1150) {*/
+    /*width: calc(100% - 300px);*/
+    /*padding: 40px;
+    }
+
+    @include breakpoint(1324) {
+        width: calc(100% - 300px);
+    }*/
+
+    @include breakpoint(lg) {
+        padding: 40px;
+        width: 1038px;
+    }
+
+    @include breakpoint(xlg) {
+        width: calc(100% - 300px);
+    }
+
+    &--full-width {
+        width: 100%;
+    }
+
+    &__wrapper {
+        flex: 1 0 auto;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: -moz-flex;
+        display: flex;
+        -webkit-flex-wrap: nowrap;
+        -ms-flex-wrap: nowrap;
+        flex-wrap: nowrap;
+        position: relative;
+    }
+}

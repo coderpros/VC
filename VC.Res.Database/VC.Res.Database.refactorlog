@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations Version="1.0" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Operation Name="Rename Refactor" Key="75dc6fa6-c4f4-47b9-bc47-f1ca7acff3eb" ChangeDateTime="10/20/2023 06:09:51">
+    <Property Name="ElementName" Value="[dbo].[tblCollection].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[tblCollection]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="tblCollection_id" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="932b8ab5-64ee-4e8f-9dbf-837fee371af2" ChangeDateTime="10/20/2023 06:23:46">
+    <Property Name="ElementName" Value="[dbo].[tblPropertyCollection].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[tblPropertyCollection]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="tblPropertyCollection_Id" />
+  </Operation>
+  <Operation Name="Rename Refactor" Key="2aa60c05-75af-4351-a3ff-78bd0d0b2566" ChangeDateTime="10/20/2023 06:24:05">
+    <Property Name="ElementName" Value="[dbo].[tblPropertyCollection].[tblPropertyCollection_Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[tblPropertyCollection]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="tblPropertyCollection_id" />
+  </Operation>
+</Operations>

@@ -1,0 +1,156 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="600px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add @Core.Enums.Label(DistanceType)</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Distance (KM)</label>
+                                <InputNumber @bind-Value="_form.KM" class="form__input" />
+                                <ValidationMessage For="@(() => _form.KM)" />
+                            </div>
+                        </div>
+                        @*<div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Latitude</label>
+                                <InputNumber @bind-Value="_form.Latitude" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Latitude)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Longitude</label>
+                                <InputNumber @bind-Value="_form.Longitude" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Longitude)" />
+                            </div>
+                        </div>*@
+
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. walk</label>
+                                <InputNumber @bind-Value="_form.MinBy_Walk" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Walk)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. drive</label>
+                                <InputNumber @bind-Value="_form.MinBy_Drive" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Drive)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. boat</label>
+                                <InputNumber @bind-Value="_form.MinBy_Boat" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Boat)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int PremiseId = 0;
+    private VC.Shared.Enums.Premises_Distance_Type DistanceType = VC.Shared.Enums.Premises_Distance_Type.Unknown;
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+
+        public double KM { get; set; } = 0;
+        public decimal? Latitude { get; set; } = null;
+        public decimal? Longitude { get; set; } = null;
+        public int? MinBy_Walk { get; set; } = null;
+        public int? MinBy_Drive { get; set; } = null;
+        public int? MinBy_Boat { get; set; } = null;
+    }
+
+    public void Open(int iPremiseId, VC.Shared.Enums.Premises_Distance_Type enumType)
+    {
+        PremiseId = iPremiseId;
+        DistanceType = enumType;
+        _form = new ModalForm();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Premises.Distance
+            {
+                Type = DistanceType,
+                Name = _form.Name.Trim(),
+                Description = _form.Description.Trim(),
+                KM = _form.KM,
+                Latitude = _form.Latitude,
+                Longitude = _form.Longitude,
+                MinBy_Walk = _form.MinBy_Walk,
+                MinBy_Drive = _form.MinBy_Drive,
+                MinBy_Boat = _form.MinBy_Boat
+            };
+
+        if (await obj.CreateAsync(PremiseId, SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the new item, please try again or contact support for further assistance." });
+        }
+
+        obj = null;
+    }
+}

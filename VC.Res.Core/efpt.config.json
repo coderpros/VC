@@ -1,0 +1,181 @@
+﻿{
+   "CodeGenerationMode": 3,
+   "ContextClassName": "DBContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Database",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "VC.Res.Core",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[tblContact]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblContactAddress]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblContactEmail]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblContactTag]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblContactTel]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblCountry]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblCurrency]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblProperty]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyAvailability]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyConfig]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyContact]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyDistance]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyExtra]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyGroup]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyRate]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyRelated]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyRoom]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertySeason]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertySeasonDate]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertySeasonExtra]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblPropertyTag]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblRegion]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysAudit]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysCacheMonitor]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysChangeLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysEmail]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysError]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblSysSetting]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblTag]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblUser]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblUserActivity]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblUserAuthCode]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblUserIP]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[tblUserSession]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[vwContactTag]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[vwPropertyTag]",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": "16i-sql.b-vc-2517-str.dbo",
+   "UncountableWords": null,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": true,
+   "UseDateOnlyTimeOnly": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": true,
+   "UseNoDefaultConstructor": true,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false,
+   "UseT4": false
+}

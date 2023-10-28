@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="wwwroot\_template\**" />
+    <Content Remove="wwwroot\_template\**" />
+    <EmbeddedResource Remove="wwwroot\_template\**" />
+    <None Remove="wwwroot\_template\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="wwwroot\media\asjpsoy3\home-banner.jpg" />
+    <Content Include="wwwroot\media\rf3dwogj\how-we-are-different.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SeoToolkit.Umbraco" Version="3.3.0" />
+    <PackageReference Include="Umbraco.Cms" Version="12.2.0" />
+    <PackageReference Include="uSync.Complete" Version="12.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Opt-in to app-local ICU to ensure consistent globalization APIs across different platforms -->
+    <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+    <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Razor files are needed for the backoffice to work correctly -->
+    <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Remove RazorCompileOnBuild and RazorCompileOnPublish when not using ModelsMode InMemoryAuto -->
+    <RazorCompileOnBuild>false</RazorCompileOnBuild>
+    <RazorCompileOnPublish>false</RazorCompileOnPublish>
+    <UserSecretsId>b018d02c-8f60-4fc8-926c-1209d620c4c9</UserSecretsId>
+  </PropertyGroup>
+  
+</Project>

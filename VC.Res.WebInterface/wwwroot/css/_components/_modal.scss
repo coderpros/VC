@@ -1,0 +1,96 @@
+////
+//// MODAL WINDOW
+////
+
+.modal {
+	$class: &;
+
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 15;
+	background: rgba(0, 0, 0, .85);
+	overflow-x: auto;
+	cursor: pointer;
+	height: 100%;
+	width: 100%;
+
+	&.is-active {
+		display: block;
+	}
+
+	&__window {
+		border-radius: 4px;
+		cursor: default;
+		position: relative;
+		width: 100%;
+
+		&-wrapper {
+			position: relative;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			min-height: calc(100vh - 80px);
+			margin: auto;
+			max-width: 550px;
+			padding: 40px 20px;
+			display: flex;
+			justify-content: center; /* horizontal center */
+			align-items: center; /* vertical center */
+		}
+	}
+
+	&__close {
+		position: absolute;
+		top: -15px;
+		right: -15px;
+		width: 40px;
+		height: 40px;
+		background-color: darken($primary-color, 15%);
+		border-radius: 20px;
+		overflow: hidden;
+		cursor: pointer;
+
+		svg {
+			fill: $mono-0;
+			padding: 8px;
+		}
+    }
+    
+    &__header {
+        background-color: $primary-color;
+        padding: 24px 40px;
+		border-radius: 4px 4px 0 0;
+    }
+
+	&__content {
+		background-color: $mono-0;
+		padding: 35px 40px 40px 40px;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		border-radius: 0 0 4px 4px;
+	}
+
+	&__title {
+        margin-bottom: 0;
+        color: $mono-0;
+	}
+
+	&__sub-title {
+		font-size: 16px;
+		font-weight: 500;
+	}
+
+	p {
+		margin-bottom: 24px;
+		margin-top: 0;
+		color: $mono-800;
+	}
+
+	&__trigger {
+		cursor: pointer;
+	}
+
+
+}

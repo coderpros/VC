@@ -1,0 +1,197 @@
+﻿@page "/countries"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Countries</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Countries</span>
+	</div>
+
+    <a @onclick="(() => RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new Country" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <SfGrid DataSource="@_countries" AllowTextWrap="true" AllowRowDragAndDrop="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents TValue="Core.Common.Country" RowDropping="RowDroppingHandler" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Country);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Countries_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="Details">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Country.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Country.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Country.A2) HeaderText="A2"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Country.A3) HeaderText="A3"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Country.Tax_Rate) Format="N2" HeaderText="Tax Rate"></GridColumn>
+                <GridColumn HeaderText="Enabled">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Country);
+                            if (obj != null)
+                            {
+                                @(obj.Enabled ? "Yes" : "No")
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Country);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+        <VC.Res.WebInterface.Shared.Modals.CountryAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
+
+        <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this country?" OnClosed="ModalDeleteConfirmClosedHandler" />
+    </div>
+</section>
+
+@code {
+    private VC.Res.WebInterface.Shared.Modals.CountryAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Country> _countries = new List<Core.Common.Country>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Countries_RefreshAsync();
+    }
+
+    private async Task Countries_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        _countries = await Core.Common.Country.FindAllAsync(bIncDisabled: true);
+
+        await EndProcessingAsync();
+    }
+
+    public async Task RowDroppingHandler(RowDroppingEventArgs<Core.Common.Country> args)
+    {
+        if (args.DropIndex == args.FromIndex)
+        {
+            return;
+        }
+
+        if (args.Data.Count > 0)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objDropIndexItem = _countries[Convert.ToInt32(args.DropIndex)];
+            var objMoved = args.Data[0];
+
+            _ = await Core.Common.Country.Move_ToPositionAsync(objMoved.Id, objDropIndexItem.Order);
+
+            objDropIndexItem = null;
+            objMoved = null;
+
+            await EndProcessingAsync();
+        }
+    }
+
+    public async Task ActionCompleteHandler(ActionEventArgs<Core.Common.Country> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Refresh) { return; }
+
+        await Countries_RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(); }
+    }
+
+    private async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                // go to edit country page
+                NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Countries_Edit, iParameterId1: objResponse.Selected_Id));
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected country, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Common.Country.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Country deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Countries_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

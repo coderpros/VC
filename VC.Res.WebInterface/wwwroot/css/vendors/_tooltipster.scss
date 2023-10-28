@@ -1,0 +1,226 @@
+﻿.tooltipster {
+	$class: &;
+
+	&-base {
+		display: flex;
+		pointer-events: none;
+		position: absolute;
+	}
+
+	&-box {
+		flex: 1 1 auto;
+	}
+
+	&-content {
+		box-sizing: border-box;
+		max-height: 100%;
+		max-width: 100%;
+		overflow: hidden;
+	}
+
+	&-ruler {
+		bottom: 0;
+		left: 0;
+		overflow: hidden;
+		position: fixed;
+		right: 0;
+		top: 0;
+		visibility: hidden;
+	}
+	/* ANIMATIONS */
+	/* Open/close animations */
+	/* fade */
+	&-fade {
+		opacity: 0;
+		-webkit-transition-property: opacity;
+		-moz-transition-property: opacity;
+		-o-transition-property: opacity;
+		-ms-transition-property: opacity;
+		transition-property: opacity;
+
+		&#{$class}-show {
+			opacity: 1;
+		}
+	}
+	/* Update animations */
+	/* We use animations rather than transitions here because
+     transition durations may be specified in the style tag due to
+     animationDuration, and we try to avoid collisions and the use
+     of !important */
+	/* fade */
+	@keyframes tooltipster-fading {
+		0% {
+			opacity: 0;
+		}
+
+		100% {
+			opacity: 1;
+		}
+	}
+
+	&-update-fade {
+		animation: tooltipster-fading 400ms;
+	}
+	/**
+        * DEFAULT STYLE OF THE SIDETIP PLUGIN
+        * 
+        * All styles are "namespaced" with .tooltipster-sidetip to prevent
+        * conflicts between plugins.
+    */
+	&-sidetip {
+		/* .tooltipster-box */
+		#{$class}-box {
+			background-color: $septenary-color;
+			color: $mono-0;
+			//border: 2px solid black;
+			border-radius: 3px;
+			text-align: center;
+			font-size: 14px;
+			padding: 16px;
+			margin: 3px;
+			max-width: 200px;
+		}
+
+		&#{$class}-bottom {
+
+			#{$class}-box {
+				margin-top: 8px;
+			}
+
+			#{$class}-arrow {
+				height: 10px;
+				/* half the width, for centering */
+				margin-left: -10px;
+				top: 0;
+				width: 20px;
+
+				&-background {
+					border-bottom-color: $septenary-color;
+					left: 0px;
+					top: 3px;
+				}
+
+				&-border {
+					//border-bottom-color: black;
+				}
+
+				&-uncropped {
+					top: -10px;
+				}
+			}
+		}
+
+		&#{$class}-left {
+
+			#{$class}-box {
+				margin-right: 8px;
+			}
+
+			#{$class}-arrow {
+				height: 20px;
+				margin-top: -10px;
+				right: 0;
+				/* top 0 to keep the arrow from overflowing .tooltipster-base when it has not
+                been positioned yet */
+				top: 0;
+				width: 10px;
+
+				&-background {
+					border-left-color: $septenary-color;
+					left: -3px;
+					top: 0px;
+				}
+
+				&-border {
+					//border-left-color: black;
+				}
+			}
+		}
+
+		&#{$class}-right {
+
+			#{$class}-box {
+				margin-left: 8px;
+			}
+
+			#{$class}-arrow {
+				height: 20px;
+				margin-top: -10px;
+				left: 0;
+				/* same as .tooltipster-left .tooltipster-arrow */
+				top: 0;
+				width: 10px;
+
+				&-background {
+					border-right-color: $septenary-color;
+					left: 3px;
+					top: 0px;
+				}
+
+				&-border {
+					//border-right-color: black;
+				}
+
+				&-uncropped {
+					left: -10px;
+				}
+			}
+		}
+
+		&#{$class}-top {
+
+			#{$class}-box {
+				margin-bottom: 8px;
+			}
+
+			#{$class}-arrow {
+				bottom: 0;
+				height: 10px;
+				margin-left: -10px;
+				width: 20px;
+
+				&-background {
+					border-top-color: $septenary-color;
+					left: 0px;
+					top: -3px;
+				}
+
+				&-border {
+					//border-top-color: black;
+				}
+			}
+		}
+		/* .tooltipster-content */
+		&#{$class}-content {
+			color: white;
+			line-height: 18px;
+			padding: 6px 14px;
+		}
+		/* .tooltipster-arrow */
+		#{$class}-arrow {
+			overflow: hidden;
+			position: absolute;
+
+			&-background,
+			&-border {
+				height: 0;
+				position: absolute;
+				width: 0;
+			}
+
+			&-background {
+				border: 10px solid transparent;
+			}
+
+			&-border {
+				border: 10px solid transparent;
+				left: 0;
+				top: 0;
+			}
+
+			&-uncropped {
+				position: relative;
+			}
+		}
+	}
+}

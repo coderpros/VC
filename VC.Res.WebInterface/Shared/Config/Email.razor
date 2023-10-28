@@ -1,0 +1,225 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+
+<EditForm Model="@_emailForm" OnValidSubmit="@Email_SubmitAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+		<div class="panel__header">
+		    <h4 class="panel__title">Sending config</h4>
+	    </div>
+		<div class="panel__content">
+			<div class="form">
+				<div class="row">
+                    @*<div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Selected logo</label>
+                            @if (!string.IsNullOrWhiteSpace(_emailForm.Logo))
+                            {
+                                <img src="@_emailForm.Logo?width=300&height=200&rmode=max" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Select logo</label>
+                            <button type="button" class="button" disabled=@bProcessing @onclick="@EmailLogo_Select" value="Pick" >Open image library</button>
+                            <button type="button" class="button" disabled=@bProcessing @onclick="@EmailLogo_Clear" value="Clear" >Clear</button>
+                        </div>
+                    </div>*@
+
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">Default from name</label>
+                            <InputText @bind-Value="_emailForm.Sending_FromName" class="form__input" maxlength="50" />
+                            <ValidationMessage For="@(() => _emailForm.Sending_FromName)" />
+						</div>
+					</div>
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">Default from address</label>
+                            <InputText @bind-Value="_emailForm.Sending_FromAddress" class="form__input" type="email" maxlength="50" />
+                            <ValidationMessage For="@(() => _emailForm.Sending_FromAddress)" />
+						</div>
+					</div>
+
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">Errors to - Generic</label>
+                            <InputText @bind-Value="_emailForm.Sending_ErrorsTo" class="form__input" type="email" maxlength="50" />
+                            <ValidationMessage For="@(() => _emailForm.Sending_ErrorsTo)" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+    <div class="panel">
+		<div class="panel__header">
+		    <h4 class="panel__title">Server settings</h4>
+	    </div>
+		<div class="panel__content">
+			<div class="form">
+				<div class="row">
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">Address</label>
+                            <InputText id="Tb_EmailServer_Address" @bind-Value="_emailForm.Server_Address" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _emailForm.Server_Address)" />
+						</div>
+					</div>
+					<div class="col col-12 sm-3">
+						<div class="form__item">
+							<label class="form__label">Port</label>
+                            <InputNumber @bind-Value="_emailForm.Server_Port" class="form__input" maxlenght="5" />
+                            <ValidationMessage For="@(() => _emailForm.Server_Port)" />
+						</div>
+					</div>
+					<div class="col col-12 sm-3">
+						<div class="form__item">
+							<label class="form__label">TLS</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_EmailServer_Tls" @bind-Value="_emailForm.Server_TLS" />
+                                <label for="Cb_EmailServer_Tls">Required</label>
+                            </span>
+						</div>
+					</div>
+					<div class="col col-12 sm-2">
+						<div class="form__item">
+							<label class="form__label">Authentication</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_EmailServer_ReqAuth" @bind-Value="_emailForm.Server_Authentication" />
+                                <label for="Cb_EmailServer_ReqAuth">Required</label>
+                            </span>
+						</div>
+					</div>
+					<div class="col col-12 sm-5">
+						<div class="form__item">
+							<label class="form__label">Username</label>
+                            <InputText id="Tb_EmailServer_Username" @bind-Value="_emailForm.Server_Username" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _emailForm.Server_Username)" />
+						</div>
+					</div>
+					<div class="col col-12 sm-5">
+						<div class="form__item">
+							<label class="form__label">Password</label>
+                            <InputText id="Tb_EmailServer_Password" @bind-Value="_emailForm.Server_Password" class="form__input" type="password" maxlength="100" autocomplete="nope" />
+                            <ValidationMessage For="@(() => _emailForm.Server_Password)" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+            
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Email_ResetAsync" value="Cancel" >Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save" >Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+
+    private class FormEmail
+    {
+        public string Logo { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Sending_FromName { get; set; } = "";
+        
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Sending_FromAddress { get; set; } = "";
+        
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Sending_ErrorsTo { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Server_Address { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        [Range(0, 65535, ErrorMessage = "Invalid port number")]
+        public int Server_Port { get; set; } = 25;
+
+        public bool Server_TLS { get; set; } = false;
+
+        public bool Server_Authentication { get; set; } = false;
+
+        public string Server_Username { get; set; } = "";
+
+        public string Server_Password { get; set; } = "";
+    }
+
+    private FormEmail _emailForm = new FormEmail();
+
+    protected override void OnInitialized()
+    {
+        Email_Load();
+    }
+
+    private void Email_Load()
+    {
+        var objGSettings = Core.Settings.Global.Fetch;
+
+        _emailForm = new FormEmail
+            {
+                Logo = objGSettings.Email_Logo,
+                Sending_FromName = objGSettings.Email_Generic_FromName,
+                Sending_FromAddress = objGSettings.Email_Generic_FromAddress,
+                Sending_ErrorsTo = objGSettings.Email_Errors_To_Generic,
+                Server_Address = objGSettings.Email_Server_Address,
+                Server_Port = objGSettings.Email_Server_Port,
+                Server_TLS = objGSettings.Email_Server_TLS,
+                Server_Authentication = objGSettings.Email_Server_ReqAuth,
+                Server_Username = objGSettings.Email_Server_Username
+            };
+
+        objGSettings = null;
+    }
+
+    private async Task Email_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objGSettings = new Core.Settings.Global
+            {
+                Email_Logo = _emailForm.Logo,
+                Email_Generic_FromName = _emailForm.Sending_FromName.Trim(),
+                Email_Generic_FromAddress = _emailForm.Sending_FromAddress.Trim(),
+                Email_Errors_To_Generic = _emailForm.Sending_ErrorsTo.Trim(),
+                Email_Server_Address = _emailForm.Server_Address.Trim(),
+                Email_Server_Port = _emailForm.Server_Port,
+                Email_Server_TLS = _emailForm.Server_TLS,
+                Email_Server_ReqAuth = _emailForm.Server_Authentication,    
+                Email_Server_Username = _emailForm.Server_Username.Trim()
+            };
+
+        if (!string.IsNullOrWhiteSpace(_emailForm.Server_Password)) { objGSettings.Email_Server_Password = _emailForm.Server_Password.Trim(); }
+
+        if (objGSettings.Save())
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but an error has occurred updating the settings, please contact support." });
+        }
+
+        await EndProcessingAsync();
+    }
+
+    private async Task Email_ResetAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Email_Load();
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

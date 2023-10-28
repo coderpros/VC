@@ -1,0 +1,10 @@
+////
+//// FLEXBOX - END
+//// @include flexbox-end();
+////
+
+@mixin flexbox-end() {
+    -webkit-box-pack: end;
+    -ms-flex-pack: end;
+    justify-content: flex-end;
+}

@@ -1,0 +1,12 @@
+////
+//// FLEXBOX ITEM
+//// @include flexbox-item();
+//// none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]
+////
+
+@mixin flexbox-item($values) {
+    -webkit-box-flex: $values;
+    -webkit-flex: $values;
+    -ms-flex: $values;
+    flex: $values;
+}

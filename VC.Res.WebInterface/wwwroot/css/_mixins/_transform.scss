@@ -1,0 +1,14 @@
+﻿////
+//// TRANSFORM
+//// @include transform(translatey(-50%));
+//// @include transform(translatex(-50%));
+//// @include transform(translate(-50%, -50%));
+////
+
+@mixin transform($args...) {
+    -webkit-transform: $args;
+    -moz-transform: $args;
+    -ms-transform: $args;
+    -o-transform: $args;
+    transform: $args;
+}

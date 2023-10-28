@@ -1,0 +1,399 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="800px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit rate</Header>
+        <Content>
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Arrival</label>
+                                <SfDatePicker @bind-Value="_form.Arrive" TValue="DateTime" Format="dd/MM/yyyy">
+                                    <DatePickerEvents TValue="DateTime" ValueChange="DateValueChangeHandlerAsync"></DatePickerEvents>
+                                </SfDatePicker>
+                                <ValidationMessage For="@(() => _form.Arrive)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Departure</label>
+                                <SfDatePicker @bind-Value="_form.Depart" TValue="DateTime" Min="_form.Arrive" Format="dd/MM/yyyy">
+                                    <DatePickerEvents TValue="DateTime" ValueChange="DateValueChangeHandlerAsync"></DatePickerEvents>
+                                </SfDatePicker>
+                                <ValidationMessage For="@(() => _form.Depart)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Minimum party size</label>
+                                <SfNumericTextBox TValue="int" Format="N0" ShowSpinButton=false @bind-Value="_form.Min_PartySize" />
+                                <ValidationMessage For="@(() => _form.Min_PartySize)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price POA</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_Rate_Price_POA" @bind-Value="_form.Price_POA" />
+                                    <label for="Cb_Rate_Price_POA">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price entered is</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Price_EntryMode">
+                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price</label>
+                                <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="_form.Price" />
+                                <ValidationMessage For="@(() => _form.Price)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Net)</label>
+                                <p>@(PriceCalculation.POA ? "POA" : PriceCalculation.Price_Net.ToString("N2"))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Commission</label>
+                                <p>@(PriceCalculation.Commission.HasValue ? PriceCalculation.Commission.Value.ToString("N2") : "n/a")</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Tax</label>
+                                <p>@(PriceCalculation.Tax.HasValue ? PriceCalculation.Tax.Value.ToString("N2") : "n/a")</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Gross)</label>
+                                <p>@(PriceCalculation.POA ? "POA" : PriceCalculation.Price_Gross.ToString("N2"))</p>
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <VC.Res.WebInterface.Shared.Premises.AvailabilityTable @ref="_availabilityTable" Premise_Id="SelectedItem.Premise_Id" Start=@_form.Arrive End=@(_form.Depart.AddDays(-1)) PadDays="0" ShowKey=false />
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">
+                        Commission
+                    </h4>
+                    <div class="panel__divider"></div>
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Type</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Commission_AmountType">
+                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Amount</label>
+                                <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="_form.Commission_Amount" />
+                                <ValidationMessage For="@(() => _form.Commission_Amount)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Note</label>
+                                <InputTextArea @bind-Value="_form.Commission_Note" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Commission_Note)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">
+                        Tax
+                    </h4>
+                    <div class="panel__divider"></div>
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Exempt</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_Rate_Tax_Exempt" @bind-Value="_form.Tax_Exempt" />
+                                    <label for="Cb_Rate_Tax_Exempt">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Percentage</label>
+                                <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="_form.Tax_Value" />
+                                <ValidationMessage For="@(() => _form.Tax_Value)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex" for="Cb_Rate_Discount">
+                        Discount
+                        <InputCheckbox id="Cb_Rate_Discount" class="form__checkbox--secondary" @bind-Value="_form.Discount" title="Discount" />
+                        <label for="Cb_Rate_Discount">Yes &nbsp;&nbsp;<span></span></label>
+                    </h4>
+                    @if (_form.Discount)
+                    {
+                        <div class="panel__divider"></div>
+                        <div class="row">
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Apply to</label>
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.Discount_EntryMode">
+                                            <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                            <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Nights required</label>
+                                    <SfNumericTextBox TValue="int" Format="N0" ShowSpinButton=false @bind-Value="_form.Discount_Nights" />
+                                    <ValidationMessage For="@(() => _form.Discount_Nights)" />
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Amount type</label>
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.Discount_AmountType">
+                                            <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                            <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Amount</label>
+                                    <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="_form.Discount_Amount" />
+                                    <ValidationMessage For="@(() => _form.Discount_Amount)" />
+                                </div>
+                            </div>
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Note</label>
+                                    <InputTextArea @bind-Value="_form.Discount_Note" class="form__textarea" />
+                                    <ValidationMessage For="@(() => _form.Discount_Note)" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private EditContext? editContext;
+    private Shared.Premises.AvailabilityTable? _availabilityTable = null;
+
+    private Core.Premises.Seasons.Rate SelectedItem = new Core.Premises.Seasons.Rate();
+    private Core.Models.PriceCalculation PriceCalculation = new Core.Models.PriceCalculation();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public DateTime Arrive { get; set; } = DateTime.Today.Date;
+        public DateTime Depart { get; set; } = DateTime.Today.AddDays(7).Date;
+        public int Min_PartySize { get; set; } = 0;
+
+        public bool Price_POA { get; set; } = false;
+        public Core.Enums.Shared_PriceValueType Price_EntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+        public decimal Price { get; set; } = 0;
+
+        public Core.Enums.Shared_NumericValueType Commission_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal Commission_Amount { get; set; } = 0;
+        public string Commission_Note { get; set; } = "";
+
+        public bool Tax_Exempt { get; set; } = false;
+        public decimal Tax_Value { get; set; } = 0;
+
+        public bool Discount { get; set; } = false;
+        public int Discount_Nights { get; set; } = 0;
+        public Core.Enums.Shared_PriceValueType Discount_EntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+        public Core.Enums.Shared_NumericValueType Discount_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal Discount_Amount { get; set; } = 0;
+        public string Discount_Note { get; set; } = "";
+    }
+
+    public async Task OpenAsync(int iRateId)
+    {
+        SelectedItem = await Core.Premises.Seasons.Rate.FindAsync(iRateId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            _form = new ModalForm()
+                {
+                    Arrive = SelectedItem.Arrive,
+                    Depart = SelectedItem.Depart,
+                    Min_PartySize = SelectedItem.Min_PartySize,
+
+                    Price_POA = SelectedItem.Price_POA,
+                    Price_EntryMode = SelectedItem.Price_EntryMode,
+                    Price = SelectedItem.Price,
+
+                    Commission_AmountType = SelectedItem.Commission_AmountType,
+                    Commission_Amount = SelectedItem.Commission_Amount,
+                    Commission_Note = SelectedItem.Commission_Note,
+
+                    Tax_Exempt = SelectedItem.Tax_Exempt,
+                    Tax_Value = SelectedItem.Tax_Value,
+
+                    Discount = SelectedItem.Discount,
+                    Discount_Nights = SelectedItem.Discount_Nights,
+                    Discount_EntryMode = SelectedItem.Discount_EntryMode,
+                    Discount_AmountType = SelectedItem.Discount_AmountType,
+                    Discount_Amount = SelectedItem.Discount_Amount,
+                    Discount_Note = SelectedItem.Discount_Note
+                };
+
+            editContext = new(_form);
+            editContext.OnFieldChanged += (sender, args) => EditContext_OnFieldChanged(sender,args);
+
+            PriceCalculation = new Core.Models.PriceCalculation(
+                _form.Price_POA,
+                _form.Price_EntryMode,
+                _form.Price,
+                true,
+                _form.Commission_AmountType,
+                _form.Commission_Amount,
+                _form.Tax_Exempt,
+                _form.Tax_Value
+            );
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private void EditContext_OnFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        PriceCalculation = new Core.Models.PriceCalculation(
+            _form.Price_POA,
+            _form.Price_EntryMode,
+            _form.Price,
+            true,
+            _form.Commission_AmountType,
+            _form.Commission_Amount,
+            _form.Tax_Exempt,
+            _form.Tax_Value
+        );
+    }
+
+    private async Task DateValueChangeHandlerAsync(ChangedEventArgs<DateTime> args)
+    {
+        if (_availabilityTable != null)
+        {
+            await _availabilityTable.RefreshAsync(bShowSpinner: true);
+        }
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.RequireReview = false; // we're manually saving, so assume its reviewed
+
+        SelectedItem.Arrive = _form.Arrive;
+        SelectedItem.Depart = _form.Depart;
+        SelectedItem.Min_PartySize = _form.Min_PartySize;
+
+        SelectedItem.Price_POA = _form.Price_POA;
+        SelectedItem.Price_EntryMode = _form.Price_EntryMode;
+        SelectedItem.Price = _form.Price;
+
+        SelectedItem.Commission_AmountType = _form.Commission_AmountType;
+        SelectedItem.Commission_Amount = _form.Commission_Amount;
+        SelectedItem.Commission_Note = _form.Commission_Note;
+
+        SelectedItem.Tax_Exempt = _form.Tax_Exempt;
+        SelectedItem.Tax_Value = _form.Tax_Value;
+
+        SelectedItem.Discount = _form.Discount;
+        SelectedItem.Discount_Nights = _form.Discount_Nights;
+        SelectedItem.Discount_EntryMode = _form.Discount_EntryMode;
+        SelectedItem.Discount_AmountType = _form.Discount_AmountType;
+        SelectedItem.Discount_Amount = _form.Discount_Amount;
+        SelectedItem.Discount_Note = _form.Discount_Note;
+
+        var lstValidationResults = await SelectedItem.ValidateAsync(SelectedItem.Premise_Id, SelectedItem.Season_Id);
+
+        if (lstValidationResults.Count > 0)
+        {
+            // done processing
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = string.Join("\n", lstValidationResults) });
+
+            return;
+        }
+
+        lstValidationResults = null;
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem editing the selected item, please try again or contact support for further assistance." });
+        }
+    }
+}

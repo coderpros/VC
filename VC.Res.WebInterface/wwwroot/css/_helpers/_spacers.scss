@@ -1,0 +1,60 @@
+﻿////
+//// SPACER
+////
+
+%y-spacer {
+	display: block;
+}
+
+%x-spacer {
+	display: inline-block;
+}
+
+.y-spacer__4 {
+	@extend %y-spacer;
+	height: 4px;
+}
+
+.y-spacer__0 {
+	@extend %y-spacer;
+	height: 0;
+}
+
+@each $name, $value in $spacers {
+	.y-spacer__#{$name} {
+		@extend %y-spacer;
+		height: $value + 0px;
+	}
+}
+
+@each $name, $value in $spacers {
+	.x-spacer__#{$name} {
+		@extend %x-spacer;
+		width: $value + 0px;
+	}
+}
+
+
+@each $name, $value in $breakpoints {
+
+	@include breakpoint($name) {
+
+		@each $spacerName, $value in $spacers {
+			.#{$name}-y-spacer__#{$spacerName} {
+				display: block;
+				height: $value + 0px;
+			}
+		}
+	}
+}
+
+@each $name, $value in $breakpoints {
+
+	@include breakpoint($name) {
+
+		.#{$name}-y-spacer__0 {
+			display: block;
+			height: 0px;
+		}
+	}
+}

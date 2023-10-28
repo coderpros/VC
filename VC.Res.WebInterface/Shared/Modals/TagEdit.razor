@@ -1,0 +1,159 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit @string.Format("{0}: {1}", Core.Enums.Label(SelectedItem.Type), SelectedItem.Name)</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+                        @if (_form.Type == Core.Enums.Common_Tag_Type.PropertyFeature)
+                        {
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Icon</label>
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.Icon">
+                                            @{
+                                                foreach (VC.Shared.Enums.Common_Tag_Icon enumIcon in Enum.GetValues(typeof(VC.Shared.Enums.Common_Tag_Icon)).ToListDynamic().OrderBy(r => r.ToString()))
+                                                {
+                                                    <option value="@enumIcon">@VC.Shared.Enums.Label(enumIcon)</option>
+                                                }
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Categories</label>
+                                    <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select categories" @bind-Value="_form.PremiseCategories" Mode="VisualMode.CheckBox" DataSource="@_premiseCategories">
+                                        <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                    </SfMultiSelect>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private Core.Common.Tag SelectedItem = new Core.Common.Tag();
+
+    private ModalForm _form = new ModalForm();
+
+    private List<Models.DropDownItem> _premiseCategories { get; set; } = new List<Models.DropDownItem>();
+
+    public class ModalForm
+    {
+        public Core.Enums.Common_Tag_Type Type { get; set; } = Core.Enums.Common_Tag_Type.ContactService;
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+
+        public string Description { get; set; } = "";
+
+        public VC.Shared.Enums.Common_Tag_Icon Icon { get; set; } = VC.Shared.Enums.Common_Tag_Icon.None;
+
+        public int[] PremiseCategories { get; set; } = Array.Empty<int>();
+    }
+
+    public async Task OpenAsync(int iTagId)
+    {
+        SelectedItem = await Core.Common.Tag.FindAsync(iTagId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            _premiseCategories = new List<Models.DropDownItem>();
+            foreach (VC.Shared.Enums.Premises_Tag_Category enumPremiseCategory in Enum.GetValues(typeof(VC.Shared.Enums.Premises_Tag_Category)))
+            {
+                if (enumPremiseCategory == VC.Shared.Enums.Premises_Tag_Category.Unknown) { continue; }
+
+                _premiseCategories.Add(new Models.DropDownItem
+                    {
+                        Text = Core.Enums.Label(enumPremiseCategory),
+                        Value_Int = (int)enumPremiseCategory
+                    });
+            }
+            _premiseCategories = _premiseCategories.OrderBy(r => r.Text).ToList();
+
+            _form = new ModalForm()
+                {
+                    Type = SelectedItem.Type,
+                    Name = SelectedItem.Name,
+                    Description = SelectedItem.Description,
+                    Icon = SelectedItem.Icon,
+                    PremiseCategories = Core.Utilities.General.ConvertToListInt<VC.Shared.Enums.Premises_Tag_Category>(SelectedItem.PremiseCategories).ToArray()
+                };
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _form.Name.Trim();
+        SelectedItem.Description = _form.Description.Trim();
+        SelectedItem.Icon = _form.Icon;
+        SelectedItem.PremiseCategories = Core.Utilities.General.ConvertToListEnums<VC.Shared.Enums.Premises_Tag_Category>(_form.PremiseCategories.ToList());
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the new item, please try again or contact support for further assistance." });
+        }
+    }
+}

@@ -1,0 +1,38 @@
+﻿@inherits Bases.Modal
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Are you sure?</Header>
+        <Content>
+            <p>@Message</p>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Yes" Disabled=@_processing IsPrimary="true" OnClick="@YesClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int? SelectedId { get; set; } = null;
+
+    [Parameter] public string Message { get; set; } = "";
+
+
+    public void Open(int? iId = null)
+    {
+        SelectedId = iId;
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task YesClickAsync()
+    {
+        Close();
+
+        await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = true, Selected_Id = SelectedId });
+    }
+}

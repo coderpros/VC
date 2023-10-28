@@ -1,0 +1,495 @@
+﻿@inherits Bases.Component
+@implements IDisposable
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject SessionInfoService SessionInfo;
+@using Syncfusion.ExcelExport;
+@using Syncfusion.XlsIO;
+@using System.Data;
+
+@if (!isUploaded)
+{
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Upload file</h4>
+            <button type="button" class="panel__header-button" value="Download template">
+                Download template
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__save"></use>
+                </svg>
+            </button>
+        </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">File</label>
+                            <SfUploader @ref="sfImportFile" AutoUpload="true" AllowMultiple="false" AllowedExtensions=".xls,.xlsx">
+                                <UploaderEvents ValueChange="sfImportFile_UploadChangeHandlerAsync"></UploaderEvents>
+                            </SfUploader>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Rooms - Review</h4>
+            <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RoomSaveClickAsync" value="Cancel">
+                Save
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__save"></use>
+                </svg>
+            </button>
+            <button type="button" class="panel__header-button" disabled=@_processing @onclick="@CancelClickAsync" value="Cancel">
+                Cancel
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+                </svg>
+            </button>
+        </div>
+        <div class="panel__full-content">
+            <SfGrid DataSource="@_importRooms" AllowTextWrap="true">
+                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                <GridColumns>
+                    <GridColumn Field=@nameof(Models.Imports.Room.RowIndex) HeaderText="Row" Width="75px"></GridColumn>
+                    <GridColumn Field=@nameof(Models.Imports.Room.Premise_Id) HeaderText="Property Id" Width="95px"></GridColumn>
+                    <GridColumn Field=@nameof(Models.Imports.Room.Premise_Name) HeaderText="Property name"></GridColumn>
+                    <GridColumn Field=@nameof(Models.Imports.Room.Name) HeaderText="Name"></GridColumn>
+                    <GridColumn HeaderText="Website description">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Imports.Room);
+
+                                if (obj != null)
+                                {
+                                    @Helpers.General.TextToHtml(obj.Description)
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="VC notes">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Imports.Room);
+
+                                if (obj != null)
+                                {
+                                    @Helpers.General.TextToHtml(obj.Note)
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="Beds">
+                        <Template>
+                            @{
+                                var objRooms = (context as Models.Imports.Room);
+
+                                if (objRooms != null)
+                                {
+                                    var lstBeds = new List<string>();
+
+                                    if (objRooms.Beds_Double > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Double, "double")); }
+                                    if (objRooms.Beds_TwinDouble > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_TwinDouble, "twin/double")); }
+                                    if (objRooms.Beds_Twin > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Twin, "twin")); }
+                                    if (objRooms.Beds_Single > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Single, "single")); }
+                                    if (objRooms.Beds_Bunk > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Bunk, "bunk")); }
+                                    if (objRooms.Beds_Sofa > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Sofa, "sofa bed")); }
+                                    if (objRooms.Beds_Child > 0) { lstBeds.Add(string.Format("{0}x {1}", objRooms.Beds_Child, "children's bed")); }
+
+                                    @string.Join(", ", lstBeds)
+                                    lstBeds = null;
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(Models.Imports.Room.Ensuite) HeaderText="Ensuite" Width="75px"></GridColumn>
+                    <GridColumn HeaderText="Status">
+                        <Template>
+                            @{
+                                var objRooms = (context as Models.Imports.Room);
+
+                                if (objRooms != null)
+                                {
+                                    if (objRooms.Warnings.Count > 0)
+                                    {
+                                        //@(string.Join(", ", objRooms.Warnings))
+                                        
+                                        @string.Join(", ", objRooms.Warnings)
+                                        
+                                    }
+                                    else
+                                    {
+                                        @("OK")
+                                    }
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+}
+
+@code {
+
+    private SfUploader? sfImportFile = new();
+    private int _stage = 0;
+    private bool isUploaded = false;
+    private int _importType = 0;
+
+    private DataTable _importData = new();
+    private List<Models.Imports.Room> _importRooms = new();
+    private async Task sfImportFile_UploadChangeHandlerAsync(UploadChangeEventArgs args)
+    {
+        if (args.Files.Count != 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please only upload a single xls/xlsx file per import." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        try
+        {
+            // grab the file into memory so it can be opened by excel engine
+            // we need an initial memory stream of the file to convert to byte array (which forces the getting of the file) - this is all a very strange way how syncfusion
+            // process their uploads
+            using var memoryStream = new MemoryStream();
+
+            await args.Files[0].File.OpenReadStream(long.MaxValue).CopyToAsync(memoryStream);
+
+            using (var stream = new MemoryStream(memoryStream.ToArray()))
+            {
+                var excelEngine = new ExcelEngine();
+                var application = excelEngine.Excel;
+
+                // load the file into excel
+                var workBook = application.Workbooks.Open(stream, ExcelOpenType.Automatic);
+                var worksheet = workBook.Worksheets["Corfu"];
+
+                // extract data to datatable for processing
+                _importData = worksheet.ExportDataTable(worksheet.UsedRange, ExcelExportDataTableOptions.ColumnNames);
+
+                // clean up
+                worksheet = null;
+                workBook = null;
+                application = null;
+                excelEngine = null;
+            }
+
+            if (await ProcessDataAsync())
+            {
+                _stage = 1;
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but an error has occurred attempting to process your file, please check the columns meet the required structure and rows are present to import." });
+            }
+
+            // imported data is now processed so clean up
+            _importData = null;
+        }
+        catch (Exception)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but an error has occurred attempting to process your file, please try again or contact support for further assistance." });
+        }
+        finally
+        {
+            await EndProcessingAsync();
+        }
+    }
+
+    private async Task<bool> ProcessDataAsync()
+    {
+        if (_importData.Rows.Count < 1) { return false; }
+
+        var bReturn = false; // default to failure unless set otherwise
+
+        try
+        {
+            // get all the columns from the datatable
+            var lstColumnNames = _importData.Columns.Cast<DataColumn>().Select(r => r.ColumnName.ToLower().Trim()).Distinct().ToList();
+            if (_importData.Columns[0].ColumnName.ToLower().Trim() != "property id") { return bReturn; }
+            if (_importData.Columns[1].ColumnName.ToLower().Trim() != "property name") { return bReturn; }
+            if (_importData.Columns[2].ColumnName.ToLower().Trim() != "column1") { return bReturn; }
+            if (_importData.Columns[3].ColumnName.ToLower().Trim() != "name") { return bReturn; }
+            if (_importData.Columns[4].ColumnName.ToLower().Trim() != "website description") { return bReturn; }
+            if (_importData.Columns[5].ColumnName.ToLower().Trim() != "vc notes") { return bReturn; }
+            if (_importData.Columns[6].ColumnName.ToLower().Trim() != "double") { return bReturn; }
+            if (_importData.Columns[7].ColumnName.ToLower().Trim() != "twin/double") { return bReturn; }
+            if (_importData.Columns[8].ColumnName.ToLower().Trim() != "twin") { return bReturn; }
+            if (_importData.Columns[9].ColumnName.ToLower().Trim() != "single") { return bReturn; }
+            if (_importData.Columns[10].ColumnName.ToLower().Trim() != "bunk") { return bReturn; }
+            if (_importData.Columns[11].ColumnName.ToLower().Trim() != "sofa bed") { return bReturn; }
+            if (_importData.Columns[12].ColumnName.ToLower().Trim() != "childrens bed") { return bReturn; }
+            if (_importData.Columns[13].ColumnName.ToLower().Trim() != "ensuite (0 or 1)") { return bReturn; }
+            // at this point all the columns are correct and in the right order
+            // reset from any previous attempts and start to process rows
+            _importRooms = new List<Models.Imports.Room>();
+
+            for (int iRow = 0; iRow < _importData.Rows.Count; iRow++)
+            {
+                // create new row import (+2 is to account for zero index and header row to get to original row in excel file)
+                var vImport = new Models.Imports.Room
+                    {
+                        RowIndex = iRow + 2
+                    };
+
+                var vRow = _importData.Rows[iRow];
+
+                // if all the columns are blank, skip it
+                var bEmptyRow = true;
+                for (var iColumn = 0; iColumn < 13; iColumn++)
+                {
+                    
+                    if (!vRow[iColumn].ToString()!.Equals("1") && !vRow[iColumn].ToString()!.Equals("2") && !string.IsNullOrWhiteSpace(vRow[iColumn].ToString()))
+                    {
+                        bEmptyRow = false;
+                        break;
+                    }
+                }
+
+                if (bEmptyRow) { break; }
+
+                // property id
+                if (int.TryParse(vRow[0].ToString(), out var iPremiseId))
+                {
+                    vImport.Premise_Id = iPremiseId;
+
+                    var objPremise = await Core.Premises.Premise.FindAsync(iPremiseId);
+
+                    if (!objPremise.Loaded || objPremise.Deleted_UTC.HasValue)
+                    {
+                        vImport.Warnings.Add("Invalid/Unknown Property Id");
+                    }
+                    else
+                    {
+                        vImport.Premise_Name = objPremise.Display_Name_Calculated;
+                    }
+
+                    objPremise = null;
+                }
+                else
+                {
+                    vImport.Warnings.Add("Missing or incorrectly formatted Property Id");
+                }
+
+                // name
+                vImport.Name = vRow[3].ToString() ?? "";
+                if (string.IsNullOrWhiteSpace(vImport.Name)) { vImport.Warnings.Add("Missing room name"); }
+
+                // web desc
+                vImport.Description = vRow[4].ToString() ?? "";
+
+                // vc note
+                vImport.Note = vRow[5].ToString() ?? "";
+
+                // room counts
+                // double
+                if (!string.IsNullOrWhiteSpace(vRow[6].ToString()))
+                {
+                    if (int.TryParse(vRow[6].ToString(), out var iBedsDouble))
+                    {
+                        vImport.Beds_Double = Math.Abs(iBedsDouble);
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Double");
+                    }
+                }
+
+                // twin/double
+                if (!string.IsNullOrWhiteSpace(vRow[7].ToString()))
+                {
+                    if (int.TryParse(vRow[7].ToString(), out var iTwinDouble))
+                    {
+                        vImport.Beds_TwinDouble = iTwinDouble;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Twin/Double");
+                    }
+                }
+
+                // twin
+                if (!string.IsNullOrWhiteSpace(vRow[8].ToString()))
+                {
+                    if (int.TryParse(vRow[8].ToString(), out var iTwin))
+                    {
+                        vImport.Beds_Twin = iTwin;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Twin");
+                    }
+                }
+
+                // single
+                if (!string.IsNullOrWhiteSpace(vRow[9].ToString()))
+                {
+                    if (int.TryParse(vRow[9].ToString(), out var iSingle))
+                    {
+                        vImport.Beds_Single = iSingle;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Twin");
+                    }
+                }
+
+                // bunk
+                if (!string.IsNullOrWhiteSpace(vRow[10].ToString()))
+                {
+                    if (int.TryParse(vRow[10].ToString(), out var iBunk))
+                    {
+                        vImport.Beds_Bunk = iBunk;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Bunk");
+                    }
+                }
+
+                // sofa
+                if (!string.IsNullOrWhiteSpace(vRow[11].ToString()))
+                {
+                    if (int.TryParse(vRow[11].ToString(), out var iSofa))
+                    {
+                        vImport.Beds_Sofa = iSofa;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Sofa Bed");
+                    }
+                }
+
+                // Childrens
+                if (!string.IsNullOrWhiteSpace(vRow[12].ToString()))
+                {
+                    if (int.TryParse(vRow[12].ToString(), out var iChildren))
+                    {
+                        vImport.Beds_Child = iChildren;
+                    }
+                    else
+                    {
+                        vImport.Warnings.Add("Incorrectly formatted Childrens");
+                    }
+                }
+
+                // ensuite
+                if (!string.IsNullOrWhiteSpace(vRow[13].ToString()))
+                {
+                    if (vRow[13].ToString()?.Trim() == "0") { vImport.Ensuite = false; }
+                    else if (vRow[13].ToString()?.Trim() == "1") { vImport.Ensuite = true; }
+                    else { vImport.Warnings.Add("Incorrectly formatted Ensuite"); }
+                }
+
+                vRow = null;
+
+                _importRooms.Add(vImport);
+
+                vImport = null;
+            }
+            isUploaded = true;
+            bReturn = true;
+        }
+        catch (Exception)
+        {
+            return bReturn;
+        }
+
+        return bReturn;
+    }
+
+    private async Task RoomSaveClickAsync()
+    {
+        if (_importRooms.Any(r => r.Warnings.Count > 0))
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please upload a new file with the row errors resolved before continuing." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        // import the rows
+        for (int iRow = 0; iRow < _importRooms.Count; iRow++)
+        {
+            var vRowToImport = _importRooms[iRow];
+
+            var obj = new Core.Premises.Room()
+                {
+                    Name = vRowToImport.Name,
+                    Description = vRowToImport.Description,
+                    Note = vRowToImport.Note,
+                    Beds_Double = vRowToImport.Beds_Double,
+                    Beds_TwinDouble = vRowToImport.Beds_TwinDouble,
+                    Beds_Twin = vRowToImport.Beds_Twin,
+                    Beds_Single = vRowToImport.Beds_Single,
+                    Beds_Bunk = vRowToImport.Beds_Bunk,
+                    Beds_Sofa = vRowToImport.Beds_Sofa,
+                    Beds_Child = vRowToImport.Beds_Child,
+                    Ensuite = vRowToImport.Ensuite
+
+                };
+
+            if (await obj.CreateAsync(vRowToImport.Premise_Id, VC.Shared.Enums.Premises_Room_Type.Bedroom, SessionInfo.Current_User.Name_Full))
+            {
+                _importRooms[iRow].Imported = true;
+            }
+
+            obj = null;
+
+            vRowToImport = null;
+        }
+
+        var iSuccessful = _importRooms.Count(r => r.Imported);
+        var iFailed = _importRooms.Count(r => !r.Imported);
+
+        _importRooms = _importRooms.Where(r => !r.Imported).ToList();
+
+        if (iSuccessful > 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = string.Format("{0} imported.", iSuccessful) });
+        }
+
+        if (iFailed > 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = string.Format("{0} failed.", iFailed) });
+        }
+
+        _stage = 2;
+
+        if (_importRooms.Count < 1)
+        {
+            await CancelClickAsync();
+        }
+
+        await EndProcessingAsync();
+    }
+
+    private async Task CancelClickAsync()
+    {
+        _stage = 0;
+        if (sfImportFile != null)
+        {
+            await sfImportFile.ClearAllAsync();
+        }
+
+        _importRooms = new List<Models.Imports.Room>();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    void IDisposable.Dispose()
+    {
+        sfImportFile?.Dispose();
+    }
+}

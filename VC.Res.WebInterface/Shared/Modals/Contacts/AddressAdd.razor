@@ -1,0 +1,167 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add address</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Line 1</label>
+                                <InputText @bind-Value="_form.Line1" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Line1)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Line 2</label>
+                                <InputText @bind-Value="_form.Line2" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Line2)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Line 3</label>
+                                <InputText @bind-Value="_form.Line3" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Line3)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Town</label>
+                                <InputText @bind-Value="_form.Town" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Town)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">County/region</label>
+                                <InputText @bind-Value="_form.Region" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Region)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Postal Code</label>
+                                <InputText @bind-Value="_form.PostCode" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.PostCode)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Country</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.CountryId">
+                                        @{
+                                            <option value="0">Select Country</option>
+                                            foreach (var country in lstCountry)
+                                            {
+                                                <option value="@country.Id">@(country.Name)</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int ContactId = 0;
+
+    private ModalForm _form = new ModalForm();
+
+    private List<Core.Common.Country> lstCountry = new List<Core.Common.Country>();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Line1 { get; set; } = "";
+
+        public string Line2 { get; set; } = "";
+
+        public string Line3 { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Town { get; set; } = "";
+
+        public string Region { get; set; } = "";
+
+        public string PostCode { get; set; } = "";
+
+        public int CountryId { get; set; } = 0;
+    }
+
+    public async Task Open(int iContactId)
+    {
+        ContactId = iContactId;
+        _form = new ModalForm();
+
+        lstCountry = await Core.Common.Country.FindAllAsync();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (_form.CountryId == 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a country." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Contacts.Address
+            {
+                Line1 = _form.Line1.Trim(),
+                Line2 = _form.Line2.Trim(),
+                Line3 = _form.Line3.Trim(),
+                Town = _form.Town.Trim(),
+                Region = _form.Region.Trim(),
+                Post_Code = _form.PostCode.Trim(),
+                Country_Id = _form.CountryId
+            };
+
+        if (await obj.CreateAsync(ContactId, SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        obj = null;
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

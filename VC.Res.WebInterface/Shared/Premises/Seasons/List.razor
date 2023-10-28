@@ -1,0 +1,160 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+@inject NavigationManager NavigationManager
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Seasons</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="(() => NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Seasons_Add, iParameterId1: SelectedItem.Id)))" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_seasons" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Seasons.Season);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Seasons_Edit, iParameterId1: SelectedItem.Id, iParameterId2: obj.Id)" class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Seasons.Season.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Seasons.Season.Name) HeaderText="Name" />
+                <GridColumn HeaderText="Dates">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Seasons.Season);
+                            if (obj != null)
+                            {
+                                @(string.Join(" | ", obj.Dates.Select(r => (string.Format("{0} to {1}", r.Start.ToString("dd/MM/yyyy"), r.End.ToString("dd/MM/yyyy"))))))
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Inclusions">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Seasons.Season);
+                            if (obj != null)
+                            {
+                                var objConfig = _configs.FirstOrDefault(r => r.Season_Id == obj.Id);
+                                if (objConfig != null)
+                                {
+                                    @(objConfig.Inclusions_Calculated)
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Extras">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Seasons.Season);
+                            if (obj != null)
+                            {
+                                @(string.Join(" | ", _extras.Where(r => r.Season_Id == obj.Id).OrderBy(r => r.Name).Select(r => r.Name)))
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Seasons.Season);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this season?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Seasons.Season> _seasons = new List<Core.Premises.Seasons.Season>();
+    private List<Core.Premises.Config> _configs = new List<Core.Premises.Config>();
+    private List<Core.Premises.Seasons.Extra> _extras = new List<Core.Premises.Seasons.Extra>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        _seasons = await Core.Premises.Seasons.Season.FindAllBy_PremiseAsync(SelectedItem.Id);
+
+        if (_seasons.Count > 0)
+        {
+            _configs = await Core.Premises.Config.FindAllBy_SeasonAsync(_seasons.Select(r => r.Id).Distinct().ToList());
+            _extras = await Core.Premises.Seasons.Extra.FindAllBy_SeasonAsync(_seasons.Select(r => r.Id).Distinct().ToList());
+        }
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Seasons.Season.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

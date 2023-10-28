@@ -1,0 +1,59 @@
+﻿@page "/config"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+
+<PageTitle>Configuration</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Config</span>
+	</div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <SfTab>
+            <TabAnimationSettings>
+                <TabAnimationNext Effect="AnimationEffect.None" />
+                <TabAnimationPrevious Effect="AnimationEffect.None" />
+            </TabAnimationSettings>
+            <TabEvents Selecting="OnTabSelecting" />
+            <TabItems>
+                <TabItem>
+                    <HeaderTemplate>General</HeaderTemplate>
+                    <ContentTemplate>
+                        <VC.Res.WebInterface.Shared.Config.General />
+                    </ContentTemplate>
+                </TabItem>
+
+                <TabItem>
+                    <HeaderTemplate>Website</HeaderTemplate>
+                    <ContentTemplate>
+                        <VC.Res.WebInterface.Shared.Config.Website />
+                    </ContentTemplate>
+                </TabItem>
+
+                <TabItem>
+                    <HeaderTemplate>Email</HeaderTemplate>
+                    <ContentTemplate>
+                        <VC.Res.WebInterface.Shared.Config.Email />
+                    </ContentTemplate>
+                </TabItem>
+
+                <TabItem>
+                    <HeaderTemplate>Property Defaults</HeaderTemplate>
+                    <ContentTemplate>
+                        <VC.Res.WebInterface.Shared.Config.PremiseDefaults />
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    </div>
+</section>
+
+@code {
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+}

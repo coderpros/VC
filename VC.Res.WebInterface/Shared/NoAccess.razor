@@ -1,0 +1,16 @@
+﻿@inject NavigationManager NavigationManager
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <h1>Access denied</h1>
+
+        <p>Sorry but you do not have access to this area.</p>
+    </div>
+</section>
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+    }
+}

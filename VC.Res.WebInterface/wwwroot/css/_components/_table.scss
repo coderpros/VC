@@ -1,0 +1,503 @@
+////
+//// TABLE
+////
+
+.table {
+    $self: &;
+
+    width: 100%;
+    border-collapse: collapse;
+
+    &__wrapper {
+        position: relative;
+        margin: 16px;
+
+        &--availability {
+            margin: 0;
+        }
+    }
+
+    &__shadow {
+        position: absolute;
+        top: 44px;
+        width: 8px;
+        height: calc(100% - 44px);
+        z-index: 2;
+        display: none;
+
+        &:before {
+            content: "";
+            position: absolute;
+            top: calc(50% - 10px);
+            z-index: 3;
+            @include transform(translatey(-50%));
+            width: 26px;
+            height: 26px;
+            background-color: $primary-color;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            background-size: 18px 18px;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+
+
+        &-left {
+            left: 0;
+            border-left: 1px solid $mono-400;
+            background-image: linear-gradient(to right, $mono-300, rgba(255,255,255,0));
+
+            &:before {
+                right: -4px;
+                background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#{$mono-0}"><path d="M19 11H7.4l5.3-5.3c.4-.4.4-1 0-1.4s-1-.4-1.4 0l-7 7c-.1.1-.2.2-.2.3-.1.2-.1.5 0 .8.1.1.1.2.2.3l7 7c.2.2.5.3.7.3s.5-.1.7-.3c.4-.4.4-1 0-1.4L7.4 13H19c.6 0 1-.4 1-1s-.4-1-1-1z"/></svg>');
+            }
+        }
+
+        &-right {
+            right: 0;
+            border-right: 1px solid $mono-400;
+            background-image: linear-gradient(to left, $mono-300, rgba(255,255,255,0));
+
+            &:before {
+                left: -4px;
+                background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#{$mono-0}"><path d="M19.9 12.4c.1-.2.1-.5 0-.8-.1-.1-.1-.2-.2-.3l-7-7c-.4-.4-1-.4-1.4 0s-.4 1 0 1.4l5.3 5.3H5c-.6 0-1 .4-1 1s.4 1 1 1h11.6l-5.3 5.3c-.4.4-.4 1 0 1.4.2.2.5.3.7.3s.5-.1.7-.3l7-7c.1-.1.2-.2.2-.3z"/>></svg>');
+            }
+        }
+    }
+
+    &__scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    &__text {
+        margin: 0 5px;
+
+        a {
+            color: $quinary-color;
+            text-decoration: none;
+        }
+    }
+
+    &__cell {
+        &--xsmall {
+            div {
+                width: 50px;
+            }
+        }
+
+        &--small {
+            div {
+                width: 100px;
+            }
+        }
+
+        &--medium {
+            div {
+                width: 150px;
+            }
+        }
+
+        &--large {
+            div {
+                width: 200px;
+            }
+        }
+
+        &--xlarge {
+            div {
+                width: 220px;
+            }
+        }
+
+        &--xxlarge {
+            div {
+                width: 270px;
+            }
+        }
+
+        &--xxxlarge {
+            div {
+                width: 350px;
+            }
+        }
+
+        &--xxxxlarge {
+            div {
+                width: 395px;
+            }
+        }
+
+        &--xxxxxlarge {
+            div {
+                width: 490px;
+            }
+        }
+    }
+
+    .button {
+        padding: 0;
+        margin: 0 auto;
+        display: block;
+    }
+
+    thead {
+
+        tr {
+            border-bottom: 1px solid $mono-300;
+
+            th {
+                font-weight: bold;
+                padding: 10px;
+                background-color: transparent;
+                text-align: left;
+            }
+        }
+    }
+
+    tbody {
+        /*background: $secondary-color;*/
+        border: 1px solid $mono-300;
+        border-radius: 4px;
+        box-sizing: border-box;
+
+        tr {
+            border-bottom: 1px solid $mono-300;
+
+            td {
+                padding: 10px;
+                vertical-align: middle;
+                //text-transform: capitalize;
+                position: relative;
+            }
+        }
+    }
+
+    &--availability {
+        //width: calc(100% - 2px);
+        width: 100%;
+
+        thead {
+
+            tr {
+
+                th {
+                    text-align: center;
+                }
+            }
+        }
+
+        tbody {
+
+            tr {
+                border: none;
+
+                td {
+                    text-align: center;
+                    position: relative;
+                    border: 1px solid $mono-300;
+
+                    &.available {
+                        > span {
+                            background-color: map-get($availability-color, available);
+                        }
+                    }
+
+                    &.available-enq {
+                        > span {
+                            background-color: map-get($availability-color, available-enq);
+                        }
+                    }
+
+                    &.on-hold {
+                        > span {
+                            background-color: map-get($availability-color, on-hold);
+                        }
+                    }
+
+                    &.booked {
+                        > span {
+                            background-color: map-get($availability-color, booked);
+                        }
+                    }
+
+                    &.booked-ext {
+                        > span {
+                            background-color: map-get($availability-color, booked-ext);
+                        }
+                    }
+
+                    &.not-available {
+                        > span {
+                            background-color: map-get($availability-color, default);
+                        }
+                    }
+
+                    &.past {
+                        background-color: $mono-200;
+                    }
+
+                    &.selected {
+                        background-color: $mono-50;
+
+                        &.available {
+                            background-color: map-get($availability-color, available);
+                        }
+
+                        &.available-enq {
+                            background-color: map-get($availability-color, available-enq);
+                        }
+
+                        &.on-hold {
+                            background-color: map-get($availability-color, on-hold);
+                        }
+
+                        &.booked {
+                            background-color: map-get($availability-color, booked);
+                        }
+
+                        &.booked-ext {
+                            background-color: map-get($availability-color, booked-ext);
+                        }
+
+                        &.not-available {
+                            background-color: map-get($availability-color, default);
+                        }
+                    }
+
+                    &.not-selected {
+                        &.available {
+                            background-color: lighten(map-get($availability-color, available),16);
+                        }
+
+                        &.available-enq {
+                            background-color: lighten(map-get($availability-color, available-enq),16);
+                        }
+
+                        &.on-hold {
+                            background-color: lighten(map-get($availability-color, on-hold),16);
+                        }
+
+                        &.booked {
+                            background-color: lighten(map-get($availability-color, booked),16);
+                        }
+
+                        &.booked-ext {
+                            background-color: lighten(map-get($availability-color, booked-ext),16);
+                        }
+
+                        &.not-available {
+                            background-color: lighten(map-get($availability-color, default),16);
+                        }
+                    }
+
+                    .date {
+                        font-size: 14px;
+                        /*color: $mono-900;*/
+                        margin-bottom: 6px;
+                    }
+
+                    > span {
+                        display: block;
+                        height: 6px;
+                        width: 50px;
+                        border-radius: 20px;
+                        margin: 0 auto;
+                    }
+
+                    .price {
+                        font-weight: 500;
+                        font-size: 16px;
+                        margin-bottom: 8px;
+
+                        del {
+                            opacity: 0.6;
+                        }
+
+                        span {
+                            font-size: 14px;
+                            font-weight: normal;
+                            opacity: 0.6;
+                            display: inline-block;
+                        }
+                    }
+
+                    &.disabled {
+                        opacity: 0.6;
+                    }
+                }
+            }
+        }
+    }
+
+    &__legend {
+        margin: 16px 0 0 0;
+        white-space: nowrap;
+        text-align: center;
+
+        &-item {
+            display: inline-block;
+            margin-right: 16px;
+            font-size: 14px;
+            color: $mono-500;
+
+            span {
+                width: 12px;
+                height: 12px;
+                display: inline-block;
+                border-radius: 6px;
+                margin-right: 8px;
+            }
+
+            &--available {
+                span {
+                    background-color: map-get($availability-color, available);
+                }
+            }
+
+            &--available-enq {
+                span {
+                    background-color: map-get($availability-color, available-enq);
+                }
+            }
+
+            &--on-hold {
+                span {
+                    background-color: map-get($availability-color, on-hold);
+                }
+            }
+
+            &--booked {
+                span {
+                    background-color: map-get($availability-color, booked);
+                }
+            }
+
+            &--booked-ext {
+                span {
+                    background-color: map-get($availability-color, booked-ext);
+                }
+            }
+
+            &--not-available {
+                span {
+                    background-color: map-get($availability-color, default);
+                }
+            }
+        }
+    }
+
+    &__dropdown {
+        display: none;
+        position: absolute;
+        margin: 0;
+        top: 50px;
+        right: 10px;
+        background: $secondary-color;
+        min-width: 160px;
+        width: 160px;
+        z-index: 30;
+        border-radius: 3px;
+        text-align: left;
+        border: 1px solid $tertiary-color;
+        border-top: 0;
+        -webkit-box-shadow: 0px 1px 1px 1px rgba(0, 0, 0, 0.1);
+        -moz-box-shadow: 0px 1px 1px 1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0px 1px 1px 1px rgba(0, 0, 0, 0.1);
+
+        &.js-active {
+            display: block;
+        }
+
+        &:before {
+            content: "";
+            display: block;
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 7px solid $tertiary-color;
+            position: absolute;
+            top: -7px;
+            right: 18px;
+        }
+
+        &-toggle {
+            opacity: 0.6;
+            color: $mono-600;
+
+            &:hover {
+                opacity: 1;
+                color: $mono-600;
+            }
+        }
+
+        &-link {
+            padding: 14px 20px;
+            color: $quinary-color;
+            text-decoration: none;
+            display: block;
+        }
+    }
+}
+
+
+.table {
+
+    &__row {
+        border: 1px solid $mono-300;
+        border-radius: 4px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        background: $secondary-color;
+        min-width: 100%;
+
+        &:not(:last-child) {
+            border-bottom: 1px solid $mono-300;            
+        }
+
+    }
+
+    &__cell {
+        display: inline-block;
+        padding: 10px;
+        vertical-align: middle;
+        text-transform: capitalize;
+        position: relative;
+
+        &--xsmall {
+            width: 50px;
+        }
+        &--small {
+            width: 100px;
+        }
+        &--medium {
+            width: 150px;
+        }
+
+        &--large {
+            width: 200px;
+        }
+
+        &--xlarge {
+            width: 220px;
+        }
+
+        &--xxlarge {
+            width: 270px;
+        }
+
+        &--xxxlarge {
+            width: 350px;
+        }
+
+        &--xxxxlarge {
+            width: 395px;
+        }
+
+        &--xxxxxlarge {
+            width: 490px;
+        }
+    }
+}

@@ -1,0 +1,60 @@
+////
+//// COLOURS
+////
+
+// BRAND COLOURS
+$primary-color: #2D5177; 
+$secondary-color: #302f2e; 
+$tertiary-color: #F5F3ED; 
+$quaternary-color: #979691; 
+$quinary-color: #313538; 
+$senary-color: #24272A; 
+$septenary-color: #243249; 
+
+
+// MONO COLOURS
+$mono-0: #FFFFFF;
+$mono-50: #f5f5f5;
+$mono-100: #eeeeee;
+$mono-200: #dedddd;
+$mono-300: #cdcdcd;
+$mono-400: #bdbcbc;
+$mono-500: #acacab;
+$mono-600: #9c9b9b;
+$mono-700: #8b8b8a;
+$mono-800: #7b7a79;
+$mono-900: #6a6a69;
+$mono-1000: #5a5958;
+$mono-1100: #4a4948;
+$mono-1200: #3d3c3b;
+$mono-1300: #302f2e;
+$mono-1400: #222221;
+$mono-1500: #151414;
+$mono-1600: #070707;
+
+
+// MESSAGE COLOURS
+$message-color: (
+	success: #68c752,
+	error: #ff5a6a,
+	warning: #f3c673,
+	notice: #a2d8f5,
+	default: $mono-400,
+);
+
+
+// BACKGROUND COLORS
+$background-color: (
+    green: $primary-color,
+    blue: $secondary-color,
+    dark-grey: $tertiary-color,
+    grey: $mono-700,
+    custom-grey: #f8f9fb,
+    light-grey: $quaternary-color,
+    white: $quinary-color,
+    black: #000000
+);
+
+
+// AVAILABILITY COLOURS
+$availability-color: ( available: #68c752, available-enq: #a2d8f5, on-hold: #f3c673, booked: #ff5a6a, booked-ext: #FF8692, default: $mono-400 );

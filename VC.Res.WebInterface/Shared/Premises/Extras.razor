@@ -1,0 +1,244 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Extras</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAdd" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_extras" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Core.Premises.Extra.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Edit">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Extra.Name) HeaderText="Name" />
+                <GridColumn Field=@nameof(Core.Premises.Extra.Description) HeaderText="Description" />
+                <GridColumn HeaderText="Price (Net)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                if (_priceCalculations.ContainsKey(obj.Id))
+                                {
+                                    @_priceCalculations[obj.Id].Price_Net.ToString("0.00")
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Commission">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                if (_priceCalculations.ContainsKey(obj.Id))
+                                {
+                                    @(_priceCalculations[obj.Id].Commission.HasValue ? _priceCalculations[obj.Id].Commission.Value.ToString("0.00") : "n/a")
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Tax">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                if (_priceCalculations.ContainsKey(obj.Id))
+                                {
+                                    @(_priceCalculations[obj.Id].Tax.HasValue ? _priceCalculations[obj.Id].Tax.Value.ToString("0.00") : "n/a")
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Price (Gross)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                if (_priceCalculations.ContainsKey(obj.Id))
+                                {
+                                    @_priceCalculations[obj.Id].Price_Gross.ToString("0.00")
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Extra);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.ExtraAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+<VC.Res.WebInterface.Shared.Modals.Premises.ExtraEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandlerAsync" />
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this item?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+    private Shared.Modals.Premises.ExtraAdd? _modalAdd = null;
+    private Shared.Modals.Premises.ExtraEdit? _modalEdit = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Extra> _extras = new List<Core.Premises.Extra>();
+    private Dictionary<int, Core.Models.PriceCalculation> _priceCalculations = new Dictionary<int, Core.Models.PriceCalculation>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        _extras = await Core.Premises.Extra.FindAllBy_PremiseAsync(SelectedItem.Id, bIncDeleted: false);
+
+        // work out the price calculations for each extra
+        _priceCalculations = new Dictionary<int, Core.Models.PriceCalculation>();
+        foreach (var vExtra in _extras)
+        {
+            _priceCalculations.Add(vExtra.Id,
+                new Core.Models.PriceCalculation(
+                    false,
+                    vExtra.Price_EntryMode_Calculated,
+                    vExtra.Price,
+                    vExtra.Commission_SubjectTo,
+                    vExtra.Commission_AmountType_Calculated,
+                    vExtra.Commission_Amount_Calculated,
+                    vExtra.Tax_Exempt_Calculated,
+                    vExtra.Tax_Value_Calculated));
+        }
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(SelectedItem.Id); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                //refresh grid
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                //refresh grid
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Extra.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

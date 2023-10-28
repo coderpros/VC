@@ -1,0 +1,9 @@
+﻿@using TooltipPosition = Syncfusion.Blazor.Popups.Position
+
+<SfTooltip Position="TooltipPosition.RightCenter" Content="@Content">
+    <span class="tooltip"></span>
+</SfTooltip>
+
+@code {
+    [Parameter] public string Content { get; set; } = "";
+}

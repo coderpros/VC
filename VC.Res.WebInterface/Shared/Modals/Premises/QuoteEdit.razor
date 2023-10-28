@@ -1,0 +1,48 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="900px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+    @* old <Header>@(_PremisesName + " " + _quoteContainer.Arrival.ToString("dd/MM/yyyy")) </Header>*@
+        <Header> @($@"Quote From {_quoteContainer.Arrival.ToString("dd/MM/yyyy")} to {_quoteContainer.Departure.ToString("dd/MM/yyyy")}")  </Header>
+        <Content>
+            <VC.Res.WebInterface.Shared.Premises.Quote @ref="_QuotePage" CallbackQuotePage="@(() => CallbackQuotePage.InvokeAsync())" />
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Close" Disabled=@_processing OnClick="@CancelClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOpen="@DialogOpen" OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    [CascadingParameter] public Models.Quoting.Container _quoteContainer { get; set; } = new Models.Quoting.Container();
+    [Parameter] public EventCallback<Shared.Premises.Quote> CallbackQuotePage { get; set; }
+    private int _Quote_Id = 0;
+    private string _PremisesName = "";
+    private Shared.Premises.Quote _QuotePage = new Shared.Premises.Quote();   
+
+    public async Task OpenAsync(int iQuote)
+    {
+        _Quote_Id = iQuote;
+
+        if (_quoteContainer.Quotes != null && _quoteContainer.Quotes.Count() > 0)
+        {
+            _PremisesName = _quoteContainer.Quotes.Where(x => x.Id == iQuote).FirstOrDefault()?.Premises.Display_Name_Calculated ?? "";
+        }
+
+        _visible = true;
+    }
+
+    private async Task DialogOpen(Object args)
+    {
+        _QuotePage._quoteContainer = _quoteContainer;
+        await _QuotePage.Quote_LoadAsync(_Quote_Id);
+
+        StateHasChanged();
+    }
+
+
+}

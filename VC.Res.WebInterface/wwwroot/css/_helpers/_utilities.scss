@@ -1,0 +1,184 @@
+//////
+//BACKGROUND COLORS
+//////
+
+@each $name, $value in $background-color {
+	.bg__#{$name} {
+  		$self: &;
+
+		background: $value;
+
+		&--gradient {
+			@include linear-gradient($value, lighten($value, 5%));
+		}
+
+		#{$self} + .bg__#{$name} {
+			border-top: 1px solid #E0E0E0;
+		}
+	}
+}
+
+
+
+
+.checkered-bg {
+    width: 100px;
+    height: 100px;
+    background-image: url(../images/image-preview__bg.png);
+
+    img {
+        display: block;
+    }
+}
+
+.checkered-bg-logo {
+    width: 270px;
+    height: 90px;
+    background-image: url(../images/image-preview__bg.png);
+
+    img {
+        display: block;
+    }
+}
+
+
+
+
+.color-preview {
+    @include flexbox-container;
+    @include flexbox-middle;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    em {
+        width: 24px;
+        height: 24px;
+        border: 1px solid $mono-200;
+    }
+
+    span {
+        font-size: 14px;
+        color: $mono-900;
+        font-weight: 600;
+    }
+}
+
+
+
+.relative {
+	position: relative;
+}
+
+
+
+
+
+.no-wrap {
+    white-space: nowrap;
+}
+
+
+
+
+
+
+
+
+
+.embed-responsive {
+	@include embedResponsively();
+}
+
+
+
+
+
+
+.responsive-image {
+	max-width: 100%;
+	width: 100%;
+	padding: 24px;
+	box-sizing: border-box;
+
+	@include breakpoint(md) {
+		padding: 0;
+	}
+}
+
+
+
+
+
+.pad__l-r--24 {
+	padding: 0 24px;
+
+	@include breakpoint(lg) {
+		padding: 0;
+	}
+}
+
+
+
+
+
+
+
+
+.divider {
+	border-bottom: 2px solid $mono-300;
+	display: block;
+	margin-top: 24px;
+	margin-bottom: 24px;
+
+	&--small {
+		border-width: 1px;
+	}
+
+	&--large {
+		border-width: 5px;
+	}
+}
+
+.y-divider {
+	border-left: 2px solid $mono-300;
+	margin: 0 auto;
+	margin-top: 24px;
+	margin-bottom: 24px;
+	display: block;
+	height: 100%;
+	width: 0;
+
+	&--small {
+		border-width: 1px;
+	}
+
+	&--large {
+		border-width: 5px;
+	}
+}
+
+.divider__text {
+	text-align: center;
+	display: table;
+	white-space: nowrap;
+	text-transform: uppercase;
+	width: 100%;
+	margin: 24px 0;
+
+	&:before, &:after {
+		border-top: 2px solid $mono-300;
+		content: '';
+		display: table-cell;
+		position: relative;
+		top: 10px;
+		width: 45%;
+	}
+
+	&:before {
+		right: 0;
+	}
+
+	&:after {
+		left: 0;
+	}
+}

@@ -1,0 +1,235 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="600px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit @string.Format("{0}: {1}", Core.Enums.Label(SelectedItem.Type), SelectedItem.Name)</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Website description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">VC notes</label>
+                                <InputTextArea @bind-Value="_form.Note" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Note)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__24"></div>
+                    <h4>Beds</h4>
+                    <div class="row">
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Double</label>
+                                <InputNumber @bind-Value="_form.DoubleBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.DoubleBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Twin / double</label>
+                                <InputNumber @bind-Value="_form.TwinDoubleBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.TwinDoubleBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Twin</label>
+                                <InputNumber @bind-Value="_form.TwinBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.TwinBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Single</label>
+                                <InputNumber @bind-Value="_form.SingleBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.SingleBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Bunk</label>
+                                <InputNumber @bind-Value="_form.BunkBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.BunkBeds)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Sofa bed</label>
+                                <InputNumber @bind-Value="_form.SofaBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.SofaBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Children's bed</label>
+                                <InputNumber @bind-Value="_form.ChildBeds" class="form__input" />
+                                <ValidationMessage For="@(() => _form.ChildBeds)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Ensuite</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Ensuite id="Cb_Ensuite" />
+                                    <label for="Cb_Ensuite">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @*<div class="y-spacer y-spacer__24"></div>
+                    <h4>Access</h4>
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Access_Inside id="Cb_Access_Inside" />
+                                    <label for="Cb_Access_Inside">Inside</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Access_Outside id="Cb_Access_Outside" />
+                                    <label for="Cb_Access_Outside">Outside</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>*@
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private Core.Premises.Room SelectedItem = new Core.Premises.Room();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Note { get; set; } = "";
+
+        public int DoubleBeds { get; set; } = 0;
+        public int TwinDoubleBeds { get; set; } = 0;
+        public int TwinBeds { get; set; } = 0;
+        public int SingleBeds { get; set; } = 0;
+        public int BunkBeds { get; set; } = 0;
+        public int SofaBeds { get; set; } = 0;
+        public int ChildBeds { get; set; } = 0;
+        public bool Ensuite { get; set; } = false;
+
+        public bool Access_Inside { get; set; } = false;
+        public bool Access_Outside { get; set; } = false;
+    }
+
+    public async Task OpenAsync(int iRoomId)
+    {
+        SelectedItem = await Core.Premises.Room.FindAsync(iRoomId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            _form = new ModalForm()
+                {
+                    Name = SelectedItem.Name,
+                    Description = SelectedItem.Description,
+                    Note = SelectedItem.Note,
+                    DoubleBeds = SelectedItem.Beds_Double,
+                    TwinDoubleBeds = SelectedItem.Beds_TwinDouble,
+                    TwinBeds = SelectedItem.Beds_Twin,
+                    SingleBeds = SelectedItem.Beds_Single,
+                    BunkBeds = SelectedItem.Beds_Bunk,
+                    SofaBeds = SelectedItem.Beds_Sofa,
+                    ChildBeds = SelectedItem.Beds_Child,
+                    Ensuite = SelectedItem.Ensuite,
+                    Access_Inside = SelectedItem.Access_Inside,
+                    Access_Outside = SelectedItem.Access_Outside
+                };
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _form.Name.Trim();
+        SelectedItem.Description = _form.Description.Trim();
+        SelectedItem.Note = _form.Note.Trim();
+
+        SelectedItem.Beds_Double = _form.DoubleBeds;
+        SelectedItem.Beds_TwinDouble = _form.TwinDoubleBeds;
+        SelectedItem.Beds_Twin = _form.TwinBeds;
+        SelectedItem.Beds_Single = _form.SingleBeds;
+        SelectedItem.Beds_Bunk = _form.BunkBeds;
+        SelectedItem.Beds_Sofa = _form.SofaBeds;
+        SelectedItem.Beds_Child = _form.ChildBeds;
+        SelectedItem.Ensuite = _form.Ensuite;
+        
+        SelectedItem.Access_Inside = _form.Access_Inside;
+        SelectedItem.Access_Outside = _form.Access_Outside;
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem editing the selected item, please try again or contact support for further assistance." });
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "Dev": {
+    "CustomVariables": {
+      "environment": "Dev"
+    }
+  },
+  "UAT": {
+    "CustomVariables": {
+      "environment": "UAT"
+    }
+  },
+  "Rel": {
+    "CustomVariables": {
+      "environment": "Production"
+    }
+  }
+}

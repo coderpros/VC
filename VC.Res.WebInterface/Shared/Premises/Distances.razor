@@ -1,0 +1,170 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">@Core.Enums.Label_Plural(SelectedType)</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAdd" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_distances" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Distance);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Distance.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Distance.Description) HeaderText="Description"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Distance.KM) HeaderText="Distance (KM)"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Distance);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.DistanceAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
+
+<VC.Res.WebInterface.Shared.Modals.Premises.DistanceEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandler" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this item?" OnClosed="ModalDeleteConfirmClosedHandler" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    [Parameter] public VC.Shared.Enums.Premises_Distance_Type SelectedType { get; set; } = VC.Shared.Enums.Premises_Distance_Type.Unknown;
+
+    private Shared.Modals.Premises.DistanceAdd? _modalAdd = null;
+    private Shared.Modals.Premises.DistanceEdit? _modalEdit = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Distance> _distances = new List<Core.Premises.Distance>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        _distances = await Core.Premises.Distance.FindAllBy_PremiseAsync(SelectedItem.Id, new List<VC.Shared.Enums.Premises_Distance_Type> { SelectedType });
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(SelectedItem.Id, SelectedType); }
+    }
+
+    private async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Distance.DeleteFullAsync(objResponse.Selected_Id.Value))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

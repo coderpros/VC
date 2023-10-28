@@ -1,0 +1,387 @@
+﻿@inherits Umbraco.Cms.Web.Common.Macros.PartialViewMacroPage
+<form>
+    <div class="home-search">
+        <input type="email" class="form-control" id="search" placeholder="WHERE DO YOU WANT TO GO?">
+        <a class="thm-btn-2">Search</a>
+    </div>
+    <!-- <div class="sub-filter">
+        <ul>
+            <li>
+                <h6>DESTINATION</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        GREECE
+                    </label>
+                </div>
+            </li>
+            <li>
+                <h6>REGION</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        GRASSE AREA
+                    </label>
+                </div>
+            </li>
+            <li>
+                <h6>COLLECTIONS</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        LARGE GROUPS
+                    </label>
+                </div>
+            </li>
+            <li>
+                <h6>VILLAS</h6>
+                <div class="sub-villa">
+                    <div class="sub-villa-img">
+                        <img src="images/villa-banner.jpg" alt="" class="img-fluid">
+                    </div>
+                    <div class="sub-villa-cnt">
+                        <span>GREECE, CORFU</span>
+                        <h6>VILLA OLIVE GROVE</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="sub-villa-amenities">8 GUESTS</div>
+                            <div class="sub-villa-amenities">4 BEDROOMS</div>
+                            <div class="sub-villa-amenities">4 BATHROOMS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-villa">
+                    <div class="sub-villa-img">
+                        <img src="images/villa-banner.jpg" alt="" class="img-fluid">
+                    </div>
+                    <div class="sub-villa-cnt">
+                        <span>GREECE, CORFU</span>
+                        <h6>VILLA OLIVE GROVE</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="sub-villa-amenities">8 GUESTS</div>
+                            <div class="sub-villa-amenities">4 BEDROOMS</div>
+                            <div class="sub-villa-amenities">4 BATHROOMS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sub-villa">
+                    <div class="sub-villa-img">
+                        <img src="images/villa-banner.jpg" alt="" class="img-fluid">
+                    </div>
+                    <div class="sub-villa-cnt">
+                        <span>GREECE, CORFU</span>
+                        <h6>VILLA OLIVE GROVE</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="sub-villa-amenities">8 GUESTS</div>
+                            <div class="sub-villa-amenities">4 BEDROOMS</div>
+                            <div class="sub-villa-amenities">4 BATHROOMS</div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <div class="home-filter-btm">
+                <a  class="clear-btn">clear</a>
+                <a  class="ok-btn">ok</a>
+            </div>
+        </ul>
+    </div> -->
+    <div class="home-filter">
+        <div class="filter-list">
+            <div class="filter-box">
+                <ul>
+                    <li class="filter-dropdown">
+                        <a>ANYWHERE</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>GREECE</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" checked="">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANTIPAROS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            CORFU
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            CRETE
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            HYDRA
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ITHACA
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            KEA
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            KEFALONIA
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            MEGANISI
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            MILOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            MYKONOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            PAROS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            PATMOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            PAXOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            PORTO HELI
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            SANTORINI
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            SIFNOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            SKIATHOS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            SPETSES
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            THE PELOPONNESE
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ZAKYNTHOS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>FRANCE & CORSICA</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>ITALY</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>SPAIN & THE BALEARICS</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>MOROCCO</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>COLLECTIONS</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="filter-dropdown">
+                        <a>COLLECTIONS</a>
+                        <div class="filter-menu">
+                            <ul>
+                                <li>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                        <label class="form-check-label" for="flexRadioDefault1">
+                                            ALL REGIONS
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">
+                                            ANDROS
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <div class="home-filter-btm">
+                        <a class="clear-btn">clear</a>
+                        <a class="ok-btn">ok</a>
+                    </div>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>

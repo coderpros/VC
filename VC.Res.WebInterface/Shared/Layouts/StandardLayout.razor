@@ -1,0 +1,232 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject IJSRuntime JS
+
+@{
+    var bHasAccess = false;
+
+    if (SessionInfo.Valid())
+    {
+        // get the current page we're on
+        var enumCurrentPageRule = Core.UrlHelpers.Interface.URLProcess_CurrentRule(NavigationManager.Uri.Replace(NavigationManager.BaseUri, "").TrimStart('/').TrimEnd('/').ToLower());
+
+        // check the user has access
+        bHasAccess = Core.UrlHelpers.Interface.HasAccess(enumCurrentPageRule, SessionInfo.Current_User);
+    }
+}
+
+<!-- // HEADER // -->
+<header class="header">
+    <div class="col col-12">
+
+        @*<a @onclick="(() => NavigationManager.NavigateTo(SPPlatform.Core.UrlHelpers.Admin.URL_Get(Core.UrlHelpers.Admin.Pages.Dashboard), forceLoad: true))" @onclick:preventDefault class="header__nav-btn header__nav-btn--dashboard" title="View Dashboard">
+            <img src="@strLogoUrl" alt="" class="header__logo" />
+        </a>*@
+
+        <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Dashboard)" class="header__nav-btn header__nav-btn--dashboard" title="View Dashboard">
+            <img src="@LogoURL" alt="" class="header__logo" />
+        </a>
+
+        <div class="chevron"></div>
+
+        <button class="header__nav-toggle" type="button" data-handheld-nav-toggle>
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__menu"></use>
+            </svg>
+            <span class="header__nav-toggle-text">Menu</span>
+        </button>
+            
+        <nav class="header__nav">
+            @foreach (var vHeaderLink in HeaderLinks)
+            {
+                <HeaderLink Link="vHeaderLink" Mobile="false" />
+            }
+        </nav>
+
+        <div class="header__profile" data-header-profile>
+            <p class="header__profile-name">
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__profile"></use>
+                </svg>
+                <span class="header__profile-name-text">@System.Web.HttpUtility.HtmlEncode(SessionInfo.Current_User.Name_Full)</span>
+                <svg class="icon icon--small" data-header-profile-arrow>
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__arrow"></use>
+                </svg>           
+            </p>
+	        <ul class="header__profile-links" data-header-profile-links>
+		        <li>
+                    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Auth_Logout)" class="header__profile-link"><span class="header__profile-link-text">Logout</span></a>
+		        </li> 
+	        </ul>
+        </div>
+    </div>
+
+    <div class="handheld-navigation">
+        <ul class="handheld-navigation__list">
+            @foreach (var vHeaderLink in HeaderLinks)
+            {
+                <HeaderLink Link="vHeaderLink" Mobile="true" />
+            }
+        </ul>
+    </div>
+</header>
+<!-- // HEADER // -->
+
+@if (bHasAccess)
+{
+    @Body
+}
+else
+{
+    <NoAccess />
+}
+
+<!-- // FOOTER // -->
+<footer class="footer">
+    <div class="row row--full-width">
+        <div class="col col-6">
+            
+        </div>
+    </div>
+	<div class="row row--full-width">
+		<div class="col col-6">
+			&copy; Villa Collective @DateTime.Now.Year.ToString(). All Rights Reserved.
+		</div>
+		<div class="col col-6 align--right">
+            <!-- Developer branding goes here. -->
+		</div>
+	</div>
+</footer>
+<!-- // FOOTER // -->
+
+<div id="model_SessionTimeout" class="modal">
+	<div class="modal__window-wrapper">
+		<div class="modal__window">
+			<div class="modal__close">
+				<svg class="icon">
+					<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+				</svg>
+			</div>
+			<div class="modal__header">
+				<h3 class="modal__title">Log out</h3>
+			</div>
+			<div class="modal__content">
+				<p>For security you are about to be logged out due to inactivity. To remain logged in please click 'Continue'.</p>
+
+				<div class="y-spacer y-spacer__8"></div>
+
+				<button type="button" id="Btn_SessionTimeout_LogOut" class="button  button__outline  modal__dismiss">
+                    Log out
+                </button>
+                <button type="button" id="Btn_SessionTimeout_Continue" class="button  modal__dismiss">
+                    Continue
+                </button> 
+			</div>
+		</div>
+	</div>
+</div>
+
+<NiceUIElements />
+
+@code{
+    public string LogoURL { get; set; } = "/imgs/logo-icon.png?width=180&height=60&rmode=max";
+    public List<Models.HeaderLink> HeaderLinks { get; set; } = new List<Models.HeaderLink>();
+
+    protected override void OnInitialized()
+    {
+        HeaderLinks = new List<Models.HeaderLink>();
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Contacts_List, SessionInfo.Current_User))
+        {
+            HeaderLinks.Add(new Models.HeaderLink { Title = "Contacts", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_List) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Premises_List, SessionInfo.Current_User))
+        {
+            HeaderLinks.Add(new Models.HeaderLink { Title = "Properties", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List) });
+        }
+
+        //if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Invoices_List, SessionInfo.CurrentUser))
+        //{
+        //    HeaderLinks.Add(new Models.HeaderLink { Title = "Invoices", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Invoices_List) });
+        //}
+
+
+
+        var objOther = new Models.HeaderLink { Title = "Other", Url = "" };
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Collections_List, SessionInfo.Current_User))
+        {
+            objOther.SubLinks.Add(new Models.HeaderLink { Title = "Collections", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Collections_List) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Premises_Groups_List, SessionInfo.Current_User))
+        {
+            objOther.SubLinks.Add(new Models.HeaderLink { Title = "Property Groups", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Groups_List) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Tags_List, SessionInfo.Current_User))
+        {
+            objOther.SubLinks.Add(new Models.HeaderLink { Title = "Tags", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Tags_List) });
+        }
+
+        var objAdmin = new Models.HeaderLink { Title = "Admin", Url = "" };
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Config, SessionInfo.Current_User))
+        {
+            objAdmin.SubLinks.Add(new Models.HeaderLink { Title = "Config", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Config) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Countries_List, SessionInfo.Current_User))
+        {
+            objAdmin.SubLinks.Add(new Models.HeaderLink { Title = "Countries", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Countries_List) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Currencies_List, SessionInfo.Current_User))
+        {
+            objAdmin.SubLinks.Add(new Models.HeaderLink { Title = "Currencies", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Currencies_List) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Tools, SessionInfo.Current_User))
+        {
+            objAdmin.SubLinks.Add(new Models.HeaderLink { Title = "Tools", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Tools) });
+        }
+
+        if (Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Users_List, SessionInfo.Current_User))
+        {
+            objAdmin.SubLinks.Add(new Models.HeaderLink { Title = "Users", Url = Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Users_List) });
+        }
+
+        
+
+        if (objOther.SubLinks.Count > 0)
+        {
+            HeaderLinks.Add(objOther);
+        }
+
+        if (objAdmin.SubLinks.Count > 0)
+        {
+            HeaderLinks.Add(objAdmin);
+        }
+
+        objOther = null;
+        objAdmin = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        //if (firstRender)
+        //{
+
+        //}
+
+        await JS.InvokeVoidAsync("module.setup");
+    }
+
+    [JSInvokable("RefreshSession")]
+    public static Task<bool> RefreshSession()
+    {
+        return Task.FromResult(true);
+    }
+}

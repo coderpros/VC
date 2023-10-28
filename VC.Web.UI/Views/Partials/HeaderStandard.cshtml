@@ -1,0 +1,67 @@
+﻿@using Umbraco.Cms.Core.Models
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    var homePage = Umbraco.ContentAtRoot().First(x => x.GetTemplateAlias() == "Home");
+}
+<!-- Start Header -->
+<header>
+    <div class="header header-sticky">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-3">
+                    <div class="header-search">
+                        <form>
+                            <input class="form-control input-keyword" type="text" value="" name="keysearch" placeholder="Where would you like to go?" autocomplete="off">
+                            <button class="input-submit" type="submit" value=""><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-xxl-6">
+                    <nav class="navbar navbar-expand-xl">
+                        <div class="container">
+                            <a class="navbar-brand" href="@homePage.Url()">
+                                <img src="@Url.Content("~/images/logo.svg")" alt="logo" class="img-fluid">
+                            </a>
+                            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"><i class="fa-solid fa-bars"></i></span>
+                            </button>
+                            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                                <div class="header-search">
+                                    <form>
+                                        <input class="form-control input-keyword" type="text" value="" name="keysearch" placeholder="Where would you like to go?" autocomplete="off">
+                                        <button class="input-submit" type="submit" value=""><i class="fa-solid fa-magnifying-glass"></i></button>
+                                    </form>
+                                </div>
+                                <ul class="navbar-nav m-auto">
+                                    @foreach (var publishedContent in homePage.Children().Where(x => Convert.ToBoolean(x.Value("HideFromNavigation")) != true))
+                                    {
+                                        <li class="nav-item">
+                                            <a class="nav-link" href="@publishedContent.Url(System.Globalization.CultureInfo.CurrentCulture.ToString(), UrlMode.Relative)">@publishedContent.Name</a>
+                                        </li>
+                                    }
+                                </ul>
+                                <div class="header-right">
+                                    <div class="header-contact">
+                                        <a href="tel:+442039501588">+44 (0)20 3950 1588</a>
+                                        <span>Mon-Fri 8am-6pm</span>
+                                    </div>
+                                    <a href="@Url.Content("~/enquiry-form/")" class="thm-btn">ENQUIRE</a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+                <div class="col-xxl-3">
+                    <div class="header-right">
+                        <div class="header-contact">
+                            <a href="tel:+442039501588">+44 (0)20 3950 1588</a>
+                            <span>Mon-Fri 8am-6pm</span>
+                        </div>
+                        <a href="@Url.Content("~/enquiry-form/")" class="thm-btn">ENQUIRE</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- End Header -->

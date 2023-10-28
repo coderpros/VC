@@ -1,0 +1,129 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add collection</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="200" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" maxlength="10000" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Enable</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_EnableCollection" @bind-Value="_form.Enabled" />
+                                    <label for="Cb_EnableCollection">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-5">
+                            <div class="form__item">
+                                <label class="form__label">Save to Umbraco </label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_SaveCollectionToUmbraco" @bind-Value="_form.SaveToUmbraco" />
+                                    <label for="Cb_SaveCollectionToUmbraco">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private CollectionAdd.ModalForm _form = new CollectionAdd.ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+
+        [DataType(DataType.MultilineText)]
+        public string Description { get; set; } = string.Empty;
+
+        public bool Enabled { get; set; } = false;
+
+        public bool SaveToUmbraco { get; set; } = false;
+
+    }
+
+    public void Open()
+    {
+        _form = new CollectionAdd.ModalForm();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        // setup a modal closed response
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Common.Collection
+            {
+                Name = this._form.Name.Trim(),
+                Description = this._form.Description.Trim(),
+                Enabled = this._form.Enabled,
+                SaveToUmbraco = this._form.SaveToUmbraco
+            };
+
+        if (await obj.CreateAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            // close the modal
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            // display message
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the new item, please try again or contact support for further assistance." });
+        }
+
+        obj = null;
+    }
+}

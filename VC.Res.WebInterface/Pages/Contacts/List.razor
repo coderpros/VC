@@ -1,0 +1,373 @@
+﻿@page "/contacts"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using VC.Res.Core.Contacts;
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Contacts</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn sub-header__btn--menu-toggle" data-sidebar-toggle data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+        </svg>
+        <span class="sub-header__btn-text">Hide</span>
+    </div>
+
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Contacts</span>
+	</div>
+
+    <a @onclick="(() => RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new Contact" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <section class="sidebar__wrapper" data-sidebar>
+        <div class="sidebar">
+            <EditForm Model="@_frmFilters" OnValidSubmit="@Contacts_RefreshAsync">
+                <div class="form__item">
+                    <label class="form__label">Name</label>
+                    <InputText @bind-Value="_frmFilters.Name" class="form__input" maxlength="100" />
+                    <ValidationMessage For="@(() => _frmFilters.Name)" />
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Company</label>
+                    <InputText @bind-Value="_frmFilters.Company" class="form__input" maxlength="100" />
+                    <ValidationMessage For="@(() => _frmFilters.Company)" />
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Email address</label>
+                    <InputText @bind-Value="_frmFilters.Email" class="form__input" maxlength="100" />
+                    <ValidationMessage For="@(() => _frmFilters.Email)" />
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Role</label>
+                    <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select role" @bind-Value="_frmFilters.Categories" Mode="VisualMode.CheckBox" DataSource="@_categories">
+                        <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                    </SfMultiSelect>
+                </div>
+
+                <div class="y-spacer y-spacer__16"></div>
+
+                <button type="submit" class="button" disabled=@_processing value="Filter">Filter</button>
+                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_ClearAsync" value="Clear">Clear</button>
+            </EditForm>
+        </div>
+    </section>
+
+    <div class="main-content">
+        <SfGrid DataSource="@_pagedData.Elements" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Contacts.Contact.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false"></GridColumn>
+                <GridColumn Field=@nameof(Core.Contacts.Contact.Name_Full) HeaderText="Name"></GridColumn>
+                <GridColumn HeaderText="Email address">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                var lst = _emails.Where(r => r.Contact_Id == obj.Id).OrderByDescending(r => r.Primary).ToList();
+                                if (lst.Count > 0)
+                                {
+                                    <a href="@("mailto:" + lst[0].Address)">
+                                        @lst[0].Address
+                                    </a>
+
+                                    if (lst.Count > 1)
+                                    {
+                                        @Helpers.General.TextToHtml("&nbsp;*")
+                                    }
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Telephone">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                var lst = _telephoneNos.Where(r => r.Contact_Id == obj.Id).OrderByDescending(r => r.Primary).ToList();
+                                if (lst.Count > 0)
+                                {
+                                    @string.Format("({0}) {1}", lst[0].CountryCode, lst[0].Number)
+
+                                    if (lst.Count > 1)
+                                    {
+                                        @Helpers.General.TextToHtml("&nbsp;*")
+                                    }
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Group(s)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                // work out the groups the contact belongs to
+                                var lstGroupContacts = _premiseGroupContacts.Where(r => r.Contact_Id == obj.Id && r.Group_Id != null).ToList();
+                                if (lstGroupContacts.Count > 0)
+                                {
+                                    @string.Join(", ", _premiseGroups.Where(r => lstGroupContacts.Select(r1 => r1.Group_Id.Value).ToList().Contains(r.Id)).Select(r => r.Name).ToList())
+                                }
+                                lstGroupContacts = null;
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Role(s)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                @string.Join(", ", obj.Categories.Select(r => Core.Enums.Label(r)).ToList())
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Contacts.Contact);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+        @if (_pagedData.TotalPages > 1)
+        {
+            <div class="pagination">
+                @foreach(var vPage in _pagedData.PagingData())
+                {
+                    <a @onclick="(() => ChangePageAsync(vPage.Page))" @onclick:preventDefault title="@vPage.Title" class="pagination__item">@((MarkupString)vPage.Text)</a>
+                }
+            </div>
+        }
+
+        <VC.Res.WebInterface.Shared.Modals.Contacts.ContactAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+        <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this contact?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+    </div>
+</section>
+
+
+
+@code {
+    private Shared.Modals.Contacts.ContactAdd? _modalAdd = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Models.DropDownItem> _categories { get; set; } = new List<Models.DropDownItem>();
+
+    private Core.Utilities.PagedData<Core.Contacts.Contact> _pagedData = new Core.Utilities.PagedData<Core.Contacts.Contact>(0);
+    private List<Core.Contacts.Email> _emails = new List<Core.Contacts.Email>();
+    private List<Core.Contacts.TelephoneNo> _telephoneNos = new List<Core.Contacts.TelephoneNo>();
+    private List<Core.Premises.Contact> _premiseGroupContacts = new List<Core.Premises.Contact>();
+    private List<Core.Premises.Group> _premiseGroups = new List<Core.Premises.Group>();
+
+    private Models.PageFilters.Contacts_List _frmFilters = new Models.PageFilters.Contacts_List();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            foreach (Core.Enums.Contacts_Contact_Category enumContactCategory in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_Category)))
+            {
+                _categories.Add(new Models.DropDownItem
+                    {
+                        Text = Core.Enums.Label(enumContactCategory),
+                        Value_Int = (int)enumContactCategory
+                    });
+            }
+            _categories = _categories.OrderBy(r => r.Text).ToList();
+
+            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Contacts_List>("Filters_Contacts");
+
+            if (previousFilters.Success)
+            {
+                if (previousFilters.Value != null)
+                {
+                    _frmFilters = previousFilters.Value;
+                }
+            }
+        }
+        catch (Exception)
+        {
+
+        }
+        finally
+        {
+            await Contacts_RefreshAsync();
+        }
+    }
+
+    private async Task Contacts_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var lstFilters_Contact = new Core.Utilities.FilterList<Core.Contacts.Contact.FilterOption>();
+        lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+
+        if (!string.IsNullOrWhiteSpace(_frmFilters.Name))
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Name_Full, _frmFilters.Name);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_frmFilters.Company))
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Company, _frmFilters.Company);
+        }
+
+        if (_frmFilters.Categories?.Length > 0)
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Categories, Core.Utilities.General.ConvertToListEnums<Core.Enums.Contacts_Contact_Category>(_frmFilters.Categories.ToList()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_frmFilters.Email))
+        {
+            // do a search of email addresses for contact ids
+            var lstEmailContactIds = (await Core.Contacts.Email.FindAll(_frmFilters.Email)).Select(r => r.Contact_Id).ToList();
+
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Ids, lstEmailContactIds);
+        }
+
+        _pagedData = await Core.Contacts.Contact.ListPagedAsync(lstFilters_Contact.Filters, iPage: _frmFilters.CurrentPage);
+        lstFilters_Contact = null;
+
+        if (_pagedData.Elements.Count > 0)
+        {
+            var lstIds = _pagedData.Elements.Select(r => r.Id).ToList();
+
+            _emails = await Core.Contacts.Email.FindAllBy_ContactAsync(lstIds);
+            _telephoneNos = await Core.Contacts.TelephoneNo.FindAllBy_ContactAsync(lstIds);
+
+            _premiseGroupContacts = await Core.Premises.Contact.FindAllBy_ContactAsync(lstIds);
+
+            if (_premiseGroupContacts.Count > 0)
+            {
+                _premiseGroups = await Core.Premises.Group.FindAllAsync(_premiseGroupContacts.Where(r => r.Group_Id != null).Select(r => r.Group_Id.Value).ToList());
+            }
+        }
+
+        if (_pagedData.CurrentPage != _frmFilters.CurrentPage) { _frmFilters.CurrentPage = _pagedData.CurrentPage; }
+
+        await ProtectedSessionStore.SetAsync("Filters_Contacts", _frmFilters);
+        
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    private async Task Filters_ClearAsync()
+    {
+        if (_processing) { return; }
+
+        _frmFilters = new();
+        await Contacts_RefreshAsync();
+    }
+
+    private async Task ChangePageAsync(int iPage)
+    {
+        if (_processing) { return; }
+
+        _frmFilters.CurrentPage = iPage;
+        await Contacts_RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_Edit, iParameterId1: objResponse.Selected_Id));
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); } 
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Contacts.Contact.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Contacts_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

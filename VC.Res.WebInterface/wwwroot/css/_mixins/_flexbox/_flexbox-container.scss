@@ -1,0 +1,12 @@
+////
+//// FLEXBOX CONTAINER
+//// @include flexbox-container();
+////
+
+@mixin flexbox-container() {
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}

@@ -1,0 +1,129 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add Collection Properties</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Properties</label>
+                                <SfMultiSelect @ref="Ddl_CollectionPremises" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select Properties" @bind-Value="_form.CollectionPremises" Mode="VisualMode.CheckBox" DataSource="@_collectionPremises" AllowFiltering="true">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                    <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_CollectionPremises_OnFilter"></MultiSelectEvents>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.Fade"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+
+    private int CollectionId = 0;
+
+    private List<Models.DropDownItem> _collectionPremises { get; set; } = new List<Models.DropDownItem>();
+
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_CollectionPremises { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public int[] CollectionPremises { get; set; } = Array.Empty<int>();
+    }
+
+    private async Task Ddl_CollectionPremises_OnFilter(FilteringEventArgs args)
+    {
+        await Helpers.General.OnFilter(Ddl_CollectionPremises, _collectionPremises, args);
+    }
+
+    public async Task OpenAsync(int iCollectionId)
+    {
+        this.CollectionId = iCollectionId;
+
+        // Find all the properties assigned to the selected collection.
+        var lstCollectionPremises = await Core.Common.Collection.FindCollectionPremisesAsync(this.CollectionId);
+
+        // Collection Premises DropDownList
+        _collectionPremises = new List<Models.DropDownItem>();
+        foreach (var objPremise in await Core.Premises.Premise.ListAsync())
+        {
+            if (lstCollectionPremises.Any(r => r.Id == objPremise.Id))
+            {
+                continue;
+            }
+
+            _collectionPremises.Add(new Models.DropDownItem { Text = objPremise.Name, Value_Int = objPremise.Id });
+        }
+        _collectionPremises = _collectionPremises.OrderBy(r => r.Text).ToList();
+
+        _form = new ModalForm();
+
+        if (_collectionPremises.Count > 0)
+        {
+            _visible = true;
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional properties available." });
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        var objResponse = new Models.ModalResponse();
+        var objCollectionPremise = new Core.Common.Collection();
+
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null))
+        {
+            return;
+        }
+
+        if (_form.CollectionPremises.Length < 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select at least one property." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync()))
+        {
+            return;
+        }
+
+        if (await objCollectionPremise.CreateCollectionPremisesAsync(_form.CollectionPremises.ToList(), this.CollectionId, SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+
+}

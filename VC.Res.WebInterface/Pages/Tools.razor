@@ -1,0 +1,116 @@
+﻿@page "/tools"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Tools</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Tools</span>
+    </div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <SfTab>
+            <TabAnimationSettings>
+                <TabAnimationNext Effect="AnimationEffect.None" />
+                <TabAnimationPrevious Effect="AnimationEffect.None" />
+            </TabAnimationSettings>
+            <TabEvents Selecting="OnTabSelecting" />
+            <TabItems>
+                <TabItem>
+                    <HeaderTemplate>Importer</HeaderTemplate>
+                    <ContentTemplate>
+                        <Importer />
+                    </ContentTemplate>
+                </TabItem>
+
+                <TabItem>
+                    <HeaderTemplate>Misc</HeaderTemplate>
+                    <ContentTemplate>
+                        <div class="panel">
+                            <div class="panel__content">
+                                <div class="form">
+                                    <div class="row">
+                                        <div class="col col-12 sm-4">
+                                            <label class="form__label">Clear the local cache of any stored values from the database</label>
+                                            <button type="button" class="button" value="ResetCache" disabled=@_processing @onclick="@ResetCacheClick">Reset cache</button>
+                                        </div>
+
+                                        <div class="col col-12 sm-4">
+                                            <label class="form__label">Force properties push/sync to website</label>
+                                            <button type="button" class="button" value="Sync" disabled=@_processing @onclick="@PropertiesWebsiteSyncClick">Sync</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ContentTemplate>
+                </TabItem>
+            </TabItems>
+        </SfTab>
+    </div>
+</section>
+
+@code {
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+
+    private async Task ResetCacheClick()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        // default to error
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem processing your request, please try again or contact support for further assistance." };
+
+        Core.LocalCache.RefreshWholeCache();
+
+        // got to here then everything OK
+        objMessage.Type = Models.ToastNotification.Types.Success;
+        objMessage.Message = "Cache cleared.";
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task PropertiesWebsiteSyncClick()
+    {
+        try
+        {
+
+            if (!(await StartProcessingAsync())) { return; }
+
+            // get all the properties to sync
+            var lstPremises = (await Core.Premises.Premise.ListAsync()).Where(r => r.Website_Id.HasValue && r.Deleted_UTC == null).ToList();
+
+            // setup options to limit number of concurrent tasks
+            var parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = 5 };
+
+            await Parallel.ForEachAsync(lstPremises, parallelOptions, async (premise, cancellationToken) =>
+            {
+                await Core.Integrations.Website.API.Premises_UpdateAsync(premise);
+            });
+
+            parallelOptions = null;
+
+            lstPremises = null;
+
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Sync process completed." });
+        }
+        catch (Exception ex)
+        {
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Error in sync." });
+        }
+    }
+}

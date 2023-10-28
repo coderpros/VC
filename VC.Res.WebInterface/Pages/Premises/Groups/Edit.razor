@@ -1,0 +1,89 @@
+﻿@page "/properties/groups/edit/{Id:int}"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Property Groups - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Groups_List)" class="sub-header__btn" title="Return to groups" data-hScroll-item>
+        <svg class="icon icon--small">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+        </svg>
+        <span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Property Groups > Edit: @_SelectedItem.Name</span>
+    </div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_SelectedItem.Loaded)
+        {
+            <SfTab SelectedItem=@SelectedTabIndex>
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Groups.Details SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                    <TabItem>
+                        <HeaderTemplate>Contacts</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Groups.Contacts SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private int SelectedTabIndex { get; set; } = 0;
+
+    private Core.Premises.Group _SelectedItem { get; set; } = new Core.Premises.Group();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SelectedItem = await Core.Premises.Group.FindAsync(Id, bUseCache: false);
+
+        if (!_SelectedItem.Loaded || _SelectedItem.Deleted_UTC.HasValue)
+        {
+            // shouldn't be accessing
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Groups_List));
+            return;
+        }
+        else
+        {
+            if (NavigationManager.TryGetQueryString<string>("view", out var strTab))
+            {
+                switch(strTab)
+                {
+                    case "contacts":
+                        SelectedTabIndex = 1;
+                        break;
+                    default: break;
+                }
+            }
+        }
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+}

@@ -1,0 +1,96 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add telephone number</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-5">
+                            <div class="form__item">
+                                <label class="form__label">Country Code</label>
+                                <InputText @bind-Value="_form.CountryCode" class="form__input" type="text" maxlength="5" />
+                                <ValidationMessage For="@(() => _form.CountryCode)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-7">
+                            <div class="form__item">
+                                <label class="form__label">Number</label>
+                                <InputText @bind-Value="_form.Number" class="form__input" type="text" maxlength="30" />
+                                <ValidationMessage For="@(() => _form.Number)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int ContactId = 0;
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string CountryCode { get; set; } = "+44";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Number { get; set; } = "";
+    }
+
+    public void Open(int iContactId)
+    {
+        ContactId = iContactId;
+        _form = new ModalForm();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = new Core.Contacts.TelephoneNo
+            {
+                CountryCode = _form.CountryCode.Trim(),
+                Number = _form.Number.Trim()
+            };
+
+        if (await obj.CreateAsync(ContactId, SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

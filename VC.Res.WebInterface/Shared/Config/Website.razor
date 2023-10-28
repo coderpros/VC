@@ -1,0 +1,123 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+
+<EditForm Model="@_detailsForm" OnValidSubmit="@General_SubmitAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Website</h4>
+        </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">URL</label>
+                            <InputText @bind-Value="_detailsForm.URL" class="form__input" />
+                            <ValidationMessage For="@(() => _detailsForm.URL)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">API</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_Website_APIEnabled" @bind-Value="_detailsForm.API_Enabled" />
+                                <label for="Cb_Website_APIEnabled">Enabled</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-9">
+                        <div class="form__item">
+                            <label class="form__label">Key</label>
+                            <InputText @bind-Value="_detailsForm.API_Key" class="form__input" />
+                            <ValidationMessage For="@(() => _detailsForm.API_Key)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_Reset" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    private class FormDetails
+    {
+        [Required(ErrorMessage = "This field is required")]
+        [Url(ErrorMessage = "Invalid url")]
+        public string URL { get; set; } = "";
+
+        public bool API_Enabled { get; set; } = false;
+
+        public string API_Key { get; set; } = "";
+    }
+
+    private FormDetails _detailsForm = new FormDetails();
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        var obj = Core.Settings.Global.Fetch;
+
+        _detailsForm = new FormDetails
+            {
+                URL = obj.Website_URL,
+                API_Enabled = obj.Website_APIEnabled,
+                API_Key = obj.Website_APIKey
+            };
+
+        obj = null;
+    }
+
+    private async Task General_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var obj = new Core.Settings.Global
+            {
+                Website_URL = _detailsForm.URL.ToLower().Trim().TrimEnd('/'),
+                Website_APIEnabled = _detailsForm.API_Enabled,
+                Website_APIKey = _detailsForm.API_Key.Trim()
+            };
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!obj.Save())
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the information, please try again or contact support for further assistance.";
+        }
+
+        obj = null;
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_Reset()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

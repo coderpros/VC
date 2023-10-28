@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+@Body
+
+<!-- // FOOTER // -->
+<footer class="footer footer--fixed">
+    <div class="row row--full-width">
+        <div class="col col-6">
+            
+        </div>
+    </div>
+	<div class="row row--full-width">
+		<div class="col col-6">
+			&copy; Villa Collective @DateTime.Now.Year.ToString(). All Rights Reserved.
+		</div>
+		<div class="col col-6 align--right">
+            <!-- Developer branding goes here. -->
+		</div>
+	</div>
+</footer>
+<!-- // FOOTER // -->
+
+<NiceUIElements />
+
+<style>
+    body 
+    {
+        background-image: url(@BackgroundImage);
+        background-size: cover;
+        background-position: center center;
+    }
+</style>
+
+@code{
+    public string BackgroundImage { get; set; } = "/imgs/background-images/";
+
+    protected override void OnInitialized()
+    {
+        var lstFileInfo = new System.IO.DirectoryInfo(System.IO.Directory.GetCurrentDirectory() + "\\wwwroot\\imgs\\background-images").GetFiles();
+
+        BackgroundImage = BackgroundImage + lstFileInfo[new Random().Next(0, lstFileInfo.Length)].Name;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("sessMan.Disable");
+            await JS.InvokeVoidAsync("module.setup");
+        }
+    }
+}

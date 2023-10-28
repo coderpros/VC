@@ -1,0 +1,59 @@
+////
+//// NOTIFICATION
+////
+$notey-fi-colors:(
+    success: #68c752,
+    error: #ff5a6a,
+    warning: #f3c673,
+    notice: #5F9EDA  
+);
+
+.notey-fi {
+    $self: &;
+
+	box-sizing: border-box;
+	padding: 20px 40px 20px 20px;
+	box-shadow: 0px 1px 1px 0px rgba(38, 50, 56, 0.08), 0px 4px 20px 0px rgba(38, 50, 56, 0.1);
+	border-radius: 4px;
+	border: 2px solid transparent;
+	display: block;
+	margin-bottom: 20px;
+	font-size: 14px;
+	position: relative;
+    color: #616161;
+
+	&__wrapper {
+		position: fixed;
+		top: 30px;
+		right: 30px;
+		max-width: 500px;
+		width: calc(100% - 60px);
+		z-index: 20;
+	}
+
+	a {
+		color: darken(#757575, 10%);
+		text-decoration: underline;
+	}
+
+	&__close {
+		position: absolute;
+		top: 20px;
+		right: 20px;
+		cursor: pointer;
+		color: darken(#757575, 10%);
+		background-image: url(data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDQ4IDQ4Ij4NCiAgPHBhdGggZmlsbD0iIzRkNGQ0ZCIgZD0iTTM4LDEyLjgsMzUuMiwxMCwyNCwyMS4yLDEyLjgsMTAsMTAsMTIuOCwyMS4yLDI0LDEwLDM1LjIsMTIuOCwzOCwyNCwyNi44LDM1LjIsMzgsMzgsMzUuMiwyNi44LDI0WiIvPg0KPC9zdmc+DQo=);
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 20px;
+		width: 20px;
+		height: 20px;
+    }
+    
+    @each $name, $value in $notey-fi-colors {
+        &__#{$name} {
+            border-color: $value;
+            background-color: lighten($value, 25%);
+        }
+    }
+}

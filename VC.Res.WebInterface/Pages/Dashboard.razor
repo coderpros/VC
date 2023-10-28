@@ -1,0 +1,22 @@
+﻿@page "/dashboard"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@*@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo*@
+
+<PageTitle>Dashboard</PageTitle>
+
+<section class="main-content__wrapper">
+    <div class="main-content  main-content--full-width">
+        <div class="row">
+            <VC.Res.WebInterface.Shared.Dashboard.RatesProvisional />
+
+            <VC.Res.WebInterface.Shared.Dashboard.RatesReview />
+        </div>
+    </div>
+</section>
+
+@code {
+
+}

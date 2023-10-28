@@ -1,0 +1,105 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Availability - @(_dtStart.ToString("MMMM yyyy"))</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestUpdateClick" value="Update">
+            Update
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+            </svg>
+        </button>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@PreviousClickAsync" value="PrevMonth">
+            <svg class="icon icon__rotate90">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__arrow"></use>
+            </svg>
+            Previous Month
+        </button>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@NextClickAsync" value="NextMonth">
+            Next Month
+            <svg class="icon icon__rotate270">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__arrow"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__content">
+        <AvailabilityTable @ref="_availabilityTable" Premise_Id="SelectedItem.Id" Start=@_dtStart End=@_dtEnd PadDays="7" />
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.AvailabilityUpdate @ref="_modalUpdate" OnClosed="ModalUpdateClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    private Shared.Premises.AvailabilityTable? _availabilityTable = null;
+    private Shared.Modals.Premises.AvailabilityUpdate? _modalUpdate = null;
+
+    private DateTime _dtStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime _dtEnd = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1).AddDays(-1);
+
+    private List<Core.Premises.Availability> _lstAvailability = new List<Core.Premises.Availability>();
+
+    private class Week
+    {
+        public List<Core.Premises.Availability> _availabilities = new List<Core.Premises.Availability>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (_availabilityTable != null)
+        {
+            await _availabilityTable.RefreshAsync(bShowSpinner: bShowSpinner);
+        }
+    }
+
+    private async Task PreviousClickAsync()
+    {
+        _dtStart = _dtStart.AddMonths(-1);
+        _dtEnd = _dtStart.AddMonths(1).AddDays(-1);
+
+        await RefreshAsync();
+    }
+
+    private async Task NextClickAsync()
+    {
+        _dtStart = _dtStart.AddMonths(1);
+        _dtEnd = _dtStart.AddMonths(1).AddDays(-1);
+
+        await RefreshAsync();
+    }
+
+    private void RequestUpdateClick()
+    {
+        if (_processing) { return; }
+
+        if (_modalUpdate != null) { _modalUpdate.Open(SelectedItem.Id); }
+    }
+
+    private async Task ModalUpdateClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                //refresh grid
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+}

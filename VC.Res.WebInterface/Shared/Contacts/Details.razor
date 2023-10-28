@@ -1,0 +1,390 @@
+﻿@using VC.Res.Core.Contacts;
+@using VC.Res.Core.Contacts
+@using VC.Res.Core;
+@using VC.Res.Core.Integrations.Zoho;
+@using VC.Res.Core.Settings;
+@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject IConfiguration configuration
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_frmDetails" OnValidSubmit="@Details_SaveAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">General</h4>
+        </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Email address</label>
+                            <p>@Helpers.General.TextToHtml(_frmDetails.Primary_Email)</p>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Telephone</label>
+                            <p>@Helpers.General.TextToHtml(_frmDetails.Primary_Tel)</p>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address</label>
+                            <p>@Helpers.General.TextToHtml(_frmDetails.Primary_Address)</p>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-1">
+                        <div class="form__item">
+                            <label class="form__label">Title</label>
+                            <InputText @bind-Value="_frmDetails.Title" class="form__input" maxlength="10" />
+                            <ValidationMessage For="@(() => _frmDetails.Title)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">First name</label>
+                            <InputText @bind-Value="_frmDetails.FirstName" class="form__input"  maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.FirstName)" />
+                        </div>
+                    </div>
+                    @*<div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Middle Name</label>
+                            <InputText @bind-Value="_frmDetails.MiddleName" class="form__input"  maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.MiddleName)" />
+                        </div>
+                    </div>*@
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Last name</label>
+                            <InputText @bind-Value="_frmDetails.LastName" class="form__input"  maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.LastName)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-5">
+                        <div class="form__item">
+                            <label class="form__label">Company</label>
+                            <InputText @bind-Value="_frmDetails.CompanyName" class="form__input" maxlength="200" />
+                            <ValidationMessage For="@(() => _frmDetails.CompanyName)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Preferred channel</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.PreferredContactMethod">
+                                    @{
+                                        foreach (Core.Enums.Contacts_Contact_PreferredContactMethod enumPreferredChannel in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_PreferredContactMethod)))
+                                        {
+                                            <option value="@enumPreferredChannel">@Core.Enums.Label(enumPreferredChannel)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Role(s)</label>
+                            <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select role(s)" @bind-Value="_frmDetails.Categories" Mode="VisualMode.CheckBox" DataSource="@_Categories">
+                                <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                            </SfMultiSelect>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Website URL</label>
+                            <InputText @bind-Value="_frmDetails.WebsiteUrl" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.WebsiteUrl)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Note</label>
+                            <InputTextArea @bind-Value="_frmDetails.Note" class="form__textarea" />
+                            <ValidationMessage For="@(() => _frmDetails.Note)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">ID</label>
+                            <p>@_frmDetails.Id</p>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Zoho ID</label>
+                            <p>@_frmDetails.ZohoId</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_frmDetails.Categories.Contains((int)Core.Enums.Contacts_Contact_Category.Agent))
+    {
+        <div class="panel">
+            <div class="panel__header">
+                <h4 class="panel__title">Agent settings</h4>
+            </div>
+            <div class="panel__content">
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Amount type</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_frmDetails.Agent_AmountType">
+                                        @{
+                                            foreach (Core.Enums.Shared_NumericValueType enumTagType in Enum.GetValues(typeof(Core.Enums.Shared_NumericValueType)))
+                                            {
+                                                if (enumTagType == Core.Enums.Shared_NumericValueType.Unknown) { continue; }
+
+                                                <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Amount</label>
+                                <InputNumber @bind-Value="_frmDetails.Agent_Amount" class="form__input" />
+                                <ValidationMessage For="@(() => _frmDetails.Agent_Amount)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Payment point</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_frmDetails.Agent_PaymentPoint">
+                                        @{
+                                            foreach (Core.Enums.Shared_AgentPaymentPoint enumTagType in Enum.GetValues(typeof(Core.Enums.Shared_AgentPaymentPoint)))
+                                            {
+                                                if (enumTagType == Core.Enums.Shared_AgentPaymentPoint.Unknown) { continue; }
+
+                                                <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (_frmDetails.Agent_PaymentPoint == Core.Enums.Shared_AgentPaymentPoint.Staged)
+                        {
+                            <div class="col col-12 sm-4">
+                                <div class="form__item">
+                                    <label class="form__label">Payment deposit</label>
+                                    <InputNumber @bind-Value="_frmDetails.Agent_PaymentDeposit" class="form__input" />
+                                    <ValidationMessage For="@(() => _frmDetails.Agent_PaymentDeposit)" />
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-4">
+                                <div class="form__item">
+                                    <label class="form__label">Payment interim</label>
+                                    <InputNumber @bind-Value="_frmDetails.Agent_PaymentInterim" class="form__input" />
+                                    <ValidationMessage For="@(() => _frmDetails.Agent_PaymentInterim)" />
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-4">
+                                <div class="form__item">
+                                    <label class="form__label">Payment balance</label>
+                                    <InputNumber @bind-Value="_frmDetails.Agent_PaymentBalance" class="form__input" />
+                                    <ValidationMessage For="@(() => _frmDetails.Agent_PaymentBalance)" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    [Parameter] public Core.Contacts.Contact SelectedItem { get; set; } = new Core.Contacts.Contact();
+
+    private List<Models.DropDownItem> _Categories { get; set; } = new List<Models.DropDownItem>();
+
+    private FormDetails _frmDetails = new FormDetails();
+
+    private class FormDetails
+    {
+        public string Primary_Email { get; set; } = "";
+        public string Primary_Tel { get; set; } = "";
+        public string Primary_Address { get; set; } = "";
+
+        public int Id { get; set; } = 0;
+        public string ZohoId { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string MiddleName { get; set; } = "";
+        public string LastName { get; set; } = "";
+        public string CompanyName { get; set; } = "";
+        public Core.Enums.Contacts_Contact_PreferredContactMethod PreferredContactMethod = Core.Enums.Contacts_Contact_PreferredContactMethod.Unknown;
+        public string WebsiteUrl { get; set; } = "";
+        public int[] Categories { get; set; } = new int[]{};
+        public string Note { get; set; } = "";
+
+        public Core.Enums.Shared_NumericValueType Agent_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Unknown;
+        public decimal? Agent_Amount { get; set; } = null;
+        public Core.Enums.Shared_AgentPaymentPoint Agent_PaymentPoint { get; set; } = Core.Enums.Shared_AgentPaymentPoint.Unknown;
+        public decimal? Agent_PaymentDeposit { get; set; } = null;
+        public decimal? Agent_PaymentInterim { get; set; } = null;
+        public decimal? Agent_PaymentBalance { get; set; } = null;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //Category DDL
+        foreach (Core.Enums.Contacts_Contact_Category enumContactCategory in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_Category)))
+        {
+            _Categories.Add(new Models.DropDownItem
+                {
+                    Text = Core.Enums.Label(enumContactCategory),
+                    Value_Int = (int)enumContactCategory
+                });
+        }
+
+        await Details_LoadAsync();
+    }
+
+    private async Task Details_LoadAsync()
+    {
+        _frmDetails = new FormDetails
+            {
+                Primary_Email = "n/a",
+                Primary_Tel = "n/a",
+                Primary_Address = "n/a",
+
+                Id = SelectedItem.Id,
+                ZohoId = SelectedItem.Zoho_Id,
+                Title = SelectedItem.Title,
+                FirstName = SelectedItem.Name_First,
+                MiddleName = SelectedItem.Name_Middle,
+                LastName = SelectedItem.Name_Last,
+                CompanyName = SelectedItem.CompanyName,
+                WebsiteUrl = SelectedItem.WebsiteURL,
+                PreferredContactMethod = SelectedItem.PreferredContactMethod,
+                Categories = Core.Utilities.General.ConvertToListInt(SelectedItem.Categories).ToArray(),
+                Note = SelectedItem.Note,
+
+                Agent_AmountType = SelectedItem.Agent_AmountType,
+                Agent_Amount = SelectedItem.Agent_Amount,
+                Agent_PaymentPoint = SelectedItem.Agent_PaymentPoint,
+                Agent_PaymentDeposit = SelectedItem.Agent_PaymentDeposit,
+                Agent_PaymentInterim = SelectedItem.Agent_PaymentInterim,
+                Agent_PaymentBalance = SelectedItem.Agent_PaymentBalance,
+            };
+
+        var objEmail = (await Core.Contacts.Email.FindAllBy_ContactAsync(SelectedItem.Id)).OrderByDescending(r => r.Primary).FirstOrDefault();
+        if (objEmail != null)
+        {
+            _frmDetails.Primary_Email = string.Format("<a href=\"mailto:{0}\">{0}</a>", objEmail.Address);
+        }
+        objEmail = null;
+
+        var objTel = (await Core.Contacts.TelephoneNo.FindAllBy_ContactAsync(SelectedItem.Id)).OrderByDescending(r => r.Primary).FirstOrDefault();
+        if (objTel != null)
+        {
+            _frmDetails.Primary_Tel = string.Format("({0}) {1}", objTel.CountryCode, objTel.Number);
+        }
+        objTel = null;
+
+        var objAddress = (await Core.Contacts.Address.FindAllBy_ContactAsync(SelectedItem.Id)).OrderByDescending(r => r.Primary).FirstOrDefault();
+        if (objAddress != null)
+        {
+            _frmDetails.Primary_Address = await objAddress.Render(", ");
+        }
+        objAddress = null;
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedItem.RefreshAsync();
+
+        SelectedItem.Title = _frmDetails.Title.Trim();
+        SelectedItem.Name_First = _frmDetails.FirstName.Trim();
+        SelectedItem.Name_Middle = _frmDetails.MiddleName.Trim();
+        SelectedItem.Name_Last = _frmDetails.LastName.Trim();
+        SelectedItem.CompanyName = _frmDetails.CompanyName.Trim();
+        SelectedItem.WebsiteURL = _frmDetails.WebsiteUrl.Trim();
+        SelectedItem.PreferredContactMethod = _frmDetails.PreferredContactMethod;
+        SelectedItem.Categories = Core.Utilities.General.ConvertToListEnums<Core.Enums.Contacts_Contact_Category>(_frmDetails.Categories.ToList());
+        SelectedItem.Note = _frmDetails.Note.Trim();
+
+        SelectedItem.Agent_AmountType = _frmDetails.Agent_AmountType;
+        SelectedItem.Agent_Amount = _frmDetails.Agent_Amount;
+        SelectedItem.Agent_PaymentPoint = _frmDetails.Agent_PaymentPoint;
+        SelectedItem.Agent_PaymentDeposit = _frmDetails.Agent_PaymentDeposit;
+        SelectedItem.Agent_PaymentInterim = _frmDetails.Agent_PaymentInterim;
+        SelectedItem.Agent_PaymentBalance = _frmDetails.Agent_PaymentBalance;
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the contact information, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            ZConfigurationOption.ZConfig = configuration.GetSection("ZohoCredential").Get<ZConfigurationOption>();
+            if (!string.IsNullOrEmpty(_frmDetails.ZohoId))
+            {
+                List<ZohoContactRequest> args = new List<ZohoContactRequest>(){
+                    new ZohoContactRequest(){
+                        id = _frmDetails.ZohoId,
+                        First_Name = _frmDetails.FirstName.Trim(),
+                        Last_Name = _frmDetails.LastName.Trim(),
+                        Full_Name = string.Format("{0} {1}", _frmDetails.FirstName.Trim(), _frmDetails.FirstName.Trim()),
+                        Email = "",
+                        Phone = _frmDetails.Primary_Tel
+                    } };
+                string zohoId = await (new VC.Res.Core.Contacts.Contact()).CreateOrUpdateZohoContactAsync(args, SelectedItem.Id);
+            }
+            await Details_LoadAsync();
+        }
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        await Details_LoadAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

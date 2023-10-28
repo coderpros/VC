@@ -1,0 +1,155 @@
+﻿@using Umbraco.Cms.Core.Services
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+@inject IDataTypeService DataTypeService
+
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.Journal>
+@{
+    Layout = "Master.cshtml";
+
+    // Get journal article types.
+    var articleTypes = DataTypeService.GetDataType("Journal Article Types");
+    var articleTypeDictionary = new Dictionary<string, string>();
+
+    articleTypeDictionary.Add("Inspiration", "inspiration");
+    articleTypeDictionary.Add("Travel Guides", "travel");
+    articleTypeDictionary.Add("Food & Drink", "food");
+    articleTypeDictionary.Add("Activities & Adventure", "activities");
+}
+<section>
+    <div class="page-banner" style="background-image:url(@Model.BackgroundImage.LocalCrops.Src);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="banner-text">
+                        @Model.TextBlock
+
+                        @if (Model.IncludeSearchBar)
+                        {
+                            @await Umbraco.RenderMacroAsync("SearchForm")
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="journal">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head text-center animate__animated animate__slideInUp">
+                        @Model.TopContent
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xxl-12 text-center animate__animated animate__slideInUp">
+                    <div class="controls">
+                        <button class="filter active" data-filter="all">ALL ARTICLES</button>
+                        @foreach (var type in articleTypes.ConfigurationAs<Umbraco.Cms.Core.PropertyEditors.DropDownFlexibleConfiguration>().Items)
+                        {
+                            <button class="filter" data-filter=".@articleTypeDictionary[type.Value]">@type.Value</button>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div id="journal-filter" class="row">
+                @foreach (ContentModels.JournalArticle article in Model.Children())
+                {
+                    <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix @articleTypeDictionary[article.ArticleType].ToLowerInvariant()" style="display: inline-block;" data-bound="">
+                        <div class="journal-box">
+                            <div class="journal-box-img" style="background-image: url(@article.BackgroundImage.LocalCrops.Src); border: 0;"></div>
+                            <div class="journal-box-cnt">
+                                <span>@article.ArticleType</span>
+                                <h5>@article.Name</h5>
+                                <p>
+                                    @article.SummaryText
+                                </p>
+                            </div>
+                            <div class="mt-auto">
+                                <a href="@article.Url()" class="thm-btn-3">READ MORE</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @*
+                <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix travel" style="display: inline-block;" data-bound="">
+                <div class="journal-box">
+                <div class="journal-box-img" style="background-image: url(images/journal/journal-2.jpg);"></div>
+                <div class="journal-box-cnt">
+                <span>TRAVEL GUIDE</span>
+                <h5>A guide to Greece</h5>
+                <p>
+                Visiting the South of France this summer? Make sure you read this insider guide first to get the very best tips for enjoying this romantic region...
+                </p>
+                </div>
+                <div class="mt-auto">
+                <a href="journal-article.html" class="thm-btn-3">READ MORE</a>
+                </div>
+                </div>
+                </div>
+                <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix food" style="display: inline-block;" data-bound="">
+                <div class="journal-box">
+                <div class="journal-box-img" style="background-image: url(images/journal/journal-3.jpg);"></div>
+                <div class="journal-box-cnt">
+                <span>FOOD &amp; DRINK</span>
+                <h5>Where to eat in Corfu</h5>
+                <p>
+                Get an insider’s guide to the best places to eat in Corfu, with an emphasis on secluded spots, stunning views and fresh local cuisine...
+                </p>
+                </div>
+                <div class="mt-auto">
+                <a href="journal-article.html" class="thm-btn-3">READ MORE</a>
+                </div>
+                </div>
+                </div>
+                <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix inspiration" style="display: inline-block;" data-bound="">
+                <div class="journal-box">
+                <div class="journal-box-img" style="background-image: url(images/journal/journal-1.jpg);"></div>
+                <div class="journal-box-cnt">
+                <span>INSPIRATION</span>
+                <h5>Get ready for an Italian Adventure...</h5>
+                <p>
+                Italy in Autumn is simply magnificent, and a visit is highly recommended. To help you make the most out of the adventure we’ve curated...
+                </p>
+                </div>
+                <div class="mt-auto">
+                <a href="journal-article.html" class="thm-btn-3">READ MORE</a>
+                </div>
+                </div>
+                </div>
+                <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix inspiration" style="display: inline-block;" data-bound="">
+                <div class="journal-box">
+                <div class="journal-box-img" style="background-image: url(images/journal/journal-2.jpg);"></div>
+                <div class="journal-box-cnt">
+                <span>INSPIRATION</span>
+                <h5>Spotlight on the South of France</h5>
+                <p>
+                Visiting the South of France this summer? Make sure you read this insider guide first to get the very best tips for enjoying this romantic region...
+                </p>
+                </div>
+                <div class="mt-auto">
+                <a href="journal-article.html" class="thm-btn-3">READ MORE</a>
+                </div>
+                </div>
+                </div>
+                <div class="col-sm-6 col-md-6 col-lg-4 col-xl-4 col-xxl-4 mix activities" style="display: inline-block;" data-bound="">
+                <div class="journal-box">
+                <div class="journal-box-img" style="background-image: url(images/journal/journal-4.jpg);"></div>
+                <div class="journal-box-cnt">
+                <span>ACTIVITIES &amp; ADVENTURE</span>
+                <h5>Ibiza 2023, what’s hot this summer.</h5>
+                <p>
+                Read on for the best tips on where to relax, eat and party.Best beaches in Ibiza. Ibiza is home to a plethora of perfect beaches. Whether...
+                </p>
+                </div>
+                <div class="mt-auto">
+                <a href="journal-article.html" class="thm-btn-3">READ MORE</a>
+                </div>
+                </div>
+                </div>
+                *@
+            </div>
+        </div>
+    </div>
+</section>

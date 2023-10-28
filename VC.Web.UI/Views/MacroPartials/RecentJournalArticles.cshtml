@@ -1,0 +1,20 @@
+﻿@inherits Umbraco.Cms.Web.Common.Macros.PartialViewMacroPage
+@{
+    var journalContent = Umbraco.Content(1084);
+}
+@foreach (var publishedContent in journalContent.Children.OrderByDescending(a => a.CreateDate).Take(Convert.ToInt32(Model.MacroParameters["numberOfArticles"])))
+{
+    var article = (JournalArticle) publishedContent;
+    <div class="col-md-12 col-lg-6 col-xl-6 col-xxl-6 text-center animate__animated animate__fadeInLeft">
+        <div class="explore-the-journal-box">
+            <div class="explore-the-journal-img" style="background-image: url(@article.BackgroundImage?.LocalCrops.Src);"></div>
+            <div class="explore-the-journal-cnt">
+                <span>@article.Name</span>
+                <h6>
+                    <a href="@article.Url()">@article.SummaryText</a>
+                </h6>
+                <div class="explore-the-journal-date">@article.CreateDate.ToString("dd.MM.yyyy")</div>
+            </div>
+        </div>
+    </div>
+}

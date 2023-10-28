@@ -1,0 +1,221 @@
+﻿@page "/properties/groups"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Property Groups</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn sub-header__btn--menu-toggle" data-sidebar-toggle data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+        </svg>
+        <span class="sub-header__btn-text">Hide</span>
+    </div>
+
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Property Groups</span>
+	</div>
+
+    <a @onclick="(() => RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new group" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <section class="sidebar__wrapper" data-sidebar>
+        <div class="sidebar">
+            <EditForm Model="@_frmFilters" OnValidSubmit="@Groups_RefreshAsync">
+                <div class="form__item">
+                    <label class="form__label">Name</label>
+                    <InputText @bind-Value="_frmFilters.Name" class="form__input" maxlength="100" />
+                    <ValidationMessage For="@(() => _frmFilters.Name)" />
+                </div>
+
+                <div class="y-spacer y-spacer__16"></div>
+
+                <button type="submit" class="button" disabled=@_processing value="Filter">Filter</button>
+                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_ClearAsync" value="Clear">Clear</button>
+            </EditForm>
+        </div>
+    </section>
+
+    <div class="main-content">
+        <SfGrid DataSource="@_groups" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Group);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Groups_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="Details">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Group.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Group.Description) HeaderText="Description"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Group);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</section>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.GroupAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this group?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    private VC.Res.WebInterface.Shared.Modals.Premises.GroupAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Group> _groups = new List<Core.Premises.Group>();
+
+    private Models.PageFilters.Premises_Groups_List _frmFilters = new Models.PageFilters.Premises_Groups_List();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // populate lists
+            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Premises_Groups_List>("Filters_Premises_Groups");
+
+            if (previousFilters.Success)
+            {
+                if (previousFilters.Value != null)
+                {
+                    _frmFilters = previousFilters.Value;
+                }
+            }
+        }
+        catch (Exception)
+        {
+
+        }
+        finally
+        {
+            await Groups_RefreshAsync();
+        }
+    }
+
+    private async Task Groups_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var lstFilters_Groups = new Core.Utilities.FilterList<Core.Premises.Group.FilterOption>();
+        lstFilters_Groups.Add(Core.Premises.Group.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+
+        if (!string.IsNullOrWhiteSpace(_frmFilters.Name))
+        {
+            lstFilters_Groups.Add(Core.Premises.Group.FilterOption.Name, _frmFilters.Name);
+        }
+
+        _groups = await Core.Premises.Group.ListAsync(lstFilters_Groups.Filters);
+        lstFilters_Groups = null;
+
+        await ProtectedSessionStore.SetAsync("Filters_Premises_Groups", _frmFilters);
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    private async Task Filters_ClearAsync()
+    {
+        if (_processing) { return; }
+
+        _frmFilters = new();
+        await Groups_RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Groups_Edit, iParameterId1: objResponse.Selected_Id, dicQuerystringParms: new Dictionary<string, string> { { "view", "contacts" } }));
+
+                await Groups_RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Group.DeleteAsync(objResponse.Selected_Id.Value, SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Groups_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

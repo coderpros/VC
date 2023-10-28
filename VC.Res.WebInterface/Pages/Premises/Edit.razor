@@ -1,0 +1,428 @@
+﻿@page "/properties/edit/{Id:int}"
+
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Properties - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List)" class="sub-header__btn" title="Return to properties" data-hScroll-item>
+        <svg class="icon icon--small">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+        </svg>
+        <span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Properties > Edit: @_SelectedItem.Name</span>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_SelectedItem.Website_URL))
+    {
+        <a href="@string.Format("{0}/{1}", Core.Settings.Global.Fetch.Website_URL.TrimEnd('/'), _SelectedItem.Website_URL.TrimStart('/'))" class="sub-header__btn" title="View on website" target="_blank" data-hScroll-item>
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__view"></use>
+            </svg>
+            <span class="sub-header__btn-text">View on website</span>
+        </a>
+    }
+    else if (Core.Settings.Global.Fetch.Website_APIEnabled)
+    {
+        <a @onclick="(() => RequestAddToWebsiteAsync())" @onclick:preventDefault class="sub-header__btn" title="Add to website" data-hScroll-item>
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__link"></use>
+            </svg>
+            <span class="sub-header__btn-text">Add to website</span>
+        </a>
+    }
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_SelectedItem.Loaded)
+        {
+            <SfTab @bind-SelectedItem=@SelectedTabIndex>
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Details SelectedItem=@_SelectedItem OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Seasons</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.List SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Rates</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesProvisionalRefresh Title="Provisional" SelectedPremise=@_SelectedItem ShowEmpty="false" ShowPast="false" ShowProvisional="true" OnChanged="ProvisionalRatesChangedHandler" />
+
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesReviewRefresh Title="Require review" SelectedPremise=@_SelectedItem ShowEmpty="false" ShowPast="false" ShowReqReview="true" OnChanged="ReviewRatesChangedHandler" />
+
+                            @{
+                                for (var iYear = DateTime.Today.Year; iYear < DateTime.Today.Year + 3; iYear++)
+                                {
+                                    var dtFrom = new DateTime(iYear, 1, 1);
+                                    var dtTo = dtFrom.AddYears(1).AddDays(-1);
+                                    <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesGeneralRefresh Title=@(iYear.ToString()) SelectedPremise=@_SelectedItem SelectedDateFrom=@dtFrom SelectedDateTo=@dtTo ShowEmpty="false" ShowPast="false" OnChanged="GeneralRatesChangedHandler" />
+                                }
+                            }
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Availability</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Availability SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Rooms</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Rooms SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Room_Type.Bedroom OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Collections</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Collections.PremiseCollections SelectedItem="@_SelectedItem" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Features</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.LivingSpace />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.IndoorFeatures />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.Outdoors />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.OutdoorFeatures />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.IncludedFeatures />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.ServicesOnRequest />
+                            <VC.Res.WebInterface.Shared.Premises.Tags SelectedItem="@_SelectedItem" SelectedType=@Core.Enums.Common_Tag_Type.PropertyFeature SelectedCategory=@VC.Shared.Enums.Premises_Tag_Category.OtherInformation />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Related properties</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Related SelectedItem=@_SelectedItem SelectedType=@Core.Enums.Premises_Related_Type.Alternative />
+                            <VC.Res.WebInterface.Shared.Premises.Related SelectedItem=@_SelectedItem SelectedType=@Core.Enums.Premises_Related_Type.RentTogether />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Nearby</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Town />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Airport />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Beach />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Restaurant />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Supermarket />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.GolfCourse />
+                            <VC.Res.WebInterface.Shared.Premises.Distances SelectedItem=@_SelectedItem SelectedType=@VC.Shared.Enums.Premises_Distance_Type.Other />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Contacts</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Contacts SelectedItem=@_SelectedItem OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Extras</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Extras SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                    <TabItem>
+                        <HeaderTemplate>Quote</HeaderTemplate>
+                        <ContentTemplate>
+                            <div class="panel">
+                                <div class="panel__header">
+                                    <h4 class="panel__title">Quote</h4>
+                                </div>
+                                <div class="panel__content">
+                                    <EditForm Model="@_form" OnValidSubmit="@Quote_CheckAsync">
+                                        <DataAnnotationsValidator />
+                                        <div class="form">
+                                            <div class="row">
+                                                <div class="col col-12 sm-3">
+                                                    <div class="form__item">
+                                                        <label class="form__label">Arrive</label>
+                                                        <SfDatePicker TValue="DateTime" @bind-Value="_form.Arrive">
+                                                            <DatePickerEvents TValue="DateTime" ValueChange="ArriveChangeHandler"></DatePickerEvents>
+                                                        </SfDatePicker>
+                                                        <ValidationMessage For="@(() => _form.Arrive)" />
+                                                    </div>
+                                                </div>
+                                                <div class="col col-12 sm-3">
+                                                    <div class="form__item">
+                                                        <label class="form__label">Depart</label>
+                                                        <SfDatePicker TValue="DateTime" @bind-Value="_form.Depart"></SfDatePicker>
+                                                        <ValidationMessage For="@(() => _form.Depart)" />
+                                                    </div>
+                                                </div>
+                                                <div class="col col-12 sm-3">
+                                                    <div class="form__item">
+                                                        <label class="form__label">Prices displayed as <Tooltip Content="This is for display purposes and will not recalculate prices based on the selected currency." /></label>
+                                                        <div class="form__select">
+                                                            <InputSelect @bind-Value="_form.Currency_Id">
+                                                                <option value="0">Please select</option>
+                                                                @foreach (var currency in currencies)
+                                                                {
+                                                                    var str = currency.Name + " (" + currency.Symbol + ")";
+                                                                    <option value="@currency.Id">@(str)</option>
+                                                                }
+                                                            </InputSelect>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col col-12 sm-3 sm-align--center">
+                                                    <div class="form__item">
+                                                        <br />
+                                                        <button type="button" class="button " disabled=@_processing @onclick="@Quote_CheckAsync" value="Check">Check</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </EditForm>
+                                </div>
+                            </div>
+                            <CascadingValue Value="@_QuoteContainer">
+                                <VC.Res.WebInterface.Shared.Premises.Quote @ref="_quoteLoad" />
+                            </CascadingValue>
+                        </ContentTemplate>
+                    </TabItem>
+                    <TabItem>
+                        <HeaderTemplate>Settings</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Config SelectedItem=@_SelectedConfig OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Import CSV</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Import.ImportCSV />
+                        </ContentTemplate>
+                    </TabItem>
+
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private int SelectedTabIndex { get; set; } = 0;
+
+    private Core.Premises.Premise _SelectedItem { get; set; } = new Core.Premises.Premise();
+    private Core.Premises.Config _SelectedConfig { get; set; } = new Core.Premises.Config();
+
+    private Shared.Premises.Quote? _quoteLoad = null;
+    private Models.Quoting.Container _QuoteContainer = new Models.Quoting.Container();
+    private Models.Quoting.Quote _SelectedQuote = new Models.Quoting.Quote();
+    private List<Core.Common.Currency> currencies = new List<Core.Common.Currency>();
+
+    private bool _Show_AgentSettings = true;
+    private bool _Show_PropertyConfig = false;
+
+    private int _ratesProvisionalRefresh = 0;
+    private int _ratesReviewRefresh = 0;
+    private int _ratesGeneralRefresh = 0;
+
+    private class QuoteForm
+    {
+        public DateTime Arrive { get; set; } = DateTime.Today.AddDays(1);
+        public DateTime Depart { get; set; } = DateTime.Today.AddDays(8);
+
+        public int Currency_Id { get; set; }
+    }
+
+    private QuoteForm _form = new QuoteForm();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SelectedItem = await Core.Premises.Premise.FindAsync(Id, bUseCache: false);
+
+        if (!_SelectedItem.Loaded || _SelectedItem.Deleted_UTC.HasValue)
+        {
+            // shouldn't be accessing
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List));
+            return;
+        }
+        else
+        {
+            _SelectedConfig = await Core.Premises.Config.FindBy_PremiseAsync(_SelectedItem.Id);
+
+            //_seasons = (await Core.Premises.Seasons.Season.FindAllBy_PremiseAsync(_SelectedItem.Id)).Where(r => r.Dates.Any(r1 => r1.End >= DateTime.Today.Date)).OrderBy(r => r.Dates.Min(r1 => (DateTime?)r1.Start)).ToList();
+
+            if (NavigationManager.TryGetQueryString<string>("view", out var strTab))
+            {
+                switch (strTab)
+                {
+                    case "seasons":
+                        SelectedTabIndex = 1;
+                        break;
+
+                    case "rates":
+                        SelectedTabIndex = 2;
+                        break;
+
+                    case "availability":
+                        SelectedTabIndex = 3;
+                        break;
+                    case "collections":
+                        this.SelectedTabIndex = 5;
+                        break;
+
+                    default: break;
+                }
+            }
+        }
+
+        currencies = await Core.Common.Currency.FindAllAsync();
+
+        _form = new QuoteForm
+            {
+                Depart = _form.Arrive.AddDays(6),
+                Currency_Id = currencies.FirstOrDefault(r => r.Id == _SelectedConfig.Currency_Id_Calculated)?.Id ?? 0
+            };
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+
+    private async Task RequestAddToWebsiteAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        // try and submit the property to the website
+        _ = await _SelectedItem.RefreshAsync();
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem submitting the property to the website, please try again or contact support for further assistance." };
+
+        if ((await Core.Integrations.Website.API.Premises_CreateAsync(_SelectedItem)).Result)
+        {
+            // successfully submitted to the website
+            _ = await _SelectedItem.RefreshAsync();
+
+            objMessage.Type = Models.ToastNotification.Types.Success;
+            objMessage.Message = "Property added to the website.";
+        }
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Quote_CheckAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        _QuoteContainer = new Models.Quoting.Container();
+
+        if (_form.Depart < _form.Arrive)
+        {
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Depart date is less than arrive date" });
+            return;
+        }
+
+        if (_form.Currency_Id == 0)
+        {
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select a currency" });
+            return;
+        }
+
+        var objCurrency = await Core.Common.Currency.FindAsync(_form.Currency_Id);
+        if (objCurrency == null)
+        {
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Invalid currency selected" });
+            return;
+        }
+
+        var objConfig = await Core.Premises.Config.FindBy_PremiseAsync(_SelectedItem.Id);
+        if (objConfig != null)
+        {
+            //if the number of days of the stay is less then the allowed minimum of the premises they don't add premise to quote
+            var iTotalDays = (_form.Depart.Date - _form.Arrive.Date).TotalDays;
+            if (iTotalDays < objConfig.MinRental_Days_Calculated)
+            {
+                await EndProcessingAsync();
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Length of stay doesn't meet the minimum number of nights" });
+                return;
+            }
+        }
+
+        await _QuoteContainer.GenerateQuote(_QuoteContainer, await Core.Premises.Premise.FindAsync(_SelectedItem.Id), objCurrency, _form.Arrive, _form.Depart);
+
+        _SelectedQuote = _QuoteContainer.Quotes.FirstOrDefault() ?? new Models.Quoting.Quote();
+
+        await EndProcessingAsync();
+
+        if (_QuoteContainer != null && _quoteLoad != null)
+        {
+            await _quoteLoad.Quote_LoadAsync(_SelectedQuote.Id, true);
+        }
+
+        objCurrency = null;
+    }
+
+    private async Task SelectedItemChangedHandlerAsync()
+    {
+        _ = await _SelectedItem.RefreshAsync();
+        _ = await _SelectedConfig.RefreshAsync();
+    }
+
+    private void ProvisionalRatesChangedHandler()
+    {
+        _ratesReviewRefresh++;
+        _ratesGeneralRefresh++;
+    }
+
+    private void ReviewRatesChangedHandler()
+    {
+        _ratesProvisionalRefresh++;
+        _ratesGeneralRefresh++;
+    }
+
+    private void GeneralRatesChangedHandler()
+    {
+        _ratesProvisionalRefresh++;
+        _ratesReviewRefresh++;
+    }
+
+    private void ArriveChangeHandler(ChangedEventArgs<DateTime> args)
+    {
+        _form.Arrive = args.Value;
+        _form.Depart = args.Value.AddDays(7);
+
+        this.StateHasChanged();
+    }
+}

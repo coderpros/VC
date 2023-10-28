@@ -1,0 +1,189 @@
+﻿@page "/collections"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using FilterType = Syncfusion.Blazor.Grids.FilterType
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Collections</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Collections</span>
+    </div>
+    <a @onclick="(() => this.RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new Currency" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <SfGrid DataSource="@_collections" AllowTextWrap="true" AllowSorting="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents TValue="Core.Common.Collection" RowDropping="RowDroppingHandlerAsync" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Width="42px" AllowFiltering="false">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Collection);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Collections_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Collection.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" AllowFiltering="true"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Collection.Name) HeaderText="Name" AllowFiltering="true"></GridColumn>
+                <GridColumn Width="42px" AllowFiltering="false">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Collection);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+        <VC.Res.WebInterface.Shared.Modals.CollectionAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
+        <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this collection?" OnClosed="ModalDeleteConfirmClosedHandler" />
+    </div>
+</section>
+
+
+
+@code {
+    private VC.Res.WebInterface.Shared.Modals.CollectionAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Collection> _collections = new List<Core.Common.Collection>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Collections_RefreshAsync();
+    }
+
+    private async Task Collections_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        _collections = await Core.Common.Collection.FindAllAsync();
+
+        await EndProcessingAsync();
+    }
+
+    public async Task ActionCompleteHandler(ActionEventArgs<Core.Common.Collection> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Refresh) { return; }
+
+        await Collections_RefreshAsync();
+    }
+
+    
+    public async Task RowDroppingHandlerAsync(RowDroppingEventArgs<Core.Common.Collection> args)
+    {
+        if (args.DropIndex == args.FromIndex)
+        {
+            return;
+        }
+
+        if (args.Data.Count > 0)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objDropIndexItem = _collections[Convert.ToInt32(args.DropIndex)];
+
+            objDropIndexItem = null;
+
+            await EndProcessingAsync();
+        }
+    }
+
+    public void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(); }
+    }
+
+    public async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                // update list
+                await Collections_RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+   /* BDO private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    } */
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected currency, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Common.Collection.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Collection deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Collections_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

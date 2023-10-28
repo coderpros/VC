@@ -1,0 +1,699 @@
+﻿@page "/properties/quote"
+@layout Shared.Layouts.StandardLayout
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Text;
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Properties - Generate Quote</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    @*<div class="sub-header__btn sub-header__btn--menu-toggle" data-sidebar-toggle data-hScroll-item>
+    <svg class="icon">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+    </svg>
+    <span class="sub-header__btn-text">Hide</span>
+    </div>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List)" class="sub-header__btn" title="Return to properties" data-hScroll-item>
+    <svg class="icon icon--small">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+    </svg>
+    <span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+    <button @onclick="@Show_Quote" href="" class="sub-header__btn" title="Return to properties" data-hScroll-item>
+    <span class="sub-header__btn-text">Generate Quote</span>
+    </button>
+    </div>*@
+
+    <ul id="breadcrumb">
+        <li data-sidebar-toggle data-hScroll-item>
+            <a href="javascript:;">
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+                </svg>
+                <span class="sub-header__btn-text">Hide</span>
+            </a>
+        </li>
+        <li data-hScroll-item>
+            <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List)" title="Return to properties">
+                <svg class="icon icon--small">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+                </svg>
+                Back to list
+            </a>
+        </li>
+        <li data-hScroll-item>
+            <a @onclick="@Show_Quote" title="Return to properties"
+               href="javascript:;">
+                Generate quote
+            </a>
+        </li>
+    </ul>
+
+
+</section>
+<section class="main-content__wrapper">
+    <section class="sidebar__wrapper" data-sidebar>
+        <div class="sidebar">
+            <EditForm Model="@_frmFilters" OnValidSubmit="@Quote_RefreshAsync">
+                <div class="form__item">
+                    <label class="form__label">Arrival Date</label>
+                    <SfDatePicker TValue="DateTime" @bind-Value="_frmFilters.Arrival_Date">
+                        <DatePickerEvents TValue="DateTime" ValueChange="ArriveChangeHandler"></DatePickerEvents>
+                    </SfDatePicker>
+                    <ValidationMessage For="@(() => _frmFilters.Arrival_Date)" />
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Flexiable Arrival Date</label>
+                    <span class="form__asp-checkbox">
+                        <InputCheckbox @bind-Value=_frmFilters.Flexible_Arrival id="Cb_Flexible" />
+                        <label for="Cb_Flexible">Yes</label>
+                    </span>
+                </div>
+                @if (_frmFilters.Flexible_Arrival)
+                {
+                    <div class="form__item">
+                        <label class="form__label">Arrival Date To</label>
+                        <SfDatePicker TValue="DateTime?" @bind-Value="_frmFilters.Secondary_Date">
+                            <DatePickerEvents TValue="DateTime?"></DatePickerEvents>
+                        </SfDatePicker>
+                        <ValidationMessage For="@(() => _frmFilters.Secondary_Date)" />
+                    </div>
+                }
+
+                @if (!_frmFilters.Flexible_Arrival)
+                {
+                    <div class="form__item">
+                        <label class="form__label">Number of Nights</label>
+                        <InputNumber @bind-Value=_frmFilters.Num_Nights class="form__input" id="tb_NumNights" min="0" />
+                    </div>
+
+                    <div class="form__item">
+                        <label class="form__label">Include if don't meet minimum nights</label>
+                        <span class="form__asp-checkbox">
+                            <InputCheckbox @bind-Value=_frmFilters.Include_Minimum id="Cb_Minimum" />
+                            <label for="Cb_Minimum">Yes</label>
+                        </span>
+                    </div>
+                }
+
+                <div class="form__item">
+                    <label class="form__label">Country</label>
+                    <div class="form__select">
+                        <InputSelect Value="_frmFilters.Country_Id" ValueExpression="@(() => _frmFilters.Country_Id)" ValueChanged="@((int args) => { _frmFilters.Country_Id = args; CountryChangeAsync(args); })">
+                            @{
+                                <option value="0">All Countries</option>
+                                foreach (var country in _countries)
+                                {
+                                    <option value="@country.Id">@(country.Name)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                @if (_frmFilters.Country_Id > 0)
+                {
+                    <div class="form__item">
+                        <label class="form__label">Region</label>
+                        <div class="form__select">
+                            <InputSelect @bind-Value="_frmFilters.Region_Id">
+                                @{
+                                    <option value="0">All Regions</option>
+                                    foreach (var region in _regions)
+                                    {
+                                        <option value="@region.Id">@(region.Name)</option>
+                                    }
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                }
+
+                <div class="form__item">
+                    <label class="form__label">Number of Guests</label>
+                    <InputNumber @bind-Value=_frmFilters.Num_People id="tb_NumGuests" class="form__input" min="0" />
+                </div>
+
+                <div class="form__item">
+                    <label class="form__label">Include Unavailable</label>
+                    <span class="form__asp-checkbox">
+                        <InputCheckbox @bind-Value=_frmFilters.Include_Unavailable id="Cb_Unavailable" />
+                        <label for="Cb_Unavailable">Yes</label>
+                    </span>
+                </div>
+
+
+                <div class="form__item">
+                    <label class="form__label">Features</label>
+                    <span class="form__asp-checkbox">
+                        <SfMultiSelect @ref="Ddl_Features" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select features" @bind-Value="_frmFilters.Features" Mode="VisualMode.CheckBox" DataSource="@_features" AllowFiltering="true">
+                            <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                            <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_Features_OnFilter"></MultiSelectEvents>
+                        </SfMultiSelect>
+                    </span>
+                </div>
+
+                <div class="form__item">
+                    <label class="form__label">Prices displayed as <Tooltip Content="This is for display purposes and will not recalculate prices based on the selected currency." /></label>
+                    <div class="form__select">
+                        <InputSelect @bind-Value="_frmFilters.Currency_Id">
+                            @{
+                                //<option value="0">Please select</option>
+                                foreach (var currency in _currencies)
+                                {
+                                    var str = currency.Name + " (" + currency.Symbol + ")";
+
+                                    <option value="@currency.Id">@(str)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__16"></div>
+
+                <button type="submit" class="button" disabled=@_processing value="Search">Search</button>
+                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_Clear" value="Clear">Clear</button>
+            </EditForm>
+        </div>
+    </section>
+
+    <div class="main-content">
+
+        @if (_quoteContainer != null && _quoteContainer.Quotes != null && _quoteContainer.Quotes.Count > 0)
+        {
+            <SfGrid @ref="lstGridResults" DataSource="@_quoteContainer.Quotes" AllowTextWrap="true">
+                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                <GridEvents QueryCellInfo="GridQueryCellInfoHandler" TValue="Models.Quoting.Quote"></GridEvents>
+                <GridColumns>
+                    <GridColumn Width="42px">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    //<a @onclick="(() => RequestModalViewAsync(obj))" @onclick:preventDefault class="button button__clear button--icon" title="View">
+                                    //    <svg class="icon">
+                                    //        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    //    </svg>
+                                    //</a>
+                                    <div class="property-check">
+                                        <input type="checkbox" id="villaIds@obj.Id" checked="@(obj.Selected==true)" @onchange="(args)=>obj.Selected = (bool)args.Value" />
+                                    </div>
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(VC.Res.WebInterface.Models.Quoting.Quote.Premises) HeaderText="Property">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(obj.Premises.Display_Name_Calculated)
+                                }
+
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="Arrival Date">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(obj.Arrival.ToString("dd/MM/yyyy"))
+                                }
+
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="Departure Date">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(obj.Departure.ToString("dd/MM/yyyy"))
+                                }
+
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(VC.Res.WebInterface.Models.Quoting.Quote.Accomodation_Gross) HeaderText="Accommodation Gross Price">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Accomodation_Gross)))
+                                }
+                                else
+                                {
+                                    @("n/a")
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(VC.Res.WebInterface.Models.Quoting.Quote.Extra_Gross) HeaderText="Extras Gross Price">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Extra_Gross)))
+                                }
+                                else
+                                {
+                                    @("n/a")
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(VC.Res.WebInterface.Models.Quoting.Quote.Total_Gross) HeaderText="Total">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @(Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Total_Gross)))
+                                }
+                                else
+                                {
+                                    @("n/a")
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="Availability">
+                        <Template>
+                            @{
+                                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                                if (obj != null)
+                                {
+                                    @Core.Enums.Label(obj.Availability)
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    @*  <GridColumn Width="42px">
+                <Template>
+                @{
+                var obj = (context as VC.Res.WebInterface.Models.Quoting.Quote);
+                if (obj != null)
+                {
+                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                <svg class="icon icon--red">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                </svg>
+                </a>
+                }
+                }
+                </Template>
+                </GridColumn>*@
+                </GridColumns>
+            </SfGrid>
+
+            <CascadingValue Value="@_quoteContainer">
+                <VC.Res.WebInterface.Shared.Modals.Premises.QuoteEdit @ref="_modalEdit" />
+                <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to remove this property from the quote?" OnClosed="ModalDeleteConfirmClosedHandler" />
+            </CascadingValue>
+        }
+    </div>
+</section>
+
+@code {
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+    private Models.PageFilters.Quote_List _frmFilters = new();
+    SfGrid<Models.Quoting.Quote>? lstGridResults { get; set; } = null;
+    private List<Core.Common.Country> _countries = new();
+    private List<Core.Common.Region> _regions = new();
+    private List<Core.Common.Currency> _currencies = new();
+    private Models.Quoting.Container _quoteContainer = new();
+    private Shared.Modals.Premises.QuoteEdit? _modalEdit = null;
+    private List<Models.DropDownItem> _features { get; set; } = new List<Models.DropDownItem>();
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_Features { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+    private Shared.Premises.Quote? _quoteLoad = new Shared.Premises.Quote();
+    private Models.Quoting.Container _QuoteContainer = new Models.Quoting.Container();
+    public List<int> Ids;
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Ids = new List<int>();
+            _countries = await Core.Common.Country.FindAllAsync();
+            _currencies = await Core.Common.Currency.FindAllAsync();
+
+            _features = new List<Models.DropDownItem>();
+            foreach (var vTag in await Core.Common.Tag.FindAllAsync(Core.Enums.Common_Tag_Type.PropertyFeature))
+            {
+                _features.Add(new Models.DropDownItem
+                    {
+                        Text = vTag.Name,
+                        Value_Int = vTag.Id
+                    });
+            }
+
+            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Quote_List>("Filters_Quote");
+            if (previousFilters.Success)
+            {
+                if (previousFilters.Value != null)
+                {
+                    _frmFilters = previousFilters.Value;
+                }
+            }
+        }
+        catch (Exception)
+        {
+
+        }
+    }
+
+    //public async Task OnCHange(bool isChecked, Models.Quoting.Quote data)
+    //{
+    //    //if (isChecked)
+    //    //    Ids.Add(data.Id);
+    //    //else
+    //    //    Ids.Remove(data.Id);
+    //    //Ids = Ids.Distinct().ToList();
+    //}
+
+    public async Task Show_Quote()
+    {
+        var lstSnippet = _quoteContainer.Quotes.Where(x => Ids.Contains(x.Id)).ToList().Distinct();
+        var strPremises = new StringBuilder();
+        if (_processing) { return; }
+        if (!_quoteContainer.Quotes.Where(x => x.Selected == true).Any())
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select villa!" });
+            await EndProcessingAsync();
+            return;
+        }
+        foreach (var item in _quoteContainer.Quotes.Where(x => x.Selected == true).ToList().Distinct())
+        {
+            strPremises.Append($@"{item.Snippet}");
+        }
+        _quoteContainer.Quotes.ForEach(x => x.Snippets = strPremises.ToString());
+        if (_modalEdit != null)
+        {
+            await _modalEdit.OpenAsync(1);
+        }
+    }
+
+    private async Task Ddl_Features_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Features, _features, args); }
+
+    private async Task Quote_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        if (_frmFilters.Arrival_Date.Date < DateTime.Now.Date)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select a valid arrival date." });
+            await EndProcessingAsync();
+            return;
+        }
+
+        if (_frmFilters.Flexible_Arrival)
+        {
+            if (!_frmFilters.Secondary_Date.HasValue)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select an arrival date range." });
+                await EndProcessingAsync();
+                return;
+            }
+            else
+            {
+                if (_frmFilters.Secondary_Date.Value.Date < DateTime.Now.Date || _frmFilters.Secondary_Date.Value.Date < _frmFilters.Arrival_Date.Date)
+                {
+                    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select a valid arrival date range." });
+                    await EndProcessingAsync();
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (_frmFilters.Num_Nights == 0)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please set the number of nights." });
+                await EndProcessingAsync();
+                return;
+            }
+
+        }
+
+        var lstFilters_Premises = new Core.Utilities.FilterList<Core.Premises.Premise.FilterOption>();
+        lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+
+        if (_frmFilters.Country_Id != 0)
+        {
+            lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Country_Id, _frmFilters.Country_Id);
+        }
+
+        if (_frmFilters.Region_Id != 0)
+        {
+            lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Region_Id, _frmFilters.Region_Id);
+        }
+
+        if (_frmFilters.Features != null && _frmFilters.Features.Length > 0)
+        {
+            var lstPremisesTags = await Core.Premises.Tag.FindAllBy_TagAsync(_frmFilters.Features.ToList());
+            if (lstPremisesTags != null && lstPremisesTags.Count > 0)
+            {
+                lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Ids, lstPremisesTags.Select(x => x.Premise_Id).ToList());
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "No properties match the search criteria." });
+                return;
+            }
+        }
+
+        var lstPremises = await Core.Premises.Premise.ListAsync(lstFilters_Premises.Filters);
+
+        if (_frmFilters.Currency_Id == 0)
+        {
+            _frmFilters.Currency_Id = _currencies?.FirstOrDefault()?.Id ?? 0;
+        }
+
+        var objCurrency = await Core.Common.Currency.FindAsync(_frmFilters.Currency_Id);
+        if (objCurrency == null)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Invalid currency selected" });
+            return;
+        }
+
+        _quoteContainer = new Models.Quoting.Container();
+        _quoteContainer.Include_Unavailable = _frmFilters.Include_Unavailable;
+        _quoteContainer.Arrival = _frmFilters.Arrival_Date;
+        _quoteContainer.Currency = objCurrency;
+        _quoteContainer.Flexible_Arrival = _frmFilters.Flexible_Arrival;
+        _quoteContainer.Number_People = _frmFilters.Num_People;
+        if (_frmFilters.Features != null && _frmFilters.Features.Length > 0)
+        {
+            _quoteContainer.Features = _frmFilters.Features.ToList();
+        }
+
+        if (_frmFilters.Flexible_Arrival)
+        {
+            if (_frmFilters.Secondary_Date.HasValue)
+            {
+                _quoteContainer.Departure = _frmFilters.Secondary_Date.Value;
+            }
+        }
+        else
+        {
+            _quoteContainer.Departure = _frmFilters.Arrival_Date.AddDays(_frmFilters.Num_Nights);
+        }
+
+        var lstModelQuote = new List<Models.Quoting.Quote>();
+        //foreach (var tmpPremises in lstPremises)
+        foreach (var tmpPremises in lstPremises)
+        {
+            int? iNumGuests = null;
+
+            if (_frmFilters.Num_People > 0)
+            {
+                iNumGuests = _frmFilters.Num_People;
+            }
+
+            if (!_frmFilters.Flexible_Arrival && !_frmFilters.Include_Minimum)
+            {
+                var objConfig = await Core.Premises.Config.FindBy_PremiseAsync(tmpPremises.Id);
+                if (objConfig != null)
+                {
+                    //if the number of days of the stay is less then the allowed minimum of the premises then don't add premise to quote
+                    var iTotalDays = (_quoteContainer.Departure - _frmFilters.Arrival_Date).TotalDays;
+                    if (iTotalDays < objConfig.MinRental_Days_Calculated)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            await _quoteContainer.GenerateQuote(_quoteContainer, tmpPremises, objCurrency, _quoteContainer.Arrival, _quoteContainer.Departure, _frmFilters.Flexible_Arrival, _frmFilters.Num_People);
+        }
+
+        if (!_frmFilters.Include_Unavailable)
+        {
+            //only display avaiable premises
+            _quoteContainer.Quotes = _quoteContainer.Quotes.Where(x => x.Availability == Core.Enums.Premises_Premise_Availability.Available).ToList();
+        }
+
+        objCurrency = null;
+
+        await ProtectedSessionStore.SetAsync("Filters_Quote", _frmFilters);
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        if (lstGridResults != null)
+        {
+            await lstGridResults.Refresh();
+        }
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private async Task CountryChangeAsync(int iCountryId)
+    {
+        if (iCountryId != 0)
+        {
+            _regions = await Core.Common.Region.FindAllBy_CountryAsync(iCountryId);
+        }
+        else
+        {
+            _regions = new List<Core.Common.Region>();
+        }
+    }
+
+    private void ArriveChangeHandler(ChangedEventArgs<DateTime> args)
+    {
+        _frmFilters.Arrival_Date = args.Value;
+        _frmFilters.Secondary_Date = args.Value.AddDays(7);
+        _frmFilters.Num_Nights = 7;
+
+        this.StateHasChanged();
+    }
+
+
+    private void Filters_Clear()
+    {
+        //clear existing models
+        if (_processing) { return; }
+
+        _frmFilters = new();
+        _quoteContainer = new Models.Quoting.Container();
+        _frmFilters.Currency_Id = _currencies?.FirstOrDefault()?.Id ?? 0;
+    }
+
+
+    private async Task RequestModalViewAsync(Models.Quoting.Quote objQuote)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null)
+        {
+            await _modalEdit.OpenAsync(objQuote.Id);
+        }
+    }
+
+
+    public void GridQueryCellInfoHandler(QueryCellInfoEventArgs<Models.Quoting.Quote> Args)
+    {
+        if (Args.Column.HeaderText == "Availability")
+        {
+            switch (Args.Data.Availability)
+            {
+                case Core.Enums.Premises_Premise_Availability.Available:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#68c752;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.AvailableEnquire:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#a2d8f5;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.Booked:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#ff5a6a;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.BookedExt:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#FF8692;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.OnHold:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#f3c673;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.Unavailable:
+                case Core.Enums.Premises_Premise_Availability.Unknown:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#bdbcbc;" } });
+                    }
+                    break;
+
+                default: break;
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+
+            var tmpQuote = _quoteContainer.Quotes.Where(x => x.Id == objResponse.Selected_Id.Value).FirstOrDefault();
+            if (tmpQuote != null)
+            {
+                if (_quoteContainer.Quotes.Remove(tmpQuote))
+                {
+                    objMessage.Type = Models.ToastNotification.Types.Success;
+                    objMessage.Message = "Property removed.";
+                }
+            }
+
+            await EndProcessingAsync();
+            await RefreshAsync();
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

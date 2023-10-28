@@ -1,0 +1,241 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">@Core.Enums.Label_Plural(SelectedType)</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAdd" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_rooms" AllowTextWrap="true" AllowRowDragAndDrop="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents TValue="Core.Premises.Room" RowDropping="RowDroppingHandlerAsync" OnActionComplete="ActionCompleteHandlerAsync"></GridEvents>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Room);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Room.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" />
+                <GridColumn Field=@nameof(Core.Premises.Room.Name) HeaderText="Name" />
+                <GridColumn HeaderText="Description">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Room);
+                            if (obj != null)
+                            {
+                                switch (obj.Type)
+                                {
+                                    case VC.Shared.Enums.Premises_Room_Type.Bedroom:
+                                        {
+                                            var lstBeds = new List<string>();
+
+                                            if (obj.Beds_Double > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Double, "double")); }
+                                            if (obj.Beds_TwinDouble > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_TwinDouble, "twin/double")); }
+                                            if (obj.Beds_Twin > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Twin, "twin")); }
+                                            if (obj.Beds_Single > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Single, "single")); }
+                                            if (obj.Beds_Bunk > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Bunk, "bunk")); }
+                                            if (obj.Beds_Sofa > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Sofa, "sofa bed")); }
+                                            if (obj.Beds_Child > 0) { lstBeds.Add(string.Format("{0}x {1}", obj.Beds_Child, "children's bed")); }
+
+                                            @string.Join(", ", lstBeds)
+                                            lstBeds = null;
+                                        }
+                                        break;
+                                    default:
+                                        @obj.Description
+                                        break;
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Room);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.RoomAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Premises.RoomEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this item?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    [Parameter] public VC.Shared.Enums.Premises_Room_Type SelectedType { get; set; } = VC.Shared.Enums.Premises_Room_Type.Unknown;
+
+    [Parameter] public EventCallback OnSelectedItemChanged { get; set; }
+
+    private Shared.Modals.Premises.RoomAdd? _modalAdd = null;
+    private Shared.Modals.Premises.RoomEdit? _modalEdit = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Room> _rooms = new List<Core.Premises.Room>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        _rooms = await Core.Premises.Room.FindAllBy_PremiseAsync(SelectedItem.Id, new List<VC.Shared.Enums.Premises_Room_Type> { SelectedType });
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    public async Task RowDroppingHandlerAsync(RowDroppingEventArgs<Core.Premises.Room> args)
+    {
+        if (args.DropIndex == args.FromIndex)
+        {
+            return;
+        }
+
+        if (args.Data.Count > 0)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objDropIndexItem = _rooms[Convert.ToInt32(args.DropIndex)];
+            var objMoved = args.Data[0];
+
+            _ = await Core.Premises.Room.Move_ToPositionAsync(objMoved.Id, objDropIndexItem.Order);
+
+            objDropIndexItem = null;
+            objMoved = null;
+
+            await EndProcessingAsync();
+        }
+    }
+
+    public async Task ActionCompleteHandlerAsync(ActionEventArgs<Core.Premises.Room> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Refresh) { return; }
+
+        await RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing){ return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(SelectedItem.Id, SelectedType); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                //refresh grid
+                await RefreshAsync();
+
+                await OnSelectedItemChanged.InvokeAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                await RefreshAsync();
+
+                await OnSelectedItemChanged.InvokeAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Room.DeleteFullAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

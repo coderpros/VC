@@ -1,0 +1,291 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="600px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add rate</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Arrival</label>
+                                <SfDatePicker @bind-Value="_form.Arrive" TValue="DateTime" Min="@_arrivalMinDate" Max="@_arrivalMaxDate" Format="dd/MM/yyyy" />
+                                <ValidationMessage For="@(() => _form.Arrive)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Departure</label>
+                                <SfDatePicker @bind-Value="_form.Depart" TValue="DateTime" Min="@_arrivalMinDate" Max="@_arrivalMaxDate" Format="dd/MM/yyyy" />
+                                <ValidationMessage For="@(() => _form.Depart)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price entered is</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Price_EntryMode">
+                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price</label>
+                                <InputNumber @bind-Value="_form.Price" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Price)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Price is</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Price_Type">
+                                        <option value="0">Total for period</option>
+                                        <option value="1">Nightly</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Minimum party size</label>
+                                <InputNumber @bind-Value="_form.Min_PartySize" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Min_PartySize)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Provisional</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_Rate_Provisional" @bind-Value="_form.Provisional" />
+                                    <label for="Cb_Rate_Provisional">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private Core.Premises.Premise _premise = new Core.Premises.Premise();
+    private Core.Premises.Seasons.Season _season = new Core.Premises.Seasons.Season();
+
+    private DateTime _arrivalMinDate = DateTime.Today.Date;
+    private DateTime _arrivalMaxDate = DateTime.Today.Date.AddYears(3);
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public DateTime Arrive { get; set; } = DateTime.Today.Date;
+
+        [Required(ErrorMessage = "This field is required")]
+        public DateTime Depart { get; set; } = DateTime.Today.AddDays(7).Date;
+
+        public Core.Enums.Shared_PriceValueType Price_EntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+        public decimal Price { get; set; } = 0;
+
+        public int Min_PartySize { get; set; } = 0;
+        public int Price_Type { get; set; } = 0;
+        public bool Provisional { get; set; } = true;
+    }
+
+    public async Task OpenAsync(int iPremiseId, int? iSeasonId, DateTime? dtInitialArrive = null, DateTime? dtMinDate = null, DateTime? dtMaxDate = null)
+    {
+        _premise = await Core.Premises.Premise.FindAsync(iPremiseId);
+
+        if (!_premise.Loaded || _premise.Deleted_UTC.HasValue)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Property could not be found." });
+            return;
+        }
+
+        if (iSeasonId.HasValue)
+        {
+            _season = await Core.Premises.Seasons.Season.FindAsync(iSeasonId.Value);
+
+            if (!_season.Loaded || _season.Deleted_UTC.HasValue || _season.Premise_Id != _premise.Id || _season.Dates.Count < 1)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Invalid season selected." });
+                return;
+            }
+        }
+
+        _form = new ModalForm();
+
+        // lookup default price entry mode from premise
+        var objPremiseConfig = await Core.Premises.Config.FindBy_PremiseAsync(_premise.Id);
+
+        _form.Price_EntryMode = objPremiseConfig.PriceEntryMode_Calculated;
+
+        // Use the config to work out change over day to ensure the default selection is on changeover day
+        if (objPremiseConfig.ChangeoverDay_Calculated.HasValue)
+        {
+            while (_form.Arrive.DayOfWeek != objPremiseConfig.ChangeoverDay_Calculated.Value)
+            {
+                _form.Arrive = _form.Arrive.AddDays(1);
+            }
+        }
+
+        if (_season.Loaded)
+        {
+            // overwrite config elements
+            var objSeasonConfig = await Core.Premises.Config.FindBy_SeasonAsync(_season.Id);
+
+            _form.Price_EntryMode = objSeasonConfig.PriceEntryMode_Calculated;
+
+            _arrivalMinDate = _season.Dates.Min(r => r.Start);
+            _arrivalMaxDate = _season.Dates.Max(r => r.End);
+
+            _form.Arrive = _arrivalMinDate;
+
+            // find the latest rate for this season to use to calculate a more accurate expected arrival date
+            var objLatestSeasonRate = (await Core.Premises.Seasons.Rate.FindAllBy_SeasonAsync(_season.Id)).OrderByDescending(r => r.Depart).FirstOrDefault();
+            if (objLatestSeasonRate != null)
+            {
+                _form.Arrive = objLatestSeasonRate.Depart;
+            }
+            objLatestSeasonRate = null;
+
+            // Use the seasons config to work out change over day to ensure the default selection is on changeover day
+            if (objSeasonConfig.ChangeoverDay_Calculated.HasValue)
+            {
+                while (_form.Arrive.DayOfWeek != objSeasonConfig.ChangeoverDay_Calculated.Value)
+                {
+                    _form.Arrive = _form.Arrive.AddDays(1);
+                }
+            }
+        }
+
+        // setup any specific requests from caller for limits
+        if (dtMinDate.HasValue) { _arrivalMinDate = dtMinDate.Value.Date; }
+
+        if (dtMaxDate.HasValue) { _arrivalMaxDate = dtMaxDate.Value.Date; }
+
+        if (dtInitialArrive.HasValue) { _form.Arrive = dtInitialArrive.Value.Date; }
+
+        if (_form.Arrive < _arrivalMinDate) { _form.Arrive = _arrivalMinDate; }
+
+        // reset default depart in case arrival has changed 
+        _form.Depart = _form.Arrive.AddDays(7);
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (_form.Arrive >= _form.Depart)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a departure date after arrival." });
+            return;
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var iSeasonId = 0;
+
+        if (_season.Loaded)
+        {
+            iSeasonId = _season.Id;
+        }
+        else
+        {
+            var objSeason = await Core.Premises.Seasons.Season.FindBy_PremiseDateAsync(_premise.Id, _form.Arrive);
+
+            if (!objSeason.Loaded || objSeason.Deleted_UTC.HasValue)
+            {
+                await EndProcessingAsync();
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "No season available at the selected property for the selected arrival date." });
+                return;
+            }
+
+            iSeasonId = objSeason.Id;
+        }
+
+        var objResponse = new Models.ModalResponse();
+
+        var dPrice = _form.Price;
+
+        if (_form.Price_Type == 1)
+        {
+            var iDays = (_form.Depart.Date - _form.Arrive.Date).Days;
+
+            if (iDays < 1)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Unable to calculate nightly price." });
+                return;
+            }
+
+            dPrice = _form.Price * iDays;
+        }
+
+        var obj = new Core.Premises.Seasons.Rate()
+            {
+                Arrive = _form.Arrive,
+                Depart = _form.Depart,
+                Min_PartySize = _form.Min_PartySize,
+                Price_EntryMode = _form.Price_EntryMode,
+                Price = dPrice,
+                Provisional = _form.Provisional                
+            };
+
+        var lstValidationResults = await obj.ValidateAsync(_premise.Id, iSeasonId);
+
+        if (lstValidationResults.Count > 0)
+        {
+            // done processing
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = string.Join("<br />", lstValidationResults) });
+
+            return;
+        }
+
+        lstValidationResults = null;
+
+        if (await obj.CreateAsync(_premise.Id, iSeasonId, strBy: SessionInfo.Current_User.Name_Full, bUseConfigDefaults: true))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        obj = null;
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+            
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

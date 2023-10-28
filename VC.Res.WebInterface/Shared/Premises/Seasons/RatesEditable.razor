@@ -1,0 +1,641 @@
+﻿@using Syncfusion.XlsIO;
+@using System.Collections.Concurrent;
+@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+@if (_visible)
+{
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">@_title</h4>
+            <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestExportAsync" value="Export">
+                Export
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__save"></use>
+                </svg>
+            </button>
+            @if (_showAdd)
+            {
+                <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAddAsync" value="Add">
+                    Add
+                    <svg class="icon">
+                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+                    </svg>
+                </button>
+            }
+            @if (_showApprove)
+            {
+                <button type="button" class="panel__header-button" disabled=@_processing @onclick="@ApproveAllClickHandlerAsync" value="ApproveAll">
+                    Approve All
+                    <svg class="icon">
+                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__tick"></use>
+                    </svg>
+                </button>
+            }
+        </div>
+        <div class="panel__full-content">
+            <SfGrid DataSource="@_rateSummaries" AllowTextWrap="true">
+                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                <GridEditSettings AllowEditing="true"></GridEditSettings>
+                <GridEvents OnActionBegin="GridActionBeginHandler" OnActionComplete="GridActionCompleteHandlerAsync" QueryCellInfo="GridQueryCellInfoHandler" TValue="Models.Premises.Rates.Summary"></GridEvents>
+                <GridColumns>
+                    <GridColumn Width="42px" AllowEditing="false">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="View">
+                                        <svg class="icon">
+                                            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                        </svg>
+                                    </a>
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Width="42px" AllowEditing="false" Visible="@_showApprove">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    if (obj.Provisional || obj.RequireReview)
+                                    {
+                                        <a @onclick="(() => ApproveClickHandlerAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Approve">
+                                            <svg class="icon">
+                                                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__tick"></use>
+                                            </svg>
+                                        </a>
+                                    }
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field=@nameof(Models.Premises.Rates.Summary.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" AllowEditing="false"></GridColumn>
+                    <GridColumn HeaderText="Season" Visible=@(!SelectedSeason.Loaded)>
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Season.Name)
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="Start day">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Arrive.ToString("dddd"))
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                    <GridColumn HeaderText="From">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Arrive.ToString("dd MMM yyyy"))
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            <SfDatePicker @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Arrive)" TValue="DateTime" Format="dd/MM/yyyy" />
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn HeaderText="To">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Depart.ToString("dd MMM yyyy"))
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            <SfDatePicker @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Depart)" TValue="DateTime" Format="dd/MM/yyyy" />
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn HeaderText="Gross rate">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Price_POA ? "POA" : Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Price_Gross)))
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Price_Gross)" />
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn HeaderText="Net rate">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Price_POA ? "POA" : Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Price_Net)))
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Price_Net)" />
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn HeaderText="Commission">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @(obj.Commission.HasValue ? Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Commission.Value)) : "n/a")
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    if (obj.Commission_AmountType == Core.Enums.Shared_NumericValueType.Percentage)
+                                    {
+                                        // don't allow editing
+                                        @(obj.Commission.HasValue ? Core.Common.Currency.Format(obj.Currency, string.Format("{0:n2}", obj.Commission.Value)) : "n/a")
+                                    }
+                                    else
+                                    {
+                                        <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Commission)" />
+                                    }
+                                }
+                            }
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn HeaderText="Availability">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    @Core.Enums.Label(obj.Availability)
+                                }
+                            }
+                        </Template>
+                        <EditTemplate>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    if (obj.Availability == Core.Enums.Premises_Premise_Availability.Booked || obj.Availability == Core.Enums.Premises_Premise_Availability.OnHold || obj.Availability == Core.Enums.Premises_Premise_Availability.Unknown)
+                                    {
+                                        // don't allow editing
+                                        @Core.Enums.Label(obj.Availability)
+                                    }
+                                    else
+                                    {
+                                        <div class="form__select">
+                                            <InputSelect @bind-Value="@((context as Models.Premises.Rates.Summary).Editable_Availability)">
+                                                @foreach (Core.Enums.Premises_Premise_Availability enumAvailability in Enum.GetValues(typeof(Core.Enums.Premises_Premise_Availability)).ToListDynamic().OrderBy(r => r.ToString()))
+                                                {
+                                                    if (enumAvailability == Core.Enums.Premises_Premise_Availability.Unknown) { continue; }
+                                                    if (enumAvailability == Core.Enums.Premises_Premise_Availability.Booked) { continue; }
+                                                    if (enumAvailability == Core.Enums.Premises_Premise_Availability.OnHold) { continue; }
+
+                                                    <option value="@enumAvailability">@Core.Enums.Label(enumAvailability)</option>
+                                                }
+                                            </InputSelect>
+                                        </div>
+                                    }
+                                }
+                            }
+                        </EditTemplate>
+                    </GridColumn>
+                    <GridColumn Width="42px" AllowEditing="false">
+                        <Template>
+                            @{
+                                var obj = (context as Models.Premises.Rates.Summary);
+                                if (obj != null)
+                                {
+                                    <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                        <svg class="icon icon--red">
+                                            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                        </svg>
+                                    </a>
+                                }
+                            }
+                        </Template>
+                    </GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+
+    <VC.Res.WebInterface.Shared.Modals.Premises.Seasons.RateAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync"  />
+    <VC.Res.WebInterface.Shared.Modals.Premises.Seasons.RateEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandlerAsync" />
+
+    <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this rate?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+}
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedPremise { get; set; } = new Core.Premises.Premise();
+    [Parameter] public Core.Premises.Seasons.Season SelectedSeason { get; set; } = new Core.Premises.Seasons.Season();
+    [Parameter] public DateTime? SelectedDateFrom { get; set; } = null;
+    [Parameter] public DateTime? SelectedDateTo { get; set; } = null;
+    [Parameter] public bool ShowPast { get; set; } = true;
+    [Parameter] public bool ShowEmpty { get; set; } = true;
+    [Parameter] public bool ShowProvisional { get; set; } = false;
+    [Parameter] public bool? ShowReqReview { get; set; } = null;
+    [Parameter] public string Title { get; set; } = "";
+
+    private string _title = "Rates";
+    private bool _showAdd = true;
+    private bool _showApprove = false;
+
+    private Shared.Modals.Premises.Seasons.RateAdd? _modalAdd = null;
+    private Shared.Modals.Premises.Seasons.RateEdit? _modalEdit = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Models.Premises.Rates.Summary> _rateSummaries = new List<Models.Premises.Rates.Summary>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (SelectedPremise.Loaded)
+        {
+            if (SelectedSeason.Loaded)
+            {
+                _title = SelectedSeason.Name;
+            }
+            else if (SelectedDateFrom.HasValue && SelectedDateTo.HasValue)
+            {
+                _title = string.Format("{0} to {1}", SelectedDateFrom.Value.ToString("dd/MM/yyyy"), SelectedDateTo.Value.ToString("dd/MM/yyyy"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(Title))
+            {
+                _title = Title;
+            }
+
+            if (ShowProvisional)
+            {
+                //_showAdd = false;
+                _showApprove = true;
+            }
+
+            if (ShowReqReview.HasValue)
+            {
+                if (ShowReqReview.Value)
+                {
+                    _showAdd = false;
+                    _showApprove = true;
+                }
+            }
+
+            await RefreshAsync(bShowSpinner: false);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RefreshCount != _refreshCount)
+        {
+            _refreshCount = RefreshCount;
+            await RefreshAsync();
+        }
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        var lstRates = new List<Core.Premises.Seasons.Rate>();
+
+        if (SelectedSeason.Loaded)
+        {
+            // show all the rates for the season
+            lstRates = await Core.Premises.Seasons.Rate.FindAllBy_SeasonAsync(SelectedSeason.Id, bProvisional: ShowProvisional, bReqReview: ShowReqReview, bIncPast: ShowPast);
+        }
+        else
+        {
+            // find rates based on premise and date range
+            lstRates = await Core.Premises.Seasons.Rate.FindAllBy_PremiseAsync(SelectedPremise.Id, dtArriveFrom: SelectedDateFrom, dtArriveTo: SelectedDateTo, bProvisional: ShowProvisional, bReqReview: ShowReqReview, bIncPast: ShowPast);
+        }
+
+        if (!ShowPast)
+        {
+            // remove any from the past
+            lstRates = lstRates.Where(r => r.Depart > DateTime.Today.Date).ToList();
+        }
+
+        var parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = 5 };
+        var lstResults = new ConcurrentBag<Models.Premises.Rates.Summary>();
+
+        await Parallel.ForEachAsync(lstRates, parallelOptions, async (objRate, cancellationToken) =>
+        {
+            var objSummary = new Models.Premises.Rates.Summary();
+
+            await objSummary.Load(objRate);
+
+            lstResults.Add(objSummary);
+        });
+
+        parallelOptions = null;
+
+        lstRates = null;
+
+        _rateSummaries = lstResults.OrderBy(r => r.Arrive).ToList();
+
+        lstResults = null;
+
+        _visible = false;
+        if (ShowEmpty || _rateSummaries.Count > 0)
+        {
+            _visible = true;
+        }
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private async Task RequestExportAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        // get the rates to be export
+        var lstRates = await Core.Premises.Seasons.Rate.FindAllAsync(_rateSummaries.Select(r => r.Id).ToList());
+
+        //// also get the premise to provide a better file name
+        //var objPremise = await Core.Premises.Premise.FindAsync(SelectedItem.Premise_Id);
+
+        // done processing, next will be the export which we don't want spinner up for
+        await EndProcessingAsync();
+
+        using (ExcelEngine excelEngine = new ExcelEngine())
+        {
+            //Step 2 : Instantiate the excel application object
+            IApplication application = excelEngine.Excel;
+            application.DefaultVersion = ExcelVersion.Excel2016;
+
+            //Creating new workbook
+            var workbook = application.Workbooks.Create(1);
+            var sheet = workbook.Worksheets[0];
+
+            var strFileName = string.Format("{0}-{1}.xlsx", Core.Utilities.General.MakeFriendlyFileName(SelectedPremise.Name), DateTime.Now.ToString("dd-MM-yyyy"));
+
+            sheet.ImportDataTable(Core.Premises.Seasons.Rate.Export(lstRates), true, 1, 1, -1, -1);
+
+            //Save the document as a stream and retrun the stream
+            using (MemoryStream stream = new MemoryStream())
+            {
+                //Save the created Excel document to MemoryStream
+                workbook.SaveAs(stream);
+
+                //await JS.SaveAs("Sample.xlsx", excelStream.ToArray());
+
+                await JS.InvokeAsync<object>("SaveAsFile", strFileName, Convert.ToBase64String(stream.ToArray()));
+            }
+
+            sheet = null;
+            workbook.Close();
+
+            application = null;
+        }
+
+        lstRates = null;
+    }
+
+    private async Task ApproveAllClickHandlerAsync()
+    {
+        // loop through all the rates and approve
+        var lstRates = await Core.Premises.Seasons.Rate.FindAllAsync(_rateSummaries.Select(r => r.Id).ToList());
+
+        foreach (var vRate in lstRates)
+        {
+            vRate.Provisional = false;
+            vRate.RequireReview = false;
+
+            _ = await vRate.SaveAsync(SessionInfo.Current_User.Name_Full);
+        }
+
+        lstRates = null;
+
+        await RefreshAsync();
+
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task ApproveClickHandlerAsync(int iRateId)
+    {
+        // find the rate
+        var objRate = await Core.Premises.Seasons.Rate.FindAsync(iRateId);
+
+        if (objRate.Loaded)
+        {
+            objRate.Provisional = false;
+            objRate.RequireReview = false;
+
+            _ = await objRate.SaveAsync(SessionInfo.Current_User.Name_Full);
+        }
+
+        objRate = null;
+
+        await RefreshAsync();
+
+        await OnChanged.InvokeAsync();
+    }
+
+    public async Task GridActionBeginHandler(ActionEventArgs<Models.Premises.Rates.Summary> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (Args.Action == "Edit")
+            {
+                // save the changes to the row
+                if (await Args.Data.Save(SessionInfo.Current_User.Name_Full))
+                {
+                    await OnChanged.InvokeAsync();
+                }
+            }
+        }
+    }
+
+    public async Task GridActionCompleteHandlerAsync(ActionEventArgs<Models.Premises.Rates.Summary> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            // save has been completed, refresh the data
+            await RefreshAsync();
+        }
+    }
+
+    public void GridQueryCellInfoHandler(QueryCellInfoEventArgs<Models.Premises.Rates.Summary> Args)
+    {
+        if (Args.Column.HeaderText == "Availability")
+        {
+            switch (Args.Data.Availability)
+            {
+                case Core.Enums.Premises_Premise_Availability.Available:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#68c752;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.AvailableEnquire:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#a2d8f5;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.Booked:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#ff5a6a;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.BookedExt:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#FF8692;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.OnHold:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#f3c673;" } });
+                    }
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.Unavailable:
+                case Core.Enums.Premises_Premise_Availability.Unknown:
+                    {
+                        Args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "background-color:#bdbcbc;" } });
+                    }
+                    break;
+
+                default: break;
+            }
+        }
+    }
+
+    private async Task RequestAddAsync()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null)
+        {
+            int? iSeasonId = null;
+            DateTime? dtInitialArrival = null;
+            DateTime? dtMinDate = null;
+            DateTime? dtMaxDate = null;
+
+            if (SelectedSeason.Loaded)
+            {
+                iSeasonId = SelectedSeason.Id;
+            }
+            else
+            {
+                if (SelectedDateFrom.HasValue)
+                {
+                    dtInitialArrival = SelectedDateFrom.Value;
+                    dtMinDate = SelectedDateFrom.Value;
+                }
+
+                if (SelectedDateTo.HasValue) { dtMaxDate = SelectedDateTo.Value; }
+
+                if (_rateSummaries.Count > 0)
+                {
+                    dtInitialArrival = _rateSummaries.Max(r => r.Depart);
+                }
+            }
+
+            await _modalAdd.OpenAsync(SelectedPremise.Id, iSeasonId, dtInitialArrive: dtInitialArrival, dtMinDate: dtMinDate, dtMaxDate: dtMaxDate);
+        }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                await RefreshAsync();
+
+                await OnChanged.InvokeAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item updated." });
+
+                await RefreshAsync();
+
+                await OnChanged.InvokeAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Seasons.Rate.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

@@ -1,0 +1,158 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<EditForm Model="@_frmDetails" OnValidSubmit="@Details_SaveAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+		    <h4 class="panel__title">General</h4>
+	    </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Name</label>
+                            <InputText @bind-Value="_frmDetails.Name" class="form__input"  maxlength="200" />
+                            <ValidationMessage For="@(() => _frmDetails.Name)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Tax Rate</label>
+                            <InputText @bind-Value="_frmDetails.TaxRate" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.TaxRate)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Enabled</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox @bind-Value=_frmDetails.Enabled id="Cb_Country_Enabled" />
+                                <label for="Cb_Country_Enabled"></label>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">A2</label>
+                            <InputText @bind-Value="_frmDetails.A2" class="form__input" maxlength="2" />
+                            <ValidationMessage For="@(() => _frmDetails.A2)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">A3</label>
+                            <InputText @bind-Value="_frmDetails.A3" class="form__input" maxlength="3" />
+                            <ValidationMessage For="@(() => _frmDetails.A3)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Number</label>
+                            <InputText @bind-Value="_frmDetails.Number" class="form__input" maxlength="3" />
+                            <ValidationMessage For="@(() => _frmDetails.Number)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_Reset" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Common.Country SelectedItem { get; set; } = new Core.Common.Country();
+
+    private FormDetails _frmDetails = new FormDetails();
+
+    private class FormDetails
+    {
+        public string Name { get; set; } = "";
+        public string A2 { get; set; } = "";
+        public string A3 { get; set; } = "";
+        public string Number { get; set; } = "";
+        public string TaxRate { get; set; } = "";
+        public bool Enabled { get; set; } = false;
+    }
+
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        _frmDetails = new FormDetails
+            {
+                Name = SelectedItem.Name,
+                A2 = SelectedItem.A2.Trim(),
+                A3 = SelectedItem.A3.Trim(),
+                Number = SelectedItem.Number.HasValue ? SelectedItem.Number.Value.ToString() : "",
+                TaxRate = SelectedItem.Tax_Rate.HasValue ? SelectedItem.Tax_Rate.Value.ToString("#.##") : "",
+                Enabled = SelectedItem.Enabled
+            };
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _frmDetails.Name.Trim();
+
+        if (int.TryParse(_frmDetails.Number, out var iNumber)) { SelectedItem.Number = iNumber; }
+
+        SelectedItem.A2 = _frmDetails.A2.Trim();
+        SelectedItem.A3 = _frmDetails.A3.Trim();
+
+        if (decimal.TryParse(_frmDetails.TaxRate, out var iTaxRate)) { SelectedItem.Tax_Rate = iTaxRate; }
+
+        SelectedItem.Enabled = _frmDetails.Enabled;
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the country information, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            Details_Load();
+        }
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_Reset()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

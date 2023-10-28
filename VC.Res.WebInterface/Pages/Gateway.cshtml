@@ -1,0 +1,70 @@
+﻿@page "/gateway"
+@model VC.Res.WebInterface.Pages.GatewayModel
+@addTagHelper *, WebOptimizer.Core
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Villa Collective</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <base href="~/" />
+
+    @*<link href="VC.Res.WebInterface.styles.css" rel="stylesheet" />*@
+
+    <!-- FAVICON -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+    <link rel="manifest" href="/favicons/site.webmanifest">
+    <link rel="mask-icon" href="/favicons/safari-pinned-tab.svg" color="#202530">
+    <link rel="shortcut icon" href="/favicons/favicon.ico">
+    <meta name="msapplication-TileColor" content="#202530">
+    <meta name="msapplication-config" content="/favicons/browserconfig.xml">
+    <meta name="theme-color" content="#202530">
+
+    <link rel="stylesheet" href="/css/bundle.css" />
+</head>
+<body style="background-image: url(/imgs/background-images/login-screen_1.jpg); background-size: cover; background-position: center center;">
+    <div class="login">
+	    <div class="login__window-wrapper">
+		    <div class="login__window">
+			    <div class="login__logo">
+				    <img src="/imgs/logo-icon.png?width=250&height=150&rmode=max" alt=""  />
+			    </div>
+			    <div class="login__header">
+				    <h4 class="login__header-title">Invalid link</h4>
+				    <p class="login__header-intro">We're sorry but the link you have used has not been recognized or has expired.</p>
+			    </div>
+                <div class="login__content">
+				    
+                </div>
+                <a href="/" title="Return to the login" class="login__button">Return to the Login</a>
+		    </div>
+	    </div>
+    </div>
+
+    <!-- // FOOTER // -->
+    <footer class="footer footer--fixed">
+        <div class="row row--full-width">
+            <div class="col col-6">
+            
+            </div>
+        </div>
+	    <div class="row row--full-width">
+		    <div class="col col-6">
+			    &copy; Villa Collective @DateTime.Now.Year.ToString(). All Rights Reserved.
+		    </div>
+		    <div class="col col-6 align--right">
+                <!-- Developer branding goes here. -->
+		    </div>
+	    </div>
+    </footer>
+    <!-- // FOOTER // -->
+
+    <script src="/js/bundle.js"></script>
+</body>
+</html>

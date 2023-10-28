@@ -1,0 +1,227 @@
+﻿@using VC.Res.Core.Premises
+@using Collection = VC.Res.Core.Common.Collection
+@inherits Bases.Component
+@inject IJSRuntime JSRuntime
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Property Collections</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAddAsync" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_premiseCollections" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Core.Common.Collection.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" />
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            if (context is Premise obj)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="View" target="_blank">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__view"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            if (context is Collection obj)
+                            {
+                                <a href="#" class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Name">
+                    <Template>
+                        @{
+                            if (context is Collection obj)
+                            {
+                                @obj.Name
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="# of Properties">
+                    <Template>
+                        @{
+                            if (context is Collection obj)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Collections_Edit, iParameterId1: obj.Id, iParameterId2: obj.PropertiesInCollection)">@obj.PropertiesInCollection</a>
+                            }
+                        }
+                        <a href="#"></a>
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            if (context is Collection obj)
+                            {
+                                <a @onclick="(() => RequestDelete(Core.Common.Collection.FindPremiseCollectionId(SelectedItem.Id, obj.Id).Result))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Collections.PremiseCollectionsAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to remove this collection from the property?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    private int selectedPropertyCollectionId = 0;
+
+    private Shared.Modals.Collections.PremiseCollectionsAdd? _modalAdd = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Collection> _premiseCollections = new List<Core.Common.Collection>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        //await JSRuntime.InvokeAsync<string>("addPreviousPage");
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        _premiseCollections = await Core.Common.Collection.FindPremiseCollectionsAsync(SelectedItem.Id);
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private async Task RequestAddAsync()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null)
+        {
+            await _modalAdd.OpenAsync(SelectedItem.Id);
+        }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = objResponse.Message_Type, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = objResponse.Message_Type, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        this.selectedPropertyCollectionId = iId;
+
+        if (_processing) { return; }
+
+        _modalDeleteConfirm?.Open(iId);
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Collection.DeleteFullByIdAsync(this.selectedPropertyCollectionId, SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+
+    private async Task SetAsPrimaryAsync(int iId)
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objMessage = new Models.ToastNotification
+            {
+                Type = Models.ToastNotification.Types.Error,
+                Message = "We're sorry but there has been a problem updating the selected item, please try again or contact support for further assistance."
+            };
+
+        if (await Core.Premises.Contact.Set_PrimaryAsync(iId))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Success;
+            objMessage.Message = "Properties that use this group will use the selected contacts configuration.";
+        }
+
+        await EndProcessingAsync();
+
+        await RefreshAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+}
+
+

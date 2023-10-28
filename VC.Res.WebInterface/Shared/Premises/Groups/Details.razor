@@ -1,0 +1,107 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_frmDetails">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">General</h4>
+        </div>
+
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Name</label>
+                            <InputText @bind-Value="_frmDetails.Name" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Name)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Description</label>
+                            <InputTextArea @bind-Value="_frmDetails.Description" class="form__textarea-large" />
+                            <ValidationMessage For="@(() => _frmDetails.Description)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12 align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save" @onclick="@Details_SaveAsync">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Premises.Group SelectedItem { get; set; } = new Core.Premises.Group();
+
+    private class FormDetails
+    {
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+    }
+
+    private FormDetails _frmDetails = new FormDetails();
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        _frmDetails = new FormDetails
+            {
+                Name = SelectedItem.Name,
+                Description = SelectedItem.Description
+            };
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _frmDetails.Name.Trim();
+        SelectedItem.Description = _frmDetails.Description.Trim();
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the item, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            Details_Load();
+        }
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        Details_Load();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

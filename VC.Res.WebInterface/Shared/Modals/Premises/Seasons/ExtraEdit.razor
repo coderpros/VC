@@ -1,0 +1,272 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="600px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit @(SelectedItem.Name)</Header>
+        <Content>
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">Pricing</h4>
+                    <div class="panel__divider"></div>
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Price entered is</label>
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.PriceEntryMode">
+                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Price</label>
+                                <InputNumber @bind-Value="_form.Price" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Price)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-3">
+                            <label class="form__label">Price (Net)</label>
+                            <p>@PriceCalculation.Price_Net.ToString("0.00")</p>
+                        </div>
+                        <div class="col col-3">
+                            <label class="form__label">Commission</label>
+                            <p>@(PriceCalculation.Commission.HasValue ? PriceCalculation.Commission.Value.ToString("0.00") : "n/a")</p>
+                        </div>
+                        <div class="col col-3">
+                            <label class="form__label">Tax</label>
+                            <p>@(PriceCalculation.Tax.HasValue ? PriceCalculation.Tax.Value.ToString("0.00") : "n/a")</p>
+                        </div>
+                        <div class="col col-3">
+                            <label class="form__label">Price (Gross)</label>
+                            <p>@PriceCalculation.Price_Gross.ToString("0.00")</p>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex" for="Cb_ExtraEdit_Commission_SubjectTo">
+                        Commission
+                        <InputCheckbox id="Cb_ExtraEdit_Commission_SubjectTo" class="form__checkbox--secondary" @bind-Value="_form.Commission_SubjectTo" title="Subject to" />
+                        <label for="Cb_ExtraEdit_Commission_SubjectTo">Subject to &nbsp;&nbsp;<span></span></label>
+                    </h4>
+                    @if (_form.Commission_SubjectTo)
+                    {
+                        <div class="panel__divider"></div>
+                        <div class="row">
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Type</label>
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.Commission_AmountType" @bind-Value:event="OnPricingChanged">
+                                            <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                            <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col col-12 sm-6">
+                                <div class="form__item">
+                                    <label class="form__label">Amount</label>
+                                    <InputNumber @bind-Value="_form.Commission_Amount" class="form__input" />
+                                    <ValidationMessage For="@(() => _form.Commission_Amount)" />
+                                </div>
+                            </div>
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Note</label>
+                                    <InputTextArea @bind-Value="_form.Commission_Note" class="form__textarea" />
+                                    <ValidationMessage For="@(() => _form.Commission_Note)" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">
+                        Tax
+                    </h4>
+                    <div class="panel__divider"></div>
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Exempt</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_Tax_Exempt" @bind-Value="_form.Tax_Exempt" />
+                                    <label for="Cb_PremiseConfig_Tax_Exempt">Yes</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Percentage</label>
+                                <InputNumber @bind-Value="_form.Tax_Value" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Tax_Value)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private EditContext? editContext;
+    private Core.Premises.Seasons.Extra SelectedItem = new Core.Premises.Seasons.Extra();
+    private Core.Models.PriceCalculation PriceCalculation = new Core.Models.PriceCalculation();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+
+        public decimal Price { get; set; } = 0;
+        public Core.Enums.Shared_PriceValueType PriceEntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+
+        public bool Tax_Exempt { get; set; } = false;
+        public decimal Tax_Value { get; set; } = 0;
+
+        public bool Commission_SubjectTo { get; set; } = false;
+        public Core.Enums.Shared_NumericValueType Commission_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal Commission_Amount { get; set; } = 0;
+        public string Commission_Note { get; set; } = "";
+    }
+
+    public async Task OpenAsync(int iSeasonExtraId)
+    {
+        SelectedItem = await Core.Premises.Seasons.Extra.FindAsync(iSeasonExtraId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            _form = new ModalForm()
+                {
+                    Name = SelectedItem.Name,
+                    Description = SelectedItem.Description,
+
+                    Price = SelectedItem.Price,
+                    PriceEntryMode = SelectedItem.Price_EntryMode,
+
+                    Tax_Exempt = SelectedItem.Tax_Exempt,
+                    Tax_Value = SelectedItem.Tax_Value,
+
+                    Commission_SubjectTo = SelectedItem.Commission_SubjectTo,
+                    Commission_AmountType = SelectedItem.Commission_AmountType,
+                    Commission_Amount = SelectedItem.Commission_Amount,
+                    Commission_Note = SelectedItem.Commission_Note
+                };
+
+            editContext = new(_form);
+            editContext.OnFieldChanged += EditContext_OnFieldChanged;
+
+            PriceCalculation = new Core.Models.PriceCalculation(
+                false,
+                _form.PriceEntryMode,
+                _form.Price,
+                _form.Commission_SubjectTo,
+                _form.Commission_AmountType,
+                _form.Commission_Amount,
+                _form.Tax_Exempt,
+                _form.Tax_Value
+            );
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _form.Name.Trim();
+        SelectedItem.Description = _form.Description.Trim();
+        SelectedItem.Price = _form.Price;
+
+        SelectedItem.Price_EntryMode = _form.PriceEntryMode;
+
+        SelectedItem.Tax_Exempt = _form.Tax_Exempt;
+        SelectedItem.Tax_Value = _form.Tax_Value;
+
+        SelectedItem.Commission_SubjectTo = _form.Commission_SubjectTo;
+        SelectedItem.Commission_AmountType = _form.Commission_AmountType;
+        SelectedItem.Commission_Amount = _form.Commission_Amount;
+        SelectedItem.Commission_Note = _form.Commission_Note;
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem updating the selected item, please try again or contact support for further assistance." });
+        }
+    }
+
+    private void EditContext_OnFieldChanged(object sender, FieldChangedEventArgs e)
+    {
+        PriceCalculation = new Core.Models.PriceCalculation(
+            false,
+            _form.PriceEntryMode,
+            _form.Price,
+            _form.Commission_SubjectTo,
+            _form.Commission_AmountType,
+            _form.Commission_Amount,
+            _form.Tax_Exempt,
+            _form.Tax_Value
+        );
+    }
+}

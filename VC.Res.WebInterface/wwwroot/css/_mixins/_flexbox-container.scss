@@ -1,0 +1,21 @@
+﻿////
+//// FLEXBOX CONTAINER
+////
+
+@mixin flexboxContainer {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-flex-wrap: nowrap;
+    -ms-flex-wrap: nowrap;
+    flex-wrap: nowrap;
+}
+
+@mixin flexboxItem($num, $margin) {  
+    -webkit-box-flex: 1;  
+    -webkit-flex: 1 1 ($num / 100) + ($margin * (($num)-1));
+    -ms-flex: 1 1 ($num / 100) + ($margin * (($num)-1));
+    flex: 1 1 ($num / 100) + ($margin * (($num)-1));
+	margin: $margin / 2;
+}

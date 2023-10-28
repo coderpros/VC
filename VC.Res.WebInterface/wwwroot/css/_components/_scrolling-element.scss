@@ -1,0 +1,38 @@
+﻿////
+//// HORIZONTAL SCROLL
+////
+
+[data-hScroll-wrapper] {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	overflow-y: hidden;
+	//-webkit-overflow-scrolling: touch;
+	cursor: move;
+	background-image: linear-gradient(to right, white, white), 
+					linear-gradient(to right, white, white), 
+					linear-gradient(to right, $mono-400, rgba(255,255,255,0)), 
+					linear-gradient(to left, $mono-400, rgba(255,255,255,0));
+	background-position: left center, right center, left center, right center;
+	background-repeat: no-repeat;
+	background-color: white;
+	background-size: 20px 100%, 20px 100%, 20px 100%, 20px 100%;
+	background-attachment: local, local, scroll, scroll;
+	//-webkit-overflow-scrolling: auto;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+	// TESTING PURPOSES
+	//background-color: #ff00ff;
+	//padding: 8px 4px;
+}
+
+[data-hScroll-item] {
+	flex: 0 0 auto;
+
+	// TESTING PURPOSES
+	//background-color: #00ff00;
+	//margin: 0 4px;
+	//padding: 4px 8px;
+}

@@ -1,0 +1,1253 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_form" OnValidSubmit="@Details_SaveAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Property settings</h4>
+        </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            @if(SelectedItem.Season_Id.HasValue)
+                            {
+                                // cannot change availability at season level
+                                <label class="form__label">
+                                    Availability status
+                                </label>
+                                <p>@Core.Enums.Label(SelectedItem.DefaultAvailability_Calculated)</p>
+                            }
+                            else
+                            {
+                                <label class="form__label form__label--flex" for="Cb_PremiseConfig_DefaultAvailability_Inherit">
+                                    Availability status
+                                    <InputCheckbox id="Cb_PremiseConfig_DefaultAvailability_Inherit" class="form__checkbox--secondary" @bind-Value="_form.DefaultAvailability_Inherit" title="Inherit" />
+                                    <label for="Cb_PremiseConfig_DefaultAvailability_Inherit"><span></span></label>
+                                </label>
+                            
+                                @if(_form.DefaultAvailability_Inherit)
+                                {
+                                    <p>@Core.Enums.Label(SelectedItem.DefaultAvailability_Calculated)</p>
+                                }
+                                else
+                                {
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.DefaultAvailability">
+                                            <option value="@Core.Enums.Premises_Premise_Availability.Available">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.Available)</option>
+                                            <option value="@Core.Enums.Premises_Premise_Availability.AvailableEnquire">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.AvailableEnquire)</option>
+                                            <option value="@Core.Enums.Premises_Premise_Availability.Unavailable">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.Unavailable)</option>
+                                        </InputSelect>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_RequireBookingApproval_Inherit">
+                                Bookings require pre approval
+                                <InputCheckbox id="Cb_PremiseConfig_RequireBookingApproval_Inherit" class="form__checkbox--secondary" @bind-Value="_form.RequireBookingApproval_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_RequireBookingApproval_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.RequireBookingApproval_Inherit)
+                            {
+                                <p>@(SelectedItem.RequireBookingApproval_Calculated ? "Yes" : "No")</p>
+                            }
+                            else
+                            {
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_RequireBookingApproval" @bind-Value="_form.RequireBookingApproval" />
+                                    <label for="Cb_PremiseConfig_RequireBookingApproval">Yes</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_PriceEntryMode_Inherit">
+                                Prices entered are
+                                <InputCheckbox id="Cb_PremiseConfig_PriceEntryMode_Inherit" class="form__checkbox--secondary" @bind-Value="_form.PriceEntryMode_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_PriceEntryMode_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.PriceEntryMode_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.PriceEntryMode_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.PriceEntryMode">
+                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_Currency_Id_Inherit">
+                                Currency
+                                <InputCheckbox id="Cb_PremiseConfig_Currency_Id_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Currency_Id_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_Currency_Id_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.Currency_Id_Inherit)
+                            {
+                                var objCurrency = currencies.FirstOrDefault(r => r.Id == SelectedItem.Currency_Id_Calculated);
+                                if (objCurrency != null)
+                                {
+                                    <p>@objCurrency.Name</p>
+                                }
+                                else
+                                {
+                                    <p>Default currency not set</p>
+                                }
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Currency_Id">
+                                        <option value="0">Please select</option>
+                                        @foreach (var currency in currencies)
+                                        {
+                                            <option value="@currency.Id">@(currency.Name)</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_Checkin_Inherit">
+                                Check-in time
+                                <InputCheckbox id="Cb_PremiseConfig_Checkin_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Checkin_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_Checkin_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.Checkin_Inherit)
+                            {
+                                <p>@SelectedItem.Checkin_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <SfTimePicker TValue="TimeSpan?" PlaceHolder="Select a time" Step=30 Format="@("hh\\:mm")" @bind-Value="_form.Checkin" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_Checkout_Inherit">
+                                Checkout time
+                                <InputCheckbox id="Cb_PremiseConfig_Checkout_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Checkout_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_Checkout_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.Checkout_Inherit)
+                            {
+                                <p>@SelectedItem.Checkout_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <SfTimePicker TValue="TimeSpan?" PlaceHolder="Select a time" Step=30 Format="@("hh\\:mm")" @bind-Value="_form.Checkout" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_ChangeoverDay_Inherit">
+                                Changeover day
+                                <InputCheckbox id="Cb_PremiseConfig_ChangeoverDay_Inherit" class="form__checkbox--secondary" @bind-Value="_form.ChangeoverDay_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_ChangeoverDay_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.ChangeoverDay_Inherit)
+                            {
+                                <p>@SelectedItem.ChangeoverDay_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.ChangeoverDay">
+                                        <option value="-1">Open/flexible</option>
+                                        <option value="@((int)DayOfWeek.Sunday)">@DayOfWeek.Sunday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Monday)">@DayOfWeek.Monday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Tuesday)">@DayOfWeek.Tuesday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Wednesday)">@DayOfWeek.Wednesday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Thursday)">@DayOfWeek.Thursday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Friday)">@DayOfWeek.Friday.ToString()</option>
+                                        <option value="@((int)DayOfWeek.Saturday)">@DayOfWeek.Saturday.ToString()</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label form__label--flex" for="Cb_PremiseConfig_MinRental_Inherit">
+                                Min nights rental
+                                <InputCheckbox id="Cb_PremiseConfig_MinRental_Inherit" class="form__checkbox--secondary" @bind-Value="_form.MinRental_Inherit" title="Inherit" />
+                                <label for="Cb_PremiseConfig_MinRental_Inherit"><span></span></label>
+                            </label>
+                            @if (_form.MinRental_Inherit)
+                            {
+                                <p>@SelectedItem.MinRental_Days_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.MinRental_Days" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinRental_Days)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Min nights rental note</label>
+                            @if (_form.MinRental_Inherit)
+                            {
+                                if (string.IsNullOrWhiteSpace(SelectedItem.MinRental_Note_Calculated))
+                                {
+                                    <p>n/a</p>
+                                }
+                                else
+                                {
+                                    <p>@Helpers.General.TextToHtml(SelectedItem.MinRental_Note_Calculated)</p>
+                                }
+                            }
+                            else
+                            {
+                                <InputTextArea @bind-Value="_form.MinRental_Note" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.MinRental_Note)" />
+                            }
+                        </div>
+                    </div>
+                    @if (!SelectedItem.Contact_Id.HasValue)
+                    {
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                @if (SelectedItem.Premise_Id.HasValue)
+                                {
+                                    <label class="form__label">Nightly price</label>
+                                }
+                                else
+                                {
+                                    <label class="form__label form__label--flex" for="Cb_PremiseConfig_NightlyPrice_Inherit">
+                                        Nightly price
+                                        <InputCheckbox id="Cb_PremiseConfig_NightlyPrice_Inherit" class="form__checkbox--secondary" @bind-Value="_form.NightlyPrice_Inherit" title="Inherit" />
+                                        <label for="Cb_PremiseConfig_NightlyPrice_Inherit"><span></span></label>
+                                    </label>
+                                }
+                                @if (_form.NightlyPrice_Inherit)
+                                {
+                                    if (SelectedItem.NightlyPrice_Calculated.HasValue)
+                                    {
+                                        <p>@SelectedItem.NightlyPrice_Calculated.ToString()</p>
+                                    }
+                                    else
+                                    {
+                                        <p>n/a</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <InputNumber @bind-Value="_form.NightlyPrice" class="form__input" />
+                                    <ValidationMessage For="@(() => _form.NightlyPrice)" />
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (!SelectedItem.Contact_Id.HasValue)
+                    {
+                        <div class="col col-12">
+                            <div class="form__item">
+                                @if (SelectedItem.Premise_Id.HasValue)
+                                {
+                                    <label class="form__label">Description for quoting</label>
+                                }
+                                else
+                                {
+                                    <label class="form__label form__label--flex" for="Cb_PremiseConfig_DescriptionForQuote_Inherit">
+                                        Description for quoting
+                                        <InputCheckbox id="Cb_PremiseConfig_DescriptionForQuote_Inherit" class="form__checkbox--secondary" @bind-Value="_form.DescriptionForQuote_Inherit" title="Inherit" />
+                                        <label for="Cb_PremiseConfig_DescriptionForQuote_Inherit"><span></span></label>
+                                    </label>
+                                }
+                                @if (_form.DescriptionForQuote_Inherit)
+                                {
+                                    if (string.IsNullOrWhiteSpace(SelectedItem.DescriptionForQuote_Calculated))
+                                    {
+                                        <p>n/a</p>
+                                    }
+                                    else
+                                    {
+                                        <p>@Helpers.General.TextToHtml(SelectedItem.DescriptionForQuote_Calculated)</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <InputTextArea @bind-Value="_form.DescriptionForQuote" class="form__textarea-large" />
+                                    <ValidationMessage For="@(() => _form.DescriptionForQuote)" />
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="col col-12">
+                        <div class="form__item">
+                            @if (SelectedItem.Contact_Id.HasValue)
+                            {
+                                <label class="form__label">House Rules and Internal Notes</label>
+                            }
+                            else
+                            {
+                                <label class="form__label form__label--flex" for="Cb_PremiseConfig_HouseRules_Inherit">
+                                    House Rules (booking confirmations etc only)
+                                    <InputCheckbox id="Cb_PremiseConfig_HouseRules_Inherit" class="form__checkbox--secondary" @bind-Value="_form.HouseRules_Inherit" title="Inherit" />
+                                    <label for="Cb_PremiseConfig_HouseRules_Inherit"><span></span></label>
+                                </label>
+                            }
+                            @if (_form.HouseRules_Inherit)
+                            {
+                                if (string.IsNullOrWhiteSpace(SelectedItem.HouseRules_Calculated))
+                                {
+                                    <p>n/a</p>
+                                }
+                                else
+                                {
+                                    <p>@Helpers.General.TextToHtml(SelectedItem.HouseRules_Calculated)</p>
+                                }
+                            }
+                            else
+                            {
+                                <InputTextArea @bind-Value="_form.HouseRules" class="form__textarea-large" />
+                                <ValidationMessage For="@(() => _form.HouseRules)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12">
+                        <div class="form__item">
+                            @if (SelectedItem.Contact_Id.HasValue)
+                            {
+                                <label class="form__label">Inclusions</label>
+                            }
+                            else
+                            {
+                                <label class="form__label form__label--flex" for="Cb_PremiseConfig_Inclusions_Inherit">
+                                    Inclusions (booking confirmations etc only)
+                                    <InputCheckbox id="Cb_PremiseConfig_Inclusions_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Inclusions_Inherit" title="Inherit" />
+                                    <label for="Cb_PremiseConfig_Inclusions_Inherit"><span></span></label>
+                                </label>
+                            }
+                            @if (_form.Inclusions_Inherit)
+                            {
+                                if (string.IsNullOrWhiteSpace(SelectedItem.Inclusions_Calculated))
+                                {
+                                    <p>n/a</p>
+                                }
+                                else
+                                {
+                                    <p>@Helpers.General.TextToHtml(SelectedItem.Inclusions_Calculated)</p>
+                                }
+                            }
+                            else
+                            {
+                                <InputTextArea @bind-Value="_form.Inclusions" class="form__textarea-large" />
+                                <ValidationMessage For="@(() => _form.Inclusions)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+                <h4 class="form__label--flex" for="Cb_PremiseConfig_Commission_Inherit">
+                    Commission
+                    <InputCheckbox id="Cb_PremiseConfig_Commission_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Commission_Inherit" title="Inherit" />
+                    <label for="Cb_PremiseConfig_Commission_Inherit">Inherit &nbsp;&nbsp;<span></span></label>
+                </h4>
+                <div class="panel__divider"></div>
+                <div class="row">
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Type</label>
+                            @if (_form.Commission_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.Commission_AmountType_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.Commission_AmountType">
+                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Amount</label>
+                            @if (_form.Commission_Inherit)
+                            {
+                                <p>@SelectedItem.Commission_Amount_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.Commission_Amount" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Commission_Amount)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Note</label>
+                            @if (_form.Commission_Inherit)
+                            {
+                                if (string.IsNullOrWhiteSpace(SelectedItem.Commission_Note_Calculated))
+                                {
+                                    <p>n/a</p>
+                                }
+                                else
+                                {
+                                    <p>@Helpers.General.TextToHtml(SelectedItem.Commission_Note_Calculated)</p>
+                                }
+                            }
+                            else
+                            {
+                                <InputTextArea @bind-Value="_form.Commission_Note" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Commission_Note)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+
+                @if (SelectedItem.Contact_Id.HasValue || (SelectedItem.Premise_Id.HasValue && !SelectedItem.Parent_Id.HasValue))
+                {
+                    <h4 class="form__label--flex">Tax</h4>
+                }
+                else
+                {
+                    <h4 class="form__label--flex" for="Cb_PremiseConfig_Tax_Inherit">
+                        Tax
+                        <InputCheckbox id="Cb_PremiseConfig_Tax_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Tax_Inherit" title="Inherit" />
+                        <label for="Cb_PremiseConfig_Tax_Inherit">Inherit &nbsp;&nbsp;<span></span></label>
+                    </h4>
+                }
+                <div class="panel__divider"></div>
+
+                <div class="row">
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Number</label>
+                            @if (_form.Tax_Inherit)
+                            {
+                                <p>@SelectedItem.Tax_Number_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Tax_Number" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Tax_Number)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Exempt</label>
+                            @if (_form.Tax_Inherit)
+                            {
+                                <p>@(SelectedItem.Tax_Exempt_Calculated ? "Yes" : "No")</p>
+                            }
+                            else
+                            {
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_Tax_Exempt" @bind-Value="_form.Tax_Exempt" />
+                                    <label for="Cb_PremiseConfig_Tax_Exempt">Yes</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Percentage</label>
+                            @if (_form.Tax_Inherit)
+                            {
+                                <p>@SelectedItem.Tax_Value_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.Tax_Value" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Tax_Value)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="y-spacer y-spacer__32"></div>
+
+                
+                @if (SelectedItem.Contact_Id.HasValue || (SelectedItem.Premise_Id.HasValue && !SelectedItem.Parent_Id.HasValue))
+                {
+                    <h4 class="form__label--flex">Bank account information</h4>
+                }
+                else
+                {
+                    <h4 class="form__label--flex" for="Cb_PremiseConfig_Bank_Inherit">
+                        Bank account information
+                        <InputCheckbox id="Cb_PremiseConfig_Bank_Inherit" class="form__checkbox--secondary" @bind-Value="_form.Bank_Inherit" title="Inherit" />
+                        <label for="Cb_PremiseConfig_Bank_Inherit">Inherit &nbsp;&nbsp;<span></span></label>
+                    </h4>
+                }
+                <div class="panel__divider"></div>
+
+                <div class="row">
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Account name</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AccountName_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AccountName" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AccountName)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Account number</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AccountNo_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AccountNo" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AccountNo)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Account sort code</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AccountSort_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AccountSort" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AccountSort)" />
+                            }
+                        </div>
+                    </div>
+
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Account IBAN</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AccountIBAN_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AccountIBAN" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AccountIBAN)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Account BIC</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AccountBIC_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AccountBIC" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AccountBIC)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address 1</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_Address1_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_Address1" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_Address1)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address 2</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_Address2_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_Address2" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_Address2)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address 3</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_Address3_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_Address3" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_Address3)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Town</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AddressTown_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AddressTown" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AddressTown)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">County</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AddressCounty_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AddressCounty" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AddressCounty)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Postcode</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AddressPostcode_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AddressPostcode" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AddressPostcode)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Country</label>
+                            @if (_form.Bank_Inherit)
+                            {
+                                <p>@SelectedItem.Bank_AddressCountry_Calculated</p>
+                            }
+                            else
+                            {
+                                <InputText @bind-Value="_form.Bank_AddressCountry" class="form__input" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Bank_AddressCountry)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+
+                <h4 class="form__label--flex" for="Cb_PremiseConfig_PaySchedule_Inherit">
+                    Payment schedule
+                    <InputCheckbox id="Cb_PremiseConfig_PaySchedule_Inherit" class="form__checkbox--secondary" @bind-Value="_form.PaySchedule_Inherit" title="Inherit" />
+                    <label for="Cb_PremiseConfig_PaySchedule_Inherit">Inherit &nbsp;&nbsp;<span></span></label>
+                </h4>
+
+                <div class="panel__divider"></div>
+
+                <div class="row">
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit required</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@(SelectedItem.PaySchedule_Deposit_Required_Calculated ? "Yes" : "No")</p>
+                            }
+                            else
+                            {
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_PaySchedule_Deposit_Required" @bind-Value="_form.PaySchedule_Deposit_Required" />
+                                    <label for="Cb_PremiseConfig_PaySchedule_Deposit_Required">Yes</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit type</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.PaySchedule_Deposit_AmountType_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.PaySchedule_Deposit_AmountType">
+                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit amount</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@SelectedItem.PaySchedule_Deposit_Amount_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.PaySchedule_Deposit_Amount" class="form__input" />
+                                <ValidationMessage For="@(() => _form.PaySchedule_Deposit_Amount)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim required</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@(SelectedItem.PaySchedule_Interim_Required_Calculated ? "Yes" : "No")</p>
+                            }
+                            else
+                            {
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_PaySchedule_Interim_Required" @bind-Value="_form.PaySchedule_Interim_Required" />
+                                    <label for="Cb_PremiseConfig_PaySchedule_Interim_Required">Yes</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim type</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.PaySchedule_Interim_AmountType_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.PaySchedule_Interim_AmountType">
+                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim amount</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@SelectedItem.PaySchedule_Interim_Amount_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.PaySchedule_Interim_Amount" class="form__input" />
+                                <ValidationMessage For="@(() => _form.PaySchedule_Interim_Amount)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Days interim due before arrival</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@SelectedItem.PaySchedule_Interim_Days_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.PaySchedule_Interim_Days" class="form__input" />
+                                <ValidationMessage For="@(() => _form.PaySchedule_Interim_Days)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Days balance due before arrival</label>
+                            @if (_form.PaySchedule_Inherit)
+                            {
+                                <p>@SelectedItem.PaySchedule_Balance_Days_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.PaySchedule_Balance_Days" class="form__input" />
+                                <ValidationMessage For="@(() => _form.PaySchedule_Balance_Days)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+
+                <h4 class="form__label--flex" for="Cb_PremiseConfig_SecurityDeposit_Inherit">
+                    Security deposit
+                    <InputCheckbox id="Cb_PremiseConfig_SecurityDeposit_Inherit" class="form__checkbox--secondary" @bind-Value="_form.SecurityDeposit_Inherit" title="Inherit" />
+                    <label for="Cb_PremiseConfig_SecurityDeposit_Inherit">Inherit &nbsp;&nbsp;<span></span></label>
+                </h4>
+
+                <div class="panel__divider"></div>
+
+                <div class="row">
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Required</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@(SelectedItem.SecurityDeposit_Required_Calculated ? "Yes" : "No")</p>
+                            }
+                            else
+                            {
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox id="Cb_PremiseConfig_SecurityDeposit_Required" @bind-Value="_form.SecurityDeposit_Required" />
+                                    <label for="Cb_PremiseConfig_SecurityDeposit_Required">Yes</label>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Amount type</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.SecurityDeposit_AmountType_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.SecurityDeposit_AmountType">
+                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Amount</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@SelectedItem.SecurityDeposit_Amount_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.SecurityDeposit_Amount" class="form__input" />
+                                <ValidationMessage For="@(() => _form.SecurityDeposit_Amount)" />
+                            }
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Calculate from</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@Core.Enums.Label(SelectedItem.SecurityDeposit_CalcFrom_Calculated)</p>
+                            }
+                            else
+                            {
+                                <div class="form__select">
+                                    <InputSelect @bind-Value="_form.SecurityDeposit_CalcFrom">
+                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Days due before arrival</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@SelectedItem.SecurityDeposit_DaysBeforeDue_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.SecurityDeposit_DaysBeforeDue" class="form__input" />
+                                <ValidationMessage For="@(() => _form.SecurityDeposit_DaysBeforeDue)" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Days refunded after departure</label>
+                            @if (_form.SecurityDeposit_Inherit)
+                            {
+                                <p>@SelectedItem.SecurityDeposit_DaysAfterDue_Calculated.ToString()</p>
+                            }
+                            else
+                            {
+                                <InputNumber @bind-Value="_form.SecurityDeposit_DaysAfterDue" class="form__input" />
+                                <ValidationMessage For="@(() => _form.SecurityDeposit_DaysAfterDue)" />
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Premises.Config SelectedItem { get; set; } = new Core.Premises.Config();
+
+    [Parameter] public EventCallback OnSelectedItemChanged { get; set; }
+
+    private List<Core.Common.Currency> currencies = new List<Core.Common.Currency>();
+
+    private DetailsForm _form = new DetailsForm();
+
+    public class DetailsForm
+    {
+        public bool DescriptionForQuote_Inherit { get; set; } = true;
+        public string DescriptionForQuote { get; set; } = ""; // Property description for quoting
+
+        public bool HouseRules_Inherit { get; set; } = true;
+        public string HouseRules { get; set; } = "";
+
+        public bool Inclusions_Inherit { get; set; } = true;
+        public string Inclusions { get; set; } = "";
+
+        public bool DefaultAvailability_Inherit { get; set; } = true;
+        public Core.Enums.Premises_Premise_Availability DefaultAvailability { get; set; } = Core.Enums.Premises_Premise_Availability.Available;
+
+        public bool RequireBookingApproval_Inherit { get; set; } = true;
+        public bool RequireBookingApproval { get; set; } = false;
+
+        public bool PriceEntryMode_Inherit { get; set; } = true;
+        public Core.Enums.Shared_PriceValueType PriceEntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+
+        public bool Currency_Id_Inherit { get; set; } = true;
+        public int Currency_Id { get; set; } = 0;
+
+        public bool Tax_Inherit { get; set; } = true;
+        public bool Tax_Exempt { get; set; } = false;
+        public decimal? Tax_Value { get; set; } = null;
+        public string Tax_Number { get; set; } = "";
+
+        public bool Bank_Inherit { get; set; } = true;
+        public string Bank_AccountName { get; set; } = "";
+        public string Bank_AccountNo { get; set; } = "";
+        public string Bank_AccountSort { get; set; } = "";
+        public string Bank_AccountIBAN { get; set; } = "";
+        public string Bank_AccountBIC { get; set; } = "";
+        public string Bank_Address1 { get; set; } = "";
+        public string Bank_Address2 { get; set; } = "";
+        public string Bank_Address3 { get; set; } = "";
+        public string Bank_AddressTown { get; set; } = "";
+        public string Bank_AddressCounty { get; set; } = "";
+        public string Bank_AddressPostcode { get; set; } = "";
+        public string Bank_AddressCountry { get; set; } = "";
+
+        public bool Commission_Inherit { get; set; } = true;
+        public Core.Enums.Shared_NumericValueType Commission_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal Commission_Amount { get; set; } = 0;
+        public string Commission_Note { get; set; } = "";
+
+        public bool Checkin_Inherit { get; set; } = true;
+        public TimeSpan? Checkin { get; set; } = null;
+
+        public bool Checkout_Inherit { get; set; } = true;
+        public TimeSpan? Checkout { get; set; } = null;
+
+        public bool ChangeoverDay_Inherit { get; set; } = true;
+        public int ChangeoverDay { get; set; } = -1; // null value represents open/flexible changeover day
+
+        public bool MinRental_Inherit { get; set; } = true;
+        public int MinRental_Days { get; set; } = 3;
+        public string MinRental_Note { get; set; } = "";
+
+        public bool NightlyPrice_Inherit { get; set; } = true;
+        public decimal? NightlyPrice { get; set; } = null;
+
+        public bool PaySchedule_Inherit { get; set; } = true;
+        public bool PaySchedule_Deposit_Required { get; set; } = true;
+        public Core.Enums.Shared_NumericValueType PaySchedule_Deposit_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal PaySchedule_Deposit_Amount { get; set; } = 10;
+
+        public bool PaySchedule_Interim_Required { get; set; } = false;
+        public Core.Enums.Shared_NumericValueType PaySchedule_Interim_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal PaySchedule_Interim_Amount { get; set; } = 20;
+        public int PaySchedule_Interim_Days { get; set; } = 28; // Number of days before arrival the interim is expected.
+
+        public int PaySchedule_Balance_Days { get; set; } = 14;
+
+        public bool SecurityDeposit_Inherit { get; set; } = true;
+        public bool SecurityDeposit_Required { get; set; } = false;
+        public Core.Enums.Shared_NumericValueType SecurityDeposit_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal SecurityDeposit_Amount { get; set; } = 10;
+        public Core.Enums.Shared_PriceValueType SecurityDeposit_CalcFrom { get; set; } = Core.Enums.Shared_PriceValueType.Gross;
+        public int SecurityDeposit_DaysBeforeDue { get; set; } = 7; // number of days before arrival the security deposit is expected
+        public int SecurityDeposit_DaysAfterDue { get; set; } = 7; // number of days after departure the security deposit is expected to be returned
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        currencies = await Core.Common.Currency.FindAllAsync();
+
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        _form = new DetailsForm
+            {
+                DescriptionForQuote_Inherit = SelectedItem.DescriptionForQuote_Inherit,
+                DescriptionForQuote = SelectedItem.DescriptionForQuote,
+
+                HouseRules_Inherit = SelectedItem.HouseRules_Inherit,
+                HouseRules = SelectedItem.HouseRules,
+
+                Inclusions_Inherit = SelectedItem.Inclusions_Inherit,
+                Inclusions = SelectedItem.Inclusions,
+
+                DefaultAvailability_Inherit = SelectedItem.DefaultAvailability_Inherit,
+                DefaultAvailability = SelectedItem.DefaultAvailability_Calculated,
+
+                RequireBookingApproval_Inherit = SelectedItem.RequireBookingApproval_Inherit,
+                RequireBookingApproval = SelectedItem.RequireBookingApproval_Calculated,
+
+                PriceEntryMode_Inherit = SelectedItem.PriceEntryMode_Inherit,
+                PriceEntryMode = SelectedItem.PriceEntryMode_Calculated,
+
+                Currency_Id_Inherit = SelectedItem.Currency_Id_Inherit,
+                Currency_Id = SelectedItem.Currency_Id_Calculated,
+
+                Tax_Inherit = SelectedItem.Tax_Inherit,
+                Tax_Exempt = SelectedItem.Tax_Exempt_Calculated,
+                Tax_Value = SelectedItem.Tax_Value_Calculated,
+                Tax_Number = SelectedItem.Tax_Number_Calculated,
+
+                Bank_Inherit = SelectedItem.Bank_Inherit,
+                Bank_AccountName = SelectedItem.Bank_AccountName_Calculated,
+                Bank_AccountNo = SelectedItem.Bank_AccountNo_Calculated,
+                Bank_AccountSort = SelectedItem.Bank_AccountSort_Calculated,
+                Bank_AccountIBAN = SelectedItem.Bank_AccountIBAN_Calculated,
+                Bank_AccountBIC = SelectedItem.Bank_AccountBIC_Calculated,
+                Bank_Address1 = SelectedItem.Bank_Address1_Calculated,
+                Bank_Address2 = SelectedItem.Bank_Address2_Calculated,
+                Bank_Address3 = SelectedItem.Bank_Address3_Calculated,
+                Bank_AddressTown = SelectedItem.Bank_AddressTown_Calculated,
+                Bank_AddressCounty = SelectedItem.Bank_AddressCounty_Calculated,
+                Bank_AddressPostcode = SelectedItem.Bank_AddressPostcode_Calculated,
+                Bank_AddressCountry = SelectedItem.Bank_AddressCountry_Calculated,
+
+                Commission_Inherit = SelectedItem.Commission_Inherit,
+                Commission_AmountType = SelectedItem.Commission_AmountType_Calculated,
+                Commission_Amount = SelectedItem.Commission_Amount_Calculated,
+                Commission_Note = SelectedItem.Commission_Note_Calculated,
+
+                Checkin_Inherit = SelectedItem.Checkin_Inherit,
+                Checkin = SelectedItem.Checkin_Calculated,
+                Checkout_Inherit = SelectedItem.Checkout_Inherit,
+                Checkout = SelectedItem.Checkout_Calculated,
+                ChangeoverDay_Inherit = SelectedItem.ChangeoverDay_Inherit,
+                ChangeoverDay = SelectedItem.ChangeoverDay_Calculated.HasValue ? (int)SelectedItem.ChangeoverDay_Calculated.Value : -1,
+
+                MinRental_Inherit = SelectedItem.MinRental_Inherit,
+                MinRental_Days = SelectedItem.MinRental_Days_Calculated,
+                MinRental_Note = SelectedItem.MinRental_Note_Calculated,
+
+                NightlyPrice_Inherit = SelectedItem.NightlyPrice_Inherit,
+                NightlyPrice = SelectedItem.NightlyPrice_Calculated,
+
+                PaySchedule_Inherit = SelectedItem.PaySchedule_Inherit,
+                PaySchedule_Deposit_Required = SelectedItem.PaySchedule_Deposit_Required_Calculated,
+                PaySchedule_Deposit_AmountType = SelectedItem.PaySchedule_Deposit_AmountType_Calculated,
+                PaySchedule_Deposit_Amount = SelectedItem.PaySchedule_Deposit_Amount_Calculated,
+                PaySchedule_Interim_Required = SelectedItem.PaySchedule_Interim_Required_Calculated,
+                PaySchedule_Interim_AmountType = SelectedItem.PaySchedule_Interim_AmountType_Calculated,
+                PaySchedule_Interim_Amount = SelectedItem.PaySchedule_Interim_Amount_Calculated,
+                PaySchedule_Interim_Days = SelectedItem.PaySchedule_Interim_Days_Calculated,
+                PaySchedule_Balance_Days = SelectedItem.PaySchedule_Balance_Days_Calculated,
+
+                SecurityDeposit_Inherit = SelectedItem.SecurityDeposit_Inherit,
+                SecurityDeposit_Required = SelectedItem.SecurityDeposit_Required_Calculated,
+                SecurityDeposit_AmountType = SelectedItem.SecurityDeposit_AmountType_Calculated,
+                SecurityDeposit_Amount = SelectedItem.SecurityDeposit_Amount_Calculated,
+                SecurityDeposit_CalcFrom = SelectedItem.SecurityDeposit_CalcFrom_Calculated,
+                SecurityDeposit_DaysBeforeDue = SelectedItem.SecurityDeposit_DaysBeforeDue_Calculated,
+                SecurityDeposit_DaysAfterDue = SelectedItem.SecurityDeposit_DaysAfterDue_Calculated
+            };
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!_form.Currency_Id_Inherit && _form.Currency_Id == 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select a currency." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.DescriptionForQuote_Inherit = _form.DescriptionForQuote_Inherit;
+        SelectedItem.DescriptionForQuote = _form.DescriptionForQuote;
+
+        SelectedItem.HouseRules_Inherit = _form.HouseRules_Inherit;
+        SelectedItem.HouseRules = _form.HouseRules;
+
+        SelectedItem.Inclusions_Inherit = _form.Inclusions_Inherit;
+        SelectedItem.Inclusions = _form.Inclusions;
+
+        SelectedItem.DefaultAvailability_Inherit = _form.DefaultAvailability_Inherit;
+        SelectedItem.DefaultAvailability = _form.DefaultAvailability;
+
+        SelectedItem.RequireBookingApproval_Inherit = _form.RequireBookingApproval_Inherit;
+        SelectedItem.RequireBookingApproval = _form.RequireBookingApproval;
+
+        SelectedItem.PriceEntryMode_Inherit = _form.PriceEntryMode_Inherit;
+        SelectedItem.PriceEntryMode = _form.PriceEntryMode;
+
+        SelectedItem.Currency_Id_Inherit = _form.Currency_Id_Inherit;
+        SelectedItem.Currency_Id = null;
+        if (_form.Currency_Id != 0) { SelectedItem.Currency_Id = _form.Currency_Id; }
+
+        SelectedItem.Tax_Inherit = _form.Tax_Inherit;
+        SelectedItem.Tax_Exempt = _form.Tax_Exempt;
+        SelectedItem.Tax_Value = _form.Tax_Value;
+        SelectedItem.Tax_Number = _form.Tax_Number;
+
+        SelectedItem.Bank_Inherit = _form.Bank_Inherit;
+        SelectedItem.Bank_AccountName = _form.Bank_AccountName;
+        SelectedItem.Bank_AccountNo = _form.Bank_AccountNo;
+        SelectedItem.Bank_AccountSort = _form.Bank_AccountSort;
+        SelectedItem.Bank_AccountIBAN = _form.Bank_AccountIBAN;
+        SelectedItem.Bank_AccountBIC = _form.Bank_AccountBIC;
+        SelectedItem.Bank_Address1 = _form.Bank_Address1;
+        SelectedItem.Bank_Address2 = _form.Bank_Address2;
+        SelectedItem.Bank_Address3 = _form.Bank_Address3;
+        SelectedItem.Bank_AddressTown = _form.Bank_AddressTown;
+        SelectedItem.Bank_AddressCounty = _form.Bank_AddressCounty;
+        SelectedItem.Bank_AddressPostcode = _form.Bank_AddressPostcode;
+        SelectedItem.Bank_AddressCountry = _form.Bank_AddressCountry;
+
+        SelectedItem.Commission_Inherit = _form.Commission_Inherit;
+        SelectedItem.Commission_AmountType = _form.Commission_AmountType;
+        SelectedItem.Commission_Amount = _form.Commission_Amount;
+        SelectedItem.Commission_Note = _form.Commission_Note;
+        
+        SelectedItem.Checkin_Inherit = _form.Checkin_Inherit;
+        SelectedItem.Checkin = _form.Checkin;
+        SelectedItem.Checkout_Inherit = _form.Checkout_Inherit;
+        SelectedItem.Checkout = _form.Checkout;
+        SelectedItem.ChangeoverDay_Inherit = _form.ChangeoverDay_Inherit;
+        SelectedItem.ChangeoverDay = null;
+        
+        SelectedItem.MinRental_Inherit = _form.MinRental_Inherit;
+        SelectedItem.MinRental_Days = _form.MinRental_Days;
+        SelectedItem.MinRental_Note = _form.MinRental_Note;
+
+        SelectedItem.NightlyPrice_Inherit = _form.NightlyPrice_Inherit;
+        SelectedItem.NightlyPrice = _form.NightlyPrice;
+        
+        SelectedItem.PaySchedule_Inherit = _form.PaySchedule_Inherit;
+        SelectedItem.PaySchedule_Deposit_Required = _form.PaySchedule_Deposit_Required;
+        SelectedItem.PaySchedule_Deposit_AmountType = _form.PaySchedule_Deposit_AmountType;
+        SelectedItem.PaySchedule_Deposit_Amount = _form.PaySchedule_Deposit_Amount;
+
+        SelectedItem.PaySchedule_Interim_Required = _form.PaySchedule_Interim_Required;
+        SelectedItem.PaySchedule_Interim_AmountType = _form.PaySchedule_Interim_AmountType;
+        SelectedItem.PaySchedule_Interim_Amount = _form.PaySchedule_Interim_Amount;
+        SelectedItem.PaySchedule_Interim_Days = _form.PaySchedule_Interim_Days;
+
+        SelectedItem.PaySchedule_Balance_Days = _form.PaySchedule_Balance_Days;
+        
+        SelectedItem.SecurityDeposit_Inherit = _form.SecurityDeposit_Inherit;
+        SelectedItem.SecurityDeposit_Required = _form.SecurityDeposit_Required;
+        SelectedItem.SecurityDeposit_AmountType = _form.SecurityDeposit_AmountType;
+        SelectedItem.SecurityDeposit_Amount = _form.SecurityDeposit_Amount;
+        SelectedItem.SecurityDeposit_CalcFrom = _form.SecurityDeposit_CalcFrom;
+        SelectedItem.SecurityDeposit_DaysBeforeDue = _form.SecurityDeposit_DaysBeforeDue;
+        SelectedItem.SecurityDeposit_DaysAfterDue = _form.SecurityDeposit_DaysAfterDue;
+
+        if (_form.ChangeoverDay != -1) { SelectedItem.ChangeoverDay = (DayOfWeek)_form.ChangeoverDay; }
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!(await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full)))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue saving the changes, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            await OnSelectedItemChanged.InvokeAsync();
+
+            Details_Load();
+        }
+        
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        Details_Load();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

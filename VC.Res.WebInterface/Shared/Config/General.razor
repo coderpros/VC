@@ -1,0 +1,123 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+
+<EditForm Model="@_detailsForm" OnValidSubmit="@General_SubmitAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+		<div class="panel__header">
+		    <h4 class="panel__title">General</h4>
+	    </div>
+		<div class="panel__content">
+			<div class="form">
+				<div class="row">
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">Name</label>
+                            <InputText @bind-Value="_detailsForm.Name" class="form__input" />
+                            <ValidationMessage For="@(() => _detailsForm.Name)" />
+						</div>
+					</div>
+					<div class="col col-12 sm-6">
+						<div class="form__item">
+							<label class="form__label">URL</label>
+                            <InputText @bind-Value="_detailsForm.URL" class="form__input" />
+                            <ValidationMessage For="@(() => _detailsForm.URL)" />
+						</div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">API key</label>
+                            <InputText @bind-Value="_detailsForm.APIKey" class="form__input" />
+                            <ValidationMessage For="@(() => _detailsForm.APIKey)" />
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</div>
+	</div>
+            
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_Reset" value="Cancel" >Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save" >Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+
+    private class FormDetails
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        [Url(ErrorMessage = "Invalid url")]
+        public string URL { get; set; } = "";
+
+        public string APIKey { get; set; } = "";
+    }
+
+    private FormDetails _detailsForm = new FormDetails();
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        var obj = Core.Settings.Interface.Fetch;
+
+        _detailsForm = new FormDetails
+            {
+                Name = obj.Name,
+                URL = obj.URL,
+                APIKey = obj.APIKey
+            };
+
+        obj = null;
+    }
+
+    private async Task General_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var obj = new Core.Settings.Interface
+            {
+                Name = _detailsForm.Name.Trim(),
+                URL = _detailsForm.URL.ToLower().Trim().TrimEnd('/'),
+                APIKey = _detailsForm.APIKey
+            };
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!obj.Save())
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the information, please try again or contact support for further assistance.";
+        }
+
+        obj = null;
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_Reset()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

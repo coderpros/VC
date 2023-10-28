@@ -1,0 +1,483 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_frmDetails">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">General</h4>
+        </div>
+
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Name</label>
+                            <InputText @bind-Value="_frmDetails.Name" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Name)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Display name</label>
+                            <InputText @bind-Value="_frmDetails.DisplayName" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.DisplayName)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Group</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Group_Id">
+                                    @{
+                                        <option value="0">None</option>
+                                        foreach (var group in lstGroup)
+                                        {
+                                            <option value="@group.Id">@(group.Name)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address line 1</label>
+                            <InputText @bind-Value="_frmDetails.Address_Line1" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_Line1)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address line 2</label>
+                            <InputText @bind-Value="_frmDetails.Address_Line2" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_Line2)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Address line 3</label>
+                            <InputText @bind-Value="_frmDetails.Address_Line3" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_Line3)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Locality/region</label>
+                            <InputText @bind-Value="_frmDetails.Address_Region" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_Region)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Town/city</label>
+                            <InputText @bind-Value="_frmDetails.Address_Town" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_Town)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Postcode</label>
+                            <InputText @bind-Value="_frmDetails.Address_PostCode" class="form__input" maxlength="20" />
+                            <ValidationMessage For="@(() => _frmDetails.Address_PostCode)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Country</label>
+                            <div class="form__select">
+                                <InputSelect Value="@_frmDetails.Country_Id" ValueExpression="@(() => _frmDetails.Country_Id)" ValueChanged="@((int args) => { _frmDetails.Country_Id = args; CountryChangeHandlerAsync(args); })">
+                                    @{
+                                        <option value="0">Select country</option>
+                                        foreach (var country in lstCountry)
+                                        {
+                                            <option value="@country.Id">@(country.Name)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Website region</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Region_Id">
+                                    @{
+                                        <option value="0">Select region</option>
+                                        foreach (var region in lstRegion)
+                                        {
+                                            <option value="@region.Id">@(region.Name)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Latitude</label>
+                            <InputNumber @bind-Value="_frmDetails.Latitude" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Latitude)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Longitude</label>
+                            <InputNumber @bind-Value="_frmDetails.Longitude" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Longitude)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Guests</label>
+                            <InputNumber @bind-Value="_frmDetails.Guests_Max" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Guests_Max)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Additional guests</label>
+                            <InputNumber @bind-Value="_frmDetails.Guests_Additional" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Guests_Additional)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Size (m2)</label>
+                            <InputNumber @bind-Value="_frmDetails.Size" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Size)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">No. of bathrooms</label>
+                            <InputNumber @bind-Value="_frmDetails.Rooms_NoBathrooms" class="form__input" />
+                            <ValidationMessage For="@(() => _frmDetails.Rooms_NoBathrooms)" />
+                        </div>
+                    </div>
+                    <div class="col col-6 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Licence number</label>
+                            <InputText @bind-Value="_frmDetails.LicenceNo" class="form__input" maxlength="100" />
+                            <ValidationMessage For="@(() => _frmDetails.LicenceNo)" />
+                        </div>
+                    </div>
+                    @if (SessionInfo.Current_User.Access_SysAdmin)
+                    {
+                        <div class="col col-6 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Save to Umbraco</label>
+                                <InputCheckbox @bind-Value="_frmDetails.SaveToUmbraco"/>
+                                <ValidationMessage For="@(() => _frmDetails.SaveToUmbraco)"/>
+                            </div>
+                        </div>
+                    }
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Channel</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Channel">
+                                    @{
+                                        foreach (Core.Enums.Premises_Premise_Channel enumTagType in Enum.GetValues(typeof(Core.Enums.Premises_Premise_Channel)))
+                                        {
+                                            <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Website pricing</h4>
+        </div>
+
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-2">
+                        <div class="form__item">
+                            <label class="form__label">Currency symbol</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Website_Pricing_CurrencySymbol">
+                                    @{
+                                        foreach (var objCurrency in _currencies)
+                                        {
+                                            <option value="@objCurrency.Symbol">@objCurrency.Symbol</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Currency symbol position</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Website_Pricing_CurrencySymbolDisplay">
+                                    @{
+                                        foreach (VC.Shared.Enums.Premises_Premise_WebsiteCurrencyDisplay enumTagType in Enum.GetValues(typeof(VC.Shared.Enums.Premises_Premise_WebsiteCurrencyDisplay)))
+                                        {
+                                            <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-2">
+                        <div class="form__item">
+                            <label class="form__label">Min price</label>
+                            <InputText @bind-Value="_frmDetails.Website_Pricing_Min" class="form__input" maxlength="20" />
+                            <ValidationMessage For="@(() => _frmDetails.Website_Pricing_Min)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-2">
+                        <div class="form__item">
+                            <label class="form__label">Max price</label>
+                            <InputText @bind-Value="_frmDetails.Website_Pricing_Max" class="form__input" maxlength="20" />
+                            <ValidationMessage For="@(() => _frmDetails.Website_Pricing_Max)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Price type</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_frmDetails.Website_Pricing_Type">
+                                    @{
+                                        foreach (VC.Shared.Enums.Premises_Premise_WebsitePricingType enumTagType in Enum.GetValues(typeof(VC.Shared.Enums.Premises_Premise_WebsitePricingType)))
+                                        {
+                                            <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12 align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save" @onclick="@Details_SaveAsync">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    [Parameter] public EventCallback OnSelectedItemChanged { get; set; }
+
+    private class FormDetails
+    {
+        public string Name { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+
+        public string LicenceNo { get; set; } = "";
+
+        public string Address_Line1 { get; set; } = "";
+        public string Address_Line2 { get; set; } = "";
+        public string Address_Line3 { get; set; } = "";
+        public string Address_Town { get; set; } = "";
+        public string Address_Region { get; set; } = "";
+        public string Address_PostCode { get; set; } = "";
+        public int Country_Id { get; set; } = 0;
+        public int Region_Id { get; set; } = 0;
+
+        public decimal? Latitude { get; set; } = null;
+        public decimal? Longitude { get; set; } = null;
+
+        public int Group_Id { get; set; } = 0;
+
+        public int Guests_Max { get; set; } = 0;
+        public int Guests_Additional { get; set; } = 0;
+        public double? Size { get; set; } = null;
+        public int Rooms_NoBathrooms { get; set; } = 0;
+
+        public string Overview { get; set; } = "";
+        public List<string> OtherWebsiteURLs { get; set; } = new List<string>();
+
+        public Core.Enums.Premises_Premise_Channel Channel { get; set; } = Core.Enums.Premises_Premise_Channel.Unknown;
+
+        public string Website_Pricing_CurrencySymbol { get; set; } = "";
+        public VC.Shared.Enums.Premises_Premise_WebsiteCurrencyDisplay Website_Pricing_CurrencySymbolDisplay { get; set; } = VC.Shared.Enums.Premises_Premise_WebsiteCurrencyDisplay.NotSet;
+        public string Website_Pricing_Min { get; set; } = "";
+        public string Website_Pricing_Max { get; set; } = "";
+        public VC.Shared.Enums.Premises_Premise_WebsitePricingType Website_Pricing_Type { get; set; } = VC.Shared.Enums.Premises_Premise_WebsitePricingType.NotSet;
+        public bool SaveToUmbraco { get; set; } = false;
+    }
+
+    private FormDetails _frmDetails = new FormDetails();
+
+    private List<Core.Common.Currency> _currencies = new List<Core.Common.Currency>();
+    private List<Core.Common.Country> lstCountry = new List<Core.Common.Country>();
+    private List<Core.Common.Region> lstRegion = new List<Core.Common.Region>();
+    private List<Core.Premises.Group> lstGroup = new List<Core.Premises.Group>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currencies = await Core.Common.Currency.FindAllAsync();
+        lstCountry = await Core.Common.Country.FindAllAsync();
+        lstGroup = await Core.Premises.Group.FindAllAsync();
+
+        await Details_LoadAsync();
+    }
+
+    private async Task Details_LoadAsync()
+    {
+        _frmDetails = new FormDetails
+            {
+                Name = SelectedItem.Name,
+                DisplayName = SelectedItem.Display_Name,
+
+                LicenceNo = SelectedItem.LicenceNo,
+
+                Address_Line1 = SelectedItem.Address_Line1,
+                Address_Line2 = SelectedItem.Address_Line2,
+                Address_Line3 = SelectedItem.Address_Line3,
+                Address_Town = SelectedItem.Address_Town,
+                Address_Region = SelectedItem.Address_Region,
+                Address_PostCode = SelectedItem.Address_PostCode,
+                Country_Id = SelectedItem.Country_Id.HasValue ? SelectedItem.Country_Id.Value : 0,
+                Region_Id = SelectedItem.Region_Id.HasValue ? SelectedItem.Region_Id.Value : 0,
+                Latitude = SelectedItem.Latitude,
+                Longitude = SelectedItem.Longitude,
+
+                Group_Id = SelectedItem.Group_Id.HasValue ? SelectedItem.Group_Id.Value : 0,
+
+                Guests_Max = SelectedItem.Guests_Max,
+                Guests_Additional = SelectedItem.Guests_Additional,
+                Size = SelectedItem.Size,
+                Rooms_NoBathrooms = SelectedItem.Rooms_NoBathrooms,
+
+                Overview = SelectedItem.Overview,
+                OtherWebsiteURLs = SelectedItem.OtherWebsiteURLs,
+                Channel = SelectedItem.Channel,
+
+                Website_Pricing_CurrencySymbol = SelectedItem.Website_Pricing_CurrencySymbol,
+                Website_Pricing_CurrencySymbolDisplay = SelectedItem.Website_Pricing_CurrencySymbolDisplay,
+                Website_Pricing_Min = SelectedItem.Website_Pricing_Min,
+                Website_Pricing_Max = SelectedItem.Website_Pricing_Max,
+                Website_Pricing_Type = SelectedItem.Website_Pricing_Type,
+                
+                SaveToUmbraco = SelectedItem.SaveToUmbraco
+            };
+
+        if (_frmDetails.Country_Id != 0)
+        {
+            lstRegion = await Core.Common.Region.FindAllBy_CountryAsync(_frmDetails.Country_Id);
+        }
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _frmDetails.Name.Trim();
+        SelectedItem.Display_Name = _frmDetails.DisplayName.Trim();
+
+        SelectedItem.LicenceNo = _frmDetails.LicenceNo.Trim();
+
+        SelectedItem.Address_Line1 = _frmDetails.Address_Line1.Trim();
+        SelectedItem.Address_Line2 = _frmDetails.Address_Line2.Trim();
+        SelectedItem.Address_Line3 = _frmDetails.Address_Line3.Trim();
+        SelectedItem.Address_Town = _frmDetails.Address_Town.Trim();
+        SelectedItem.Address_Region = _frmDetails.Address_Region.Trim();
+        SelectedItem.Address_PostCode = _frmDetails.Address_PostCode.Trim();
+
+        SelectedItem.Country_Id = null;
+        if (_frmDetails.Country_Id != 0) { SelectedItem.Country_Id = _frmDetails.Country_Id; }
+
+        SelectedItem.Region_Id = null;
+        if (_frmDetails.Region_Id != 0) { SelectedItem.Region_Id = _frmDetails.Region_Id; }
+
+        SelectedItem.Latitude = _frmDetails.Latitude;
+        SelectedItem.Longitude = _frmDetails.Longitude;
+
+        SelectedItem.Group_Id = null;
+        if (_frmDetails.Group_Id != 0) { SelectedItem.Group_Id = _frmDetails.Group_Id; }
+
+        SelectedItem.Guests_Max = _frmDetails.Guests_Max;
+        SelectedItem.Guests_Additional = _frmDetails.Guests_Additional;
+        SelectedItem.Size = _frmDetails.Size;
+        SelectedItem.Rooms_NoBathrooms = _frmDetails.Rooms_NoBathrooms;
+
+        SelectedItem.Overview = _frmDetails.Overview.Trim();
+        SelectedItem.OtherWebsiteURLs = _frmDetails.OtherWebsiteURLs;
+        SelectedItem.Channel = _frmDetails.Channel;
+
+        SelectedItem.Website_Pricing_CurrencySymbol = _frmDetails.Website_Pricing_CurrencySymbol;
+        SelectedItem.Website_Pricing_CurrencySymbolDisplay = _frmDetails.Website_Pricing_CurrencySymbolDisplay;
+        SelectedItem.Website_Pricing_Min = _frmDetails.Website_Pricing_Min;
+        SelectedItem.Website_Pricing_Max = _frmDetails.Website_Pricing_Max;
+        SelectedItem.Website_Pricing_Type = _frmDetails.Website_Pricing_Type;
+
+        SelectedItem.SaveToUmbraco = _frmDetails.SaveToUmbraco;
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue updating the item, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            await OnSelectedItemChanged.InvokeAsync();
+
+            await Details_LoadAsync();
+        }
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        await Details_LoadAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+
+    private async Task CountryChangeHandlerAsync(int iCountryId)
+    {
+        if (iCountryId != 0)
+        {
+            lstRegion = await Core.Common.Region.FindAllBy_CountryAsync(iCountryId);
+        }
+        else
+        {
+            lstRegion = new List<Core.Common.Region>();
+        }
+
+        this.StateHasChanged();
+    }
+}

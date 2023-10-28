@@ -1,0 +1,68 @@
+﻿////
+//// HIDDEN
+////
+
+.is-hidden-desktop {
+    display: block;
+
+    @include breakpoint(medium) {
+        display: none;
+    }
+}
+.is-hidden-mobile {
+    display: none;
+
+    @include breakpoint(medium) {
+        display: block;
+    }
+}
+
+
+.is-hidden {
+	display: none;
+}
+
+
+
+@each $name, $value in $breakpoints {
+    .is-hidden__#{$name} {
+        display: block;
+    
+        @include breakpoint($name) {
+            display: none;
+        }
+    }
+}
+@each $name, $value in $breakpoints {
+    .is-hidden__#{$name}-down {
+        display: none;
+    
+        @include breakpoint($name) {
+            display: block;
+        }
+    }
+    .is-hidden__#{$name}-down--inline {
+        display: none;
+    
+        @include breakpoint($name) {
+            display: inline-block;
+        }
+    }
+}
+@each $name, $value in $breakpoints {
+	.is-hidden__#{$name}-up {
+		display: none;
+
+		@include breakpoint($name, false) {
+			display: block;
+		}
+	}
+
+	.is-hidden__#{$name}-up--inline {
+		display: none;
+
+		@include breakpoint($name, false) {
+			display: inline-block;
+		}
+	}
+}

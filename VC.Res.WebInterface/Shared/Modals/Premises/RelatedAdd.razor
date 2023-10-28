@@ -1,0 +1,134 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add @Core.Enums.Label(RelatedType)</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Property</label>
+                                <SfDropDownList @ref="Ddl_Premises" TValue="int?" TItem="Models.DropDownItem" Placeholder="Select a property" ShowClearButton="true" DataSource="@Premises" AllowFiltering="true" @bind-Value="@_form.Premise_Id">
+                                    <DropDownListFieldSettings Text="Text" Value="Value_Int"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="int?" TItem="Models.DropDownItem" Filtering="Ddl_Premises_OnFilter"></DropDownListEvents>
+                                </SfDropDownList>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int PremiseId = 0;
+    private Core.Enums.Premises_Related_Type RelatedType = Core.Enums.Premises_Related_Type.Unknown;
+
+    private ModalForm _form = new ModalForm();
+
+    private List<Models.DropDownItem> Premises { get; set; } = new List<Models.DropDownItem>();
+
+    SfDropDownList<int?, Models.DropDownItem>? Ddl_Premises { get; set; } = new SfDropDownList<int?, Models.DropDownItem>();
+
+    public class ModalForm
+    {
+        public int? Premise_Id { get; set; } = null;
+    }
+
+    public async Task OpenAsync(int iPremiseId, Core.Enums.Premises_Related_Type enumType)
+    {
+        PremiseId = iPremiseId;
+        RelatedType = enumType;
+
+        _form = new ModalForm();
+
+        // setup a list of available premises
+        // get a list of premise ids already assigned
+        var lstAssignedIds = (await Core.Premises.Related.FindAllBy_PremiseAsync(PremiseId, RelatedType)).Select(r => r.Premise_RelatedId).ToList();
+
+        // add this premise to the list of assigned to exclude it from available ones
+        lstAssignedIds.Add(iPremiseId);
+
+        // get a list of premises
+        var lstFilters_Premises = new Core.Utilities.FilterList<Core.Premises.Premise.FilterOption>();
+        lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+        lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Ids, lstAssignedIds, bExclude: true);
+
+        //var lstPremises = await Core.Premises.Premise.ListAsync();
+
+        Premises = new List<Models.DropDownItem>();
+        foreach (var vPremise in await Core.Premises.Premise.ListAsync(lstFilters_Premises.Filters))
+        {
+            Premises.Add(new Models.DropDownItem
+                {
+                    Text = vPremise.Name,
+                    Value_Int = vPremise.Id
+                });
+        }
+
+        lstFilters_Premises = null;
+        lstAssignedIds = null;
+
+        if (Premises.Count > 0)
+        {
+            _visible = true;
+            this.StateHasChanged();
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional properties available to be added." });
+        }
+    }
+
+    private async Task Ddl_Premises_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Premises, Premises, args); }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!_form.Premise_Id.HasValue)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a property." });
+            return;
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        var obj = await Core.Premises.Related.CreateAsync(PremiseId, RelatedType, _form.Premise_Id.Value, SessionInfo.Current_User.Name_Full);
+
+        if (obj != null && obj.Loaded)
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = obj.Id;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

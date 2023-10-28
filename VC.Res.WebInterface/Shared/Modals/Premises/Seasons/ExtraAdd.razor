@@ -1,0 +1,161 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add extra</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Extra</label>
+                                <SfMultiSelect @ref="Ddl_Extras" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select extras" DataSource="@Extras" @bind-Value="@_form.Extras" AllowFiltering="true">
+                                    <MultiSelectFieldSettings Text="Text" Value="Value_Int"></MultiSelectFieldSettings>
+                                    <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_Extra_OnFilter"></MultiSelectEvents>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int SeasonId = 0;
+
+    private List<Models.DropDownItem> Extras { get; set; } = new List<Models.DropDownItem>();
+
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_Extras { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public int[] Extras { get; set; } = Array.Empty<int>();
+    }
+
+    private async Task Ddl_Extra_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Extras, Extras, args); }
+
+    public async Task OpenAsync(int iSeasonId)
+    {
+        SeasonId = iSeasonId;
+
+        _form = new ModalForm();
+
+        // setup a list of available extras
+        await RefreshAsync();
+
+        if (Extras.Count > 0)
+        {
+            _visible = true;
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional extras available." });
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task RefreshAsync()
+    {
+        Extras = new List<Models.DropDownItem>();
+
+        // get the season
+        var objSeason = await Core.Premises.Seasons.Season.FindAsync(SeasonId);
+
+        // get extras already assigned
+        var lstExistingSeasonExtras = await Core.Premises.Seasons.Extra.FindAllBy_SeasonAsync(SeasonId);
+
+        // go through and populate available extras from premise that are not already assigned
+        foreach (var vExtra in await Core.Premises.Extra.FindAllBy_PremiseAsync(objSeason.Premise_Id))
+        {
+            if (lstExistingSeasonExtras.Any(r => r.Extra_Id == vExtra.Id)) { continue; }
+
+            Extras.Add(new Models.DropDownItem
+                {
+                    Text = vExtra.Name,
+                    Value_Int = vExtra.Id
+                });
+        }
+
+        lstExistingSeasonExtras = null;
+        objSeason = null;
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (_form.Extras.Length < 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select an extra." });
+            return;
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        foreach (var iExtraId in _form.Extras)
+        {
+            // find the extra
+            var objExtra = await Core.Premises.Extra.FindAsync(iExtraId);
+
+            if (!objExtra.Loaded || objExtra.Deleted_UTC.HasValue) { continue; }
+
+            var obj = new Core.Premises.Seasons.Extra
+                {
+                    Name = objExtra.Name,
+                    Description = objExtra.Description,
+                    Price_EntryMode = objExtra.Price_EntryMode_Calculated,
+                    Price = objExtra.Price,
+                    Commission_SubjectTo = objExtra.Commission_SubjectTo,
+                    Commission_AmountType = objExtra.Commission_AmountType_Calculated,
+                    Commission_Amount = objExtra.Commission_Amount_Calculated,
+                    Commission_Note = objExtra.Commission_Note,
+                    Tax_Exempt = objExtra.Tax_Exempt_Calculated,
+                    Tax_Value = objExtra.Tax_Value_Calculated
+                };
+
+            if (await obj.CreateAsync(SeasonId, iExtraId, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objResponse.Selected_Ids.Add(obj.Id);
+            }
+
+            obj = null;
+        }
+
+        if (objResponse.Selected_Ids.Count > 0)
+        {
+            objResponse.Successful = true;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

@@ -1,0 +1,51 @@
+﻿@inject Services.SessionInfoService SessionInfo
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Shared.Layouts.NoAuthLayout)" />
+        @*<FocusOnNavigate RouteData="@routeData" Selector="h1" />*@
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(Shared.Layouts.NoAuthLayout)">
+            <div class="login">
+	            <div class="login__window-wrapper">
+		            <div class="login__window">
+			            <div class="login__logo">
+				            <img src="/imgs/Auth-Logo.png" alt=""  />
+			            </div>
+			            <div class="login__header">
+				            <h4 class="login__header-title">404 Error - Page Not Found</h4>
+				            <p class="login__header-intro">We're sorry but the page you are looking for could not be found.</p>
+			            </div>
+                        <div class="login__content">
+				            <p>This might be because:</p>
+				            <ul>
+					            <li>You may have typed the web address incorrectly. Please check the address and spelling ensuring that it does not contain capital letters or spaces.</li>
+					            <li>It is possible that the page you were looking for may have been moved, updated or deleted.</li>
+				            </ul>
+                        </div>
+                        <a href="/" title="Return to the homepage" class="login__button">Return to the Login</a>
+		            </div>
+	            </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code{
+    [Parameter] public string IPAddress { get; set; } = "";
+
+    //[Parameter] public int UserId { get; set; }
+    [Parameter] public int SessionId { get; set; }
+    
+    protected override void OnInitialized()
+    {
+        //System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+        //stopWatch.Start();
+
+        SessionInfo.IPAddress = IPAddress;
+
+        SessionInfo.Configure(SessionId);
+    }
+}

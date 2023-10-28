@@ -1,0 +1,83 @@
+﻿@inject NavigationManager NavigationManager
+
+@if (Mobile)
+{
+    if (Link.SubLinks.Count == 0)
+    {
+        if (Link.Url_Local)
+        {
+            <li class="handheld-navigation__item"><a href="@Link.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(Link.Title)" class="handheld-navigation__link">@Link.Title</a></li>
+        }
+        else
+        {
+            <li class="handheld-navigation__item"><a href="@Link.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(Link.Title)" class="handheld-navigation__link" target="_blank">@Link.Title</a></li>
+        }
+    }
+    else
+    {
+        <li class="handheld-navigation__item">
+            <div class="handheld-navigation__link" data-has-dropdown>
+                @Link.Title
+                <svg class="icon icon--small"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__arrow"></use></svg>
+            </div>
+            <ul class="handheld-navigation__sub-list">
+                @foreach(var vChildLink in Link.SubLinks)
+                {
+                    if (vChildLink.Url_Local)
+                    {
+                        <li class="handheld-navigation__sub-item"><a class="handheld-navigation__sub-link" href="@vChildLink.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(vChildLink.Title)">@vChildLink.Title</a></li>
+                    }
+                    else
+                    {
+                        <li class="handheld-navigation__sub-item"><a class="handheld-navigation__sub-link" href="@vChildLink.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(vChildLink.Title)" target="_blank">@vChildLink.Title</a></li>
+                    }
+                }
+            </ul>
+        </li>
+    }
+}
+else
+{
+    if (Link.SubLinks.Count == 0)
+    {
+        if (Link.Url_Local)
+        {
+            <a href="@Link.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(Link.Title)" class="header__nav-btn"><span class="header__nav-text">@Link.Title</span></a>
+        }
+        else
+        {
+            <a href="@Link.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(Link.Title)" class="header__nav-btn" target="_blank"><span class="header__nav-text">@Link.Title</span></a>
+        }
+    }
+    else
+    {
+        <div title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(Link.Title)" class="header__nav-btn has-dropdown">
+            <span class="header__nav-text">@Link.Title</span>
+            <svg class="icon icon--small"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__arrow"></use></svg>
+            <ul class="header__nav-dropdown">
+                @foreach(var vChildLink in Link.SubLinks)
+                {
+                    if (vChildLink.Url_Local)
+                    {
+                        <li class="header__nav-dropdown-item"><a class="header__nav-dropdown-link" href="@vChildLink.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(vChildLink.Title)">@vChildLink.Title</a></li>
+                    }
+                    else
+                    {
+                        <li class="header__nav-dropdown-item"><a class="header__nav-dropdown-link" href="@vChildLink.Url" title="@VC.Res.Core.Utilities.General.MakeFriendlyTag(vChildLink.Title)" target="_blank">@vChildLink.Title</a></li>
+                    }
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public bool Mobile { get; set; } = false;
+
+    [Parameter] public Models.HeaderLink Link { get; set; } = new Models.HeaderLink();
+
+    //private void NavigateTo()
+    //{
+    //    NavigationManager.NavigateTo(Link.Url, forceLoad: true);
+    //}
+}

@@ -1,0 +1,96 @@
+﻿@page "/contacts/edit/{Id:int}"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject NavigationManager NavigationManager
+
+<PageTitle>Contacts - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_List)" class="sub-header__btn" title="Return to contacts" data-hScroll-item>
+        <svg class="icon icon--small">
+			<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+		</svg>
+		<span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Contacts > Edit: @_SelectedItem.Name_Full</span>
+	</div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_SelectedItem.Loaded)
+        {
+            <SfTab>
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Contacts.Details SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Addresses</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Contacts.Emails SelectedItem=@_SelectedItem />
+                            <VC.Res.WebInterface.Shared.Contacts.Telephones SelectedItem=@_SelectedItem />
+                            <VC.Res.WebInterface.Shared.Contacts.Addresses SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    @*<TabItem Visible="@_Show_PropertyConfig">*@
+                    <TabItem>
+                        <HeaderTemplate>Default Property Config</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Config SelectedItem=@_SelectedConfig />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Property groups</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Contacts.PremiseGroups SelectedItem=@_SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Core.Contacts.Contact _SelectedItem { get; set; } = new Core.Contacts.Contact();
+    private Core.Premises.Config _SelectedConfig { get; set; } = new Core.Premises.Config();
+
+    //private bool _Show_PropertyConfig = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SelectedItem = await Core.Contacts.Contact.FindAsync(Id, bUseCache: false);
+
+        if (!_SelectedItem.Loaded || _SelectedItem.Deleted_UTC.HasValue)
+        {
+            // shouldn't be accessing
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_List));
+            return;
+        }
+        else
+        {
+            _SelectedConfig = await Core.Premises.Config.FindBy_ContactAsync(_SelectedItem.Id);
+        }
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+}

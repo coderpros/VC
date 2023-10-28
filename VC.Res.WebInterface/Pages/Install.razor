@@ -1,0 +1,167 @@
+﻿@page "/install"
+@layout Shared.Layouts.NoAuthLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Install</PageTitle>
+
+<div class="login">
+	<div class="login__window-wrapper">
+		<div class="login__window">
+			<div class="login__logo">
+				<img src="@strLogoUrl" alt=""  />
+			</div>
+			<div class="login__header">
+				<h4 class="login__header-title">Install</h4>
+				<p class="login__header-intro">Please setup an initial user to continue</p>
+			</div>
+
+            <EditForm Model="@_formInstall" OnValidSubmit="@Install_SubmitAsync">
+                <DataAnnotationsValidator />
+                <div class="login__content">
+                    <div class="form__item">
+					    <label for="Tb_Install_SiteName" class="form__label">Site name</label>
+                        <InputText id="Tb_Install_SiteName" @bind-Value="_formInstall.Name" class="form__input" />
+                        <ValidationMessage For="@(() => _formInstall.Name)" />
+				    </div>
+                    <div class="form__item">
+					    <label for="Tb_Install_AdminSiteAddress" class="form__label">Site URL</label>
+                        <InputText id="Tb_Install_AdminSiteAddress" @bind-Value="_formInstall.URL" class="form__input" />
+                        <ValidationMessage For="@(() => _formInstall.URL)" />
+				    </div>
+                    <div class="form__item">
+					    <label for="Tb_Install_Email" class="form__label">Email address</label>
+                        <InputText id="Tb_Install_Email" @bind-Value="_formInstall.Email" class="form__input" type="email" maxlength="50" />
+                        <ValidationMessage For="@(() => _formInstall.Email)" />
+				    </div>
+                    <div class="form__item">
+					    <label for="Tb_Install_FirstName" class="form__label">First name</label>
+                        <InputText id="Tb_Install_FirstName" @bind-Value="_formInstall.FirstName" class="form__input" maxlength="50" />
+                        <ValidationMessage For="@(() => _formInstall.FirstName)" />
+				    </div>
+                    <div class="form__item">
+					    <label for="Tb_Install_LastName" class="form__label">Last name</label>
+                        <InputText id="Tb_Install_LastName" @bind-Value="_formInstall.LastName" class="form__input" maxlength="50" />
+                        <ValidationMessage For="@(() => _formInstall.LastName)" />
+				    </div>
+				    <div class="form__item"> 
+					    <label for="Tb_Install_Password" class="form__label">Password</label>
+                        <InputText id="Tb_Install_Password" @bind-Value="_formInstall.Password" class="form__input" type="password" maxlength="50" autocomplete="nope" />
+                        <ValidationMessage For="@(() => _formInstall.Password)" />
+				    </div>
+				    <div class="form__item"> 
+					    <label for="Tb_Install_PasswordConfirm" class="form__label">Confirm password</label>
+                        <InputText id="Tb_Install_PasswordConfirm" @bind-Value="_formInstall.PasswordCompare" class="form__input" type="password" maxlength="50" autocomplete="nope" />
+                        <ValidationMessage For="@(() => _formInstall.PasswordCompare)" />
+				    </div>
+
+				    <div class="y-spacer y-spacer__16"></div>
+
+                    <button type="submit" class="button button--wide" disabled=@_processing value="Install" >Install</button>
+                </div>
+            </EditForm>
+		</div>
+	</div>
+</div>
+
+@code {
+    private string strLogoUrl = "/imgs/logo-icon.png?width=250&height=150&rmode=max";
+
+    private class FormInstall
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        [Url(ErrorMessage = "Invalid url")]
+        public string URL { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        public string FirstName { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        public string LastName{ get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        [Helpers.CustomDataAnnotations.PasswordLength(ErrorMessage = "10 to 30 characters required")]
+        [Helpers.CustomDataAnnotations.PasswordComplexity(ErrorMessage = "Number, upper and lower case required")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        [Compare("Password", ErrorMessage = "This field does not match")]
+        public string PasswordCompare{ get; set; }
+    }
+
+    private FormInstall _formInstall = new FormInstall();
+
+    protected override void OnInitialized()
+    {
+        if (!Core.UrlHelpers.Interface.HasAccess(Core.UrlHelpers.Interface.Pages.Install, new Core.Users.User()))
+        {
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        _formInstall = new FormInstall
+            {
+                URL = NavigationManager.BaseUri
+            };
+    }
+
+    //protected override async Task OnInitializedAsync()
+    //{
+        
+    //}
+
+    private async Task Install_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        // interface settings
+        var objISettings = new Core.Settings.Interface
+            {
+                Name = _formInstall.Name + " Admin",
+                URL = _formInstall.URL.Trim().TrimEnd('/').ToLower()
+            };
+
+        _ = objISettings.Save();
+
+        // setup initial user
+        var objUser = new Core.Users.User
+            {
+                Email = _formInstall.Email.Trim().ToLower(),
+                Name_First = _formInstall.FirstName.Trim(),
+                Name_Last = _formInstall.LastName.Trim(),
+                TwoFA_Enabled = false,
+                Access_SysAdmin = true,
+                Enabled = true
+            };
+
+        if (!(await objUser.CreateAsync(false, 0)))
+        {
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has being an issue running the initial setup, please contact support." });
+            return;
+        }
+
+        // set the password
+        if (!(await Core.Users.User.Password_SetAsync(objUser.Id, _formInstall.Password, 0, SessionInfo.IPAddress)))
+        {
+            await EndProcessingAsync();
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has being an issue running the initial setup, please contact support." });
+            return;
+        }
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Setup completed, please login to continue." });
+
+        NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+    }
+}

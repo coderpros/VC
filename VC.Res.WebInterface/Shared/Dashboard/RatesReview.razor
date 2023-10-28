@@ -1,0 +1,81 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+@if (_visible)
+{
+    <div class="@Panel_Class">
+        <div class="panel panel--full-height">
+            <div class="panel__header">
+                <h4 class="panel__title">Rates requiring review</h4>
+            </div>
+            <div class="panel__table-wrapper-short">
+                @{
+                    if (_premises.Count > 0)
+                    {
+                        <table class="panel__table">
+                            <tbody>
+                                @foreach (var vPremise in _premises)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: vPremise.Id, dicQuerystringParms: new Dictionary<string, string>{{ "view", "rates" }})">
+                                                @vPremise.Display_Name_Calculated
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="panel__empty-state  panel__empty-state-short">
+                            <div class="panel__empty-state-content">
+                                <h6 class="eyebrow">No properties with rates to review</h6>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Panel_Class { get; set; } = "col col-12 sm-6";
+
+    private List<Core.Premises.Premise> _premises = new List<Core.Premises.Premise>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // may need to apply logic to limit if this panel can be seen
+        _visible = true;
+
+        if (_visible)
+        {
+            await RefreshAsync(bShowSpinner: false);
+        }
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        // find all rates that require review
+        var lstRates = await Core.Premises.Seasons.Rate.FindAllAsync(bReqReview: true, bIncDeleted: false, bIncPast: false);
+
+        if (lstRates.Count > 0)
+        {
+            var lstPremiseIds = lstRates.Select(r => r.Premise_Id).Distinct().ToList();
+
+            _premises = await Core.Premises.Premise.FindAllAsync(lstPremiseIds);
+
+            lstPremiseIds = null;
+        }
+
+        lstRates = null;
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+}

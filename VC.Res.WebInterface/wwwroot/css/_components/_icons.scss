@@ -1,0 +1,83 @@
+////
+//// ICONS
+////
+
+.icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    transition: background-image .25s ease-in-out;
+    fill: currentColor;
+
+    &--standalone {
+        margin: 4px;
+    }
+    ////
+    //// SIZES
+    ////
+    // EXTRA EXTRA LARGE
+    &--xxlarge {
+        background-size: 80px 80px;
+        width: 80px;
+        height: 80px;
+    }
+    // EXTRA LARGE
+    &--xlarge {
+        background-size: 64px 64px;
+        width: 64px;
+        height: 64px;
+    }
+    // LARGE
+    &--large {
+        background-size: 32px 32px;
+        width: 32px;
+        height: 32px;
+    }
+    // SMALL
+    &--small {
+        background-size: 12px 12px;
+        width: 12px;
+        height: 12px;
+    }
+    ////
+    //// COLORS
+    ////
+    &--red {
+        fill: map-get($message-color, error);
+    }
+
+    &--green {
+        fill: map-get($message-color, success);
+    }
+    ////
+    //// VARIENTS
+    ////
+    // ARROW
+    &__arrow {
+
+        &--left {
+            @include transform(rotate(90deg));
+        }
+
+        &--right {
+            @include transform(rotate(-90deg));
+        }
+
+        &--up {
+            @include transform(rotate(180deg));
+        }
+    }
+
+    &__rotate90 {
+        @include transform(rotate(90deg));
+    }
+
+    &__rotate180 {
+        @include transform(rotate(180deg));
+    }
+
+    &__rotate270 {
+        @include transform(rotate(270deg));
+    }
+}

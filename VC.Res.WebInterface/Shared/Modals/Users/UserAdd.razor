@@ -1,0 +1,138 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add user</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Email address</label>
+                                <InputText @bind-Value="_form.Email" class="form__input" type="email" maxlength="50" />
+                                <ValidationMessage For="@(() => _form.Email)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">First name</label>
+                                <InputText @bind-Value="_form.FirstName" class="form__input" maxlength="50" />
+                                <ValidationMessage For="@(() => _form.FirstName)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Last name</label>
+                                <InputText @bind-Value="_form.LastName" class="form__input" maxlength="50" />
+                                <ValidationMessage For="@(() => _form.LastName)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string LastName { get; set; } = "";
+    }
+
+    public void Open()
+    {
+        _form = new ModalForm();
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse { Message_Type = Models.ToastNotification.Types.Error, Message_Wording = "We're sorry but there has been an error adding the item, please try again or contact support for further assistance." };
+
+        // initial email lookup
+        var obj = await Core.Users.User.FindAsync(_form.Email);
+
+        if (obj.Loaded)
+        {
+            // user already exists, check if deleted and if so undelete.
+            if (obj.Deleted_UTC.HasValue)
+            {
+                // undelete the user
+                if (await Core.Users.User.DeleteAsync(obj.Id, SessionInfo.Current_User.Id, bDeleted: false))
+                {
+                    objResponse.Successful = true;
+                    objResponse.Selected_Id = obj.Id;
+                }
+            }
+            else
+            {
+                // already a valid user
+                objResponse.Message_Type = Models.ToastNotification.Types.Warning;
+                objResponse.Message_Wording = "User already exists.";
+            }
+        }
+        else
+        {
+            // need to create the user
+            obj = new Core.Users.User
+                {
+                    Email = _form.Email.Trim().ToLower(),
+                    Name_First = _form.FirstName.Trim(),
+                    Name_Last = _form.LastName.Trim(),
+                    TwoFA_Enabled = false,
+                    Access_SysAdmin = false,
+                    Enabled = true
+                };
+
+            if (await obj.CreateAsync(true, SessionInfo.Current_User.Id))
+            {
+                objResponse.Successful = true;
+                objResponse.Selected_Id = obj.Id;
+            }
+        }
+
+        obj = null;
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+}

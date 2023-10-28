@@ -1,0 +1,131 @@
+﻿@page "/properties/seasons/edit/{PremiseId:int}/{SeasonId:int}"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Properties - Season - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: PremiseId, dicQuerystringParms: new Dictionary<string, string> { { "view", "seasons" } })" class="sub-header__btn" title="Return to property" data-hScroll-item>
+        <svg class="icon icon--small">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+        </svg>
+        <span class="sub-header__btn-text">Back to property</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Properties > Edit: @_SelectedPremise.Name > Season: @_SelectedItem.Name</span>
+    </div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_SelectedItem.Loaded)
+        {
+            <SfTab @bind-SelectedItem=@SelectedTabIndex>
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.Details SelectedItem=@_SelectedItem OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Rates</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesProvisionalRefresh Title="Provisional" SelectedPremise=@_SelectedPremise SelectedSeason=@_SelectedItem ShowEmpty="false" ShowPast="false" ShowProvisional="true" OnChanged="ProvisionalRatesChangedHandler" />
+
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesReviewRefresh Title="Require review" SelectedPremise=@_SelectedPremise SelectedSeason=@_SelectedItem ShowEmpty="false" ShowPast="false" ShowReqReview="true" OnChanged="ReviewRatesChangedHandler" />
+
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.RatesEditable RefreshCount=@_ratesGeneralRefresh SelectedPremise=@_SelectedPremise SelectedSeason=@_SelectedItem ShowEmpty="true" ShowPast="true" OnChanged="GeneralRatesChangedHandler" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Extras</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Seasons.Extras SelectedItem="@_SelectedItem" />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Settings</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Premises.Config SelectedItem=@_SelectedConfig OnSelectedItemChanged="SelectedItemChangedHandlerAsync" />
+                        </ContentTemplate>
+                    </TabItem>
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int PremiseId { get; set; }
+    [Parameter] public int SeasonId { get; set; }
+
+    private int SelectedTabIndex { get; set; } = 0;
+
+    private Core.Premises.Seasons.Season _SelectedItem { get; set; } = new Core.Premises.Seasons.Season();
+    private Core.Premises.Premise _SelectedPremise { get; set; } = new Core.Premises.Premise();
+    private Core.Premises.Config _SelectedConfig { get; set; } = new Core.Premises.Config();
+
+    private int _ratesProvisionalRefresh = 0;
+    private int _ratesReviewRefresh = 0;
+    private int _ratesGeneralRefresh = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SelectedPremise = await Core.Premises.Premise.FindAsync(PremiseId, bUseCache: false);
+        _SelectedItem = await Core.Premises.Seasons.Season.FindAsync(SeasonId, bUseCache: false);
+
+        if (!_SelectedPremise.Loaded || _SelectedPremise.Deleted_UTC.HasValue || !_SelectedItem.Loaded || _SelectedItem.Deleted_UTC.HasValue || _SelectedItem.Premise_Id != _SelectedPremise.Id)
+        {
+            // shouldn't be accessing
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: PremiseId, dicQuerystringParms: new Dictionary<string, string> { { "view", "seasons" } }));
+            return;
+        }
+        else
+        {
+            _SelectedConfig = await Core.Premises.Config.FindBy_SeasonAsync(_SelectedItem.Id);
+        }
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+
+    private async Task SelectedItemChangedHandlerAsync()
+    {
+        _ = await _SelectedItem.RefreshAsync();
+        _ = await _SelectedPremise.RefreshAsync();
+        _ = await _SelectedConfig.RefreshAsync();
+    }
+
+    private void ProvisionalRatesChangedHandler()
+    {
+        _ratesReviewRefresh++;
+        _ratesGeneralRefresh++;
+    }
+
+    private void ReviewRatesChangedHandler()
+    {
+        _ratesProvisionalRefresh++;
+        _ratesGeneralRefresh++;
+    }
+
+    private void GeneralRatesChangedHandler()
+    {
+        _ratesProvisionalRefresh++;
+        _ratesReviewRefresh++;
+    }
+}

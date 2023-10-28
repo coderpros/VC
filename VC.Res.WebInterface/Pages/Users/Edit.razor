@@ -1,0 +1,75 @@
+﻿@page "/users/edit/{Id:int}"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Syncfusion.Blazor.Navigations
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Users - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Users_List)" class="sub-header__btn" title="Return to users" data-hScroll-item>
+        <svg class="icon icon--small">
+			<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+		</svg>
+		<span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Users > Edit: @_SelectedUser.Name_Full</span>
+	</div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_SelectedUser.Loaded)
+        {
+            <SfTab>
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Users.Details SelectedUser=@_SelectedUser />
+                        </ContentTemplate>
+                    </TabItem>
+
+                    <TabItem>
+                        <HeaderTemplate>Password</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Users.Password SelectedUser=@_SelectedUser />
+                        </ContentTemplate>
+                    </TabItem>
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Core.Users.User _SelectedUser { get; set; } = new Core.Users.User();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SelectedUser = await Core.Users.User.FindAsync(Id, bUseCache: false);
+
+        if (!_SelectedUser.Loaded || _SelectedUser.Deleted_UTC.HasValue || _SelectedUser.Id == SessionInfo.Current_User.Id)
+        {
+            // shouldn't be accessingi this user
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Users_List));
+        }
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+}

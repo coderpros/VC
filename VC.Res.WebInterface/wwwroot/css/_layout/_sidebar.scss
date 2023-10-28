@@ -1,0 +1,48 @@
+////
+//// SIDEBAR
+////
+
+.sidebar {
+    $self: &;
+
+    padding: 24px;
+    box-sizing: border-box;
+    min-height: 100%;
+
+    &__wrapper {
+        min-width: 300px;
+        max-width: 300px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        box-sizing: border-box;
+        z-index: 1;
+        background-color: $mono-1100;
+        color: $mono-0;
+        padding: 0;
+        //max-height: 100vh;
+
+        &.js-hidden {
+            width: 0;
+            overflow: hidden;
+            min-width: 0;
+            max-width: 0;
+            left: -300px;
+        }
+
+        @include breakpoint(md) {
+            position: relative;
+            left: 0;
+            min-width: 300px;
+            max-width: 300px;
+        }
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: $mono-0;
+    }
+
+    p {
+        color: rgba($mono-0, 0.6);
+    }
+}

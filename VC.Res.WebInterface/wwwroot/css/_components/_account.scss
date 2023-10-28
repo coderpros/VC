@@ -1,0 +1,128 @@
+////
+//// ACCOUNT 
+////
+
+.account {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 15;
+    overflow-y: auto;
+    overflow-x: hidden;
+    //height: 100%;
+    height: calc(100% - 99px);
+    width: 100%;
+
+    &__window {
+        cursor: default;
+        position: relative;
+        width: 100%;
+
+        &-wrapper {
+            position: relative;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            min-height: calc(100% - 48px);
+            margin: auto;
+            max-width: 330px;
+            padding: 24px 24px;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+    }
+
+    &__logo {
+        padding: 0 24px 24px;
+
+        svg {
+            margin: 0 auto;
+            display: block;
+        }
+
+        img {
+            margin: 0 auto;
+            display: block;
+        }
+    }
+
+    &__header {
+        padding: 24px;
+        border-top: 3px solid $primary-color;
+        border-radius: 3px 3px 0 0;
+        text-align: center;
+        background-color: $mono-0;
+
+        &-title {
+            margin-bottom: 5px;
+        }
+
+        &-intro {
+            margin-bottom: 0 !important;
+        }
+    }
+
+    &__content {
+        padding: 16px 24px 24px 24px;
+        border-radius: 0 0 3px 3px;
+        background-color: $mono-0;
+    }
+
+    &__selection-item {
+        border: 1px solid $mono-300;
+        border-bottom: 0;
+        display: block;
+        padding: 16px 16px 16px 56px;
+        color: $mono-700;
+        position: relative;
+
+        &:before {
+            content: "";
+            width: 22px;
+            height: 22px;
+            position: absolute;
+            top: 17px;
+            left: 16px;
+            border-radius: 100px;
+            background-color: $mono-0;
+            border: 1px solid $mono-300;
+        }
+
+        &:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+
+        &:last-child {
+            border-radius: 0 0 4px 4px;
+            border-bottom: 1px solid $mono-300;
+        }
+
+        &:hover {
+            background-color: $mono-200;
+
+            &:before {
+                background-color: $primary-color;
+            }
+
+            &:after {
+                content: "";
+                width: 6px;
+                height: 6px;
+                position: absolute;
+                top: 25px;
+                left: 24px;
+                border-radius: 100px;
+                background-color: $mono-0;
+                border: 1px solid $mono-300;
+            }
+        }
+    }
+}

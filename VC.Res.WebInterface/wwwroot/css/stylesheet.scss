@@ -1,0 +1,220 @@
+﻿//////////////////////////////////////////
+//// GRIDSTA - FRONT END DEVELOPMENT STARTER KIT
+//// Created by Jordan Sayner
+//// http://gridsta.jordansayner.co.uk
+//////////////////////////////////////////
+
+////
+//// FONTS
+////
+
+// Import you font family here - @import url('https://fonts.googleapis.com/css?family=Roboto');
+//@import url('');
+
+
+
+////
+//// CONFIG
+////
+
+// Import your config variables here
+@import '_config/_config';
+
+
+
+////
+//// DEBUG
+////
+
+// Import your debug file here
+@import '_debug/_debug';
+
+
+
+////
+//// MIXINS
+////
+
+// Import your mixins here
+@import '_mixins/_flexbox/_flexbox-bottom';
+@import '_mixins/_flexbox/_flexbox-center';
+@import '_mixins/_flexbox/_flexbox-container--inline';
+@import '_mixins/_flexbox/_flexbox-container';
+@import '_mixins/_flexbox/_flexbox-direction';
+@import '_mixins/_flexbox/_flexbox-end';
+@import '_mixins/_flexbox/_flexbox-flow-oppersite';
+@import '_mixins/_flexbox/_flexbox-item--auto';
+@import '_mixins/_flexbox/_flexbox-item--fill';
+@import '_mixins/_flexbox/_flexbox-item--fit';
+@import '_mixins/_flexbox/_flexbox-item';
+@import '_mixins/_flexbox/_flexbox-middle';
+@import '_mixins/_flexbox/_flexbox-order';
+@import '_mixins/_flexbox/_flexbox-space-around';
+@import '_mixins/_flexbox/_flexbox-space-between';
+@import '_mixins/_flexbox/_flexbox-start';
+@import '_mixins/_flexbox/_flexbox-stretch';
+@import '_mixins/_flexbox/_flexbox-top';
+@import '_mixins/_flexbox/_flexbox-wrap';
+
+@import '_mixins/_aspect-ratio';
+@import '_mixins/_embed-responsively';
+@import '_mixins/_flexbox-container';
+@import '_mixins/_linear-gradient';
+@import '_mixins/_media-queries';
+@import '_mixins/_opacity';
+@import '_mixins/_placeholder';
+@import '_mixins/_responsive-text';
+@import '_mixins/_svg';
+@import '_mixins/_tint-shade';
+@import '_mixins/_transform';
+@import '_mixins/_transitions';
+
+
+
+////
+//// BASE
+////
+
+// Import your base files here
+@import '_base/_reset';
+@import '_base/_type';
+@import '_base/_base';
+
+
+
+////
+//// GRID
+////
+
+// Import your grid here
+@import '_grid/_grid';
+
+
+
+////
+//// LAYOUT
+////
+
+// Import your layout files here
+@import '_layout/_header';
+@import '_layout/_main-content';
+@import '_layout/_sidebar';
+@import '_layout/_sub-header';
+@import '_layout/_footer';
+
+
+
+////
+//// COMPONENTS
+////
+
+// Import your components here
+// @import '_components';
+@import '_components/_accordion';
+@import '_components/_account';
+@import '_components/_buttons';
+@import '_components/_card';
+@import '_components/_dropdown';
+@import '_components/_form';
+@import '_components/_floating-panel';
+@import '_components/_handheld-navigation';
+@import '_components/_icons';
+@import '_components/_login';
+@import '_components/_modal';
+@import '_components/_pagination';
+@import '_components/_panel';
+@import '_components/_scrolling-element';
+@import '_components/_table';
+@import '_components/_tooltip';
+
+
+
+////
+//// HELPERS
+////
+
+// Import your helpers here
+@import '_helpers/_floats';
+@import '_helpers/_hidden';
+@import '_helpers/_no-scroll';
+@import '_helpers/_spacers';
+@import '_helpers/_text-alignment';
+@import '_helpers/_utilities';
+
+
+
+////
+//// VENDORS
+////
+
+// Import you vendors here
+// @import 'vendors/';
+@import 'vendors/_notey-fi';
+@import 'vendors/_tooltipster';
+@import 'vendors/_jquery.scrollbar';
+
+
+
+
+.chevron {
+    position: relative;
+    margin: 0 10px;
+    display: none;
+
+    @include breakpoint(md) {
+        display: inline-block;
+    }
+
+    &:before {
+        content: "";
+        position: absolute;
+        top: -17px;
+        left: -27px;
+        height: 27px;
+        width: 35px;
+        border-right: 1px solid $mono-300;
+        border-top: 1px solid $mono-300;
+        transform: rotate(67deg) skew(45deg);
+        //opacity: 0.2;
+    }
+}
+
+
+// HACK - Resolve Filemanger height issue within a dialog for image picker
+.imagePicker {
+    .e-splitter {
+        height: 359px !important;
+    }
+}
+
+.sfGrid--noHeader {
+    border-width: 0px;
+
+    .e-gridheader {
+        display: none;
+    }
+
+    .e-gridheader .e-columnheader {
+        display: none;
+    }
+}
+
+.e-tooltip {
+    display:inline;
+}
+
+// Fix for e-spin not getting centered of window
+.e-spin-fixedPosition {
+    position: fixed !important;
+    z-index: 99999 !important;
+}
+
+// fix for dialog overlays
+.e-dlg-overlay {
+    z-index: -1 !important;
+    display: unset !important;
+}
+
+.text-danger {
+    color: map-get($message-color, error);
+}

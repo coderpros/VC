@@ -1,0 +1,258 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<EditForm Model="@_detailsForm" OnValidSubmit="@Details_SaveAsync">
+<DataAnnotationsValidator />
+    <div class="panel">
+	    <div class="panel__header">
+		    <h4 class="panel__title">General</h4>
+	    </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12">
+                        <div class="form__item">
+                            <label class="form__label">Email address</label>
+                            <InputText @bind-Value="_detailsForm.Email" class="form__input" type="email" maxlength="50" />
+                            <ValidationMessage For="@(() => _detailsForm.Email)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">First name</label>
+                            <InputText @bind-Value="_detailsForm.FirstName" class="form__input" maxlength="50" />
+                            <ValidationMessage For="@(() => _detailsForm.FirstName)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Last name</label>
+                            <InputText @bind-Value="_detailsForm.LastName" class="form__input" maxlength="50" />
+                            <ValidationMessage For="@(() => _detailsForm.LastName)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+	    <div class="panel__header">
+		    <h4 class="panel__title">Two factor authentication</h4>
+	    </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Required</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_Details_TwoFAEnabled" @bind-Value="_detailsForm.TwoFA_Required" />
+                                <label for="Cb_Details_TwoFAEnabled">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Method @*<span class="tooltip tooltipster" title="Text message can only be used if a Mobile tel no. is entered and it has been set as verified."></span>*@</label>
+						    <div class="form__select">
+                                <InputSelect @bind-Value="_detailsForm.TwoFA_Methods">
+                                    <option value="@Core.Enums.Shared_TwoFAMethod.Disabled">Disabled</option>
+                                    <option value="@Core.Enums.Shared_TwoFAMethod.Email">Email</option>
+                                    @*<option value="20">Text Message</option>*@
+                                </InputSelect>
+						    </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Mobile tel no.</label>
+                            <InputText @bind-Value="_detailsForm.Mobile_No" class="form__input" maxlength="20" />
+                            <ValidationMessage For="@(() => _detailsForm.Mobile_No)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Mobile tel no. status @*<span class="tooltip tooltipster" title="This manually sets if the mobile tel no. entered is valid and can be used as a method for 2FA authentication."></span>*@</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_Details_TwoFAMobileVerified" @bind-Value="_detailsForm.Mobile_Verified" />
+                                <label for="Cb_Details_TwoFAMobileVerified">Verified</label>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+	    <div class="panel__header">
+		    <h4 class="panel__title">Access</h4>
+	    </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-2">
+                        <div class="form__item">
+                            <label class="form__label">Enabled</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_Details_AccessEnabled" @bind-Value="_detailsForm.Access_Enabled" />
+                                <label for="Cb_Details_AccessEnabled">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-2">
+                        <div class="form__item">
+                            <label class="form__label">System admin</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_Details_AccessSysAdmin" @bind-Value="_detailsForm.Access_SysAdmin" />
+                                <label for="Cb_Details_AccessSysAdmin">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel" >Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public Core.Users.User SelectedUser { get; set; } = new Core.Users.User();
+
+    private class FormDetails
+    {
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string LastName { get; set; } = "";
+
+        public bool TwoFA_Required { get; set; } = false;
+
+        public Core.Enums.Shared_TwoFAMethod TwoFA_Methods { get; set; } = Core.Enums.Shared_TwoFAMethod.Disabled;
+
+        public string Mobile_No { get; set; } = "";
+
+        public bool Mobile_Verified{ get; set; } = false;
+
+        public bool Access_SysAdmin { get; set; } = false;
+
+        public bool Access_Enabled { get; set; } = false;
+    }
+
+    private FormDetails _detailsForm = new FormDetails();
+
+    protected override void OnInitialized()
+    {
+        Details_Load();
+    }
+
+    //protected override async Task OnInitializedAsync()
+    //{
+
+    //}
+
+    private void Details_Load()
+    {
+        _detailsForm = new FormDetails
+            {
+                Email = SelectedUser.Email,
+                FirstName = SelectedUser.Name_First,
+                LastName = SelectedUser.Name_Last,
+                TwoFA_Required = SelectedUser.TwoFA_Enabled,
+                TwoFA_Methods = SelectedUser.TwoFA_Method,
+                Mobile_No = SelectedUser.Tel_Mobile,
+                Mobile_Verified = SelectedUser.Tel_Mobile_Verified,
+                Access_SysAdmin = SelectedUser.Access_SysAdmin,
+                Access_Enabled = SelectedUser.Enabled
+            };
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        await SelectedUser.RefreshAsync();
+
+        var bSaveUser = false;
+
+        if (_detailsForm.Email.Trim().ToLower() != SelectedUser.Email)
+        {
+            if (!(await Core.Users.User.Check_UniqueEmailAsync(_detailsForm.Email.Trim())))
+            {
+                await EndProcessingAsync();
+
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "We're sorry but this email address is already in use by another account." });
+                return;
+            }
+        }
+
+        if (_detailsForm.Email.ToLower().Trim() != SelectedUser.Email) { SelectedUser.Email = _detailsForm.Email.Trim(); bSaveUser = true; }
+
+        if (_detailsForm.FirstName.Trim() != SelectedUser.Name_First) { SelectedUser.Name_First = _detailsForm.FirstName.Trim(); bSaveUser = true; }
+
+        if (_detailsForm.LastName.Trim() != SelectedUser.Name_Last) { SelectedUser.Name_Last = _detailsForm.LastName.Trim(); bSaveUser = true; }
+
+        if (_detailsForm.TwoFA_Required != SelectedUser.TwoFA_Enabled) { SelectedUser.TwoFA_Enabled = _detailsForm.TwoFA_Required; bSaveUser = true; }
+
+        if (_detailsForm.TwoFA_Methods != SelectedUser.TwoFA_Method) { SelectedUser.TwoFA_Method = _detailsForm.TwoFA_Methods; bSaveUser = true; }
+
+        if (Core.Utilities.General.MakeFriendlyTelNo(_detailsForm.Mobile_No) != SelectedUser.Tel_Mobile) { SelectedUser.Tel_Mobile = _detailsForm.Mobile_No.Trim(); bSaveUser = true; }
+
+        if (_detailsForm.Mobile_Verified != SelectedUser.Tel_Mobile_Verified) { SelectedUser.Tel_Mobile_Verified = _detailsForm.Mobile_Verified; bSaveUser = true; }
+
+        if (_detailsForm.Access_SysAdmin != SelectedUser.Access_SysAdmin) { SelectedUser.Access_SysAdmin = _detailsForm.Access_SysAdmin; bSaveUser = true; }
+
+        if (_detailsForm.Access_Enabled != SelectedUser.Enabled) { SelectedUser.Enabled = _detailsForm.Access_Enabled; bSaveUser = true; }
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (bSaveUser)
+        {
+            if (!(await SelectedUser.SaveAsync(SessionInfo.Current_User.Id)))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Error;
+                objMessage.Message = "We're sorry but there has been an issue updating the account information, please try again or contact support for further assistance.";
+            }
+        }
+
+        await SelectedUser.RefreshAsync();
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Details_Load();
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

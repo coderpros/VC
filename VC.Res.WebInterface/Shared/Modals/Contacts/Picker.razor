@@ -1,0 +1,286 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="750px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Select contact</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">First Name</label>
+                                <InputText @bind-Value="_form.Name_First" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name_First)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Last Name</label>
+                                <InputText @bind-Value="_form.Name_Last" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name_Last)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Company</label>
+                                <InputText @bind-Value="_form.Company" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Company)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Email address</label>
+                                <InputText @bind-Value="_form.Email" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Email)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">Role</label>
+                                <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select role" @bind-Value="_form.Categories" Mode="VisualMode.CheckBox" DataSource="@_categories">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="y-spacer y-spacer__16"></div>
+                    <div class="row">
+                        <div class="col col-12  align--right">
+                            <button type="submit" class="button" disabled=@_processing value="Search" @onclick="@SearchClickAsync">Search</button>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+            <div class="y-spacer y-spacer__16"></div>
+
+            <SfGrid @ref="@_sfGrid" DataSource="@_contacts.Elements" AllowTextWrap="true" AllowSelection="true">
+                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                <GridSelectionSettings Type="@GridSelectionType"></GridSelectionSettings>
+                <GridColumns>
+                    @*<GridColumn Type="ColumnType.CheckBox" Width="40px" Visible="@MultipleSelect" />*@
+                    <GridColumn Field=@nameof(Core.Contacts.Contact.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                    <GridColumn Field=@nameof(Core.Contacts.Contact.Name_Full) HeaderText="Name"></GridColumn>
+                    <GridColumn Field=@nameof(Core.Contacts.Contact.CompanyName) HeaderText="Company"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (CreateNew)
+        {
+            <DialogButton Content="Create contact" Disabled=@_processing OnClick="@RequestAdd" />
+        }
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Select" Disabled=@_processing IsPrimary="true" OnClick="@SelectClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+<VC.Res.WebInterface.Shared.Modals.Contacts.ContactAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+@code {
+    private bool CreateNew { get; set; } = false;
+    private bool MultipleSelect { get; set; } = false;
+    private SelectionType GridSelectionType { get; set; } = SelectionType.Single;
+    private List<int>? ContactIds_Excluded { get; set; } = null;
+
+    private List<Models.DropDownItem> _categories { get; set; } = new List<Models.DropDownItem>();
+
+    private SfGrid<Core.Contacts.Contact>? _sfGrid;
+    private Core.Utilities.PagedData<Core.Contacts.Contact> _contacts = new Core.Utilities.PagedData<Core.Contacts.Contact>(0);
+
+    private Shared.Modals.Contacts.ContactAdd? _modalAdd = null;
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public string Name_First { get; set; } = "";
+
+        public string Name_Last { get; set; } = "";
+
+        public string Company { get; set; } = "";
+
+        public string Email { get; set; } = "";
+
+        public int[] Categories { get; set; } = new int[] { };
+    }
+
+    protected override void OnInitialized()
+    {
+        //Category DDL
+        foreach (Core.Enums.Contacts_Contact_Category enumContactCategory in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_Category)))
+        {
+            _categories.Add(new Models.DropDownItem
+                {
+                    Text = Core.Enums.Label(enumContactCategory),
+                    Value_Int = (int)enumContactCategory
+                });
+        }
+        _categories = _categories.OrderBy(r => r.Text).ToList();
+    }
+
+    public void Open(bool bMultipleSelect = false, bool bCreateNew = false, List<int>? lstExclusionIds = null)
+    {
+        _form = new ModalForm();
+        _contacts = new Core.Utilities.PagedData<Core.Contacts.Contact>(0);
+
+        MultipleSelect = bMultipleSelect;
+        GridSelectionType = bMultipleSelect ? SelectionType.Multiple : SelectionType.Single;
+
+        CreateNew = bCreateNew;
+
+        ContactIds_Excluded = lstExclusionIds;
+
+        _visible = true;
+        this.StateHasChanged();
+    }
+
+    private async Task SearchClickAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var lstFilters_Contact = new Core.Utilities.FilterList<Core.Contacts.Contact.FilterOption>();
+        lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+
+        if (!string.IsNullOrWhiteSpace(_form.Name_First))
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Name_First, _form.Name_First);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_form.Name_Last))
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Name_Last, _form.Name_Last);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_form.Company))
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Company, _form.Company);
+        }
+
+        if (_form.Categories.Length > 0)
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Categories, Core.Utilities.General.ConvertToListEnums<Core.Enums.Contacts_Contact_Category>(_form.Categories.ToList()));
+        }
+
+        if (ContactIds_Excluded != null)
+        {
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Ids, ContactIds_Excluded, bExclude: true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_form.Email))
+        {
+            // do a search of email addresses for contact ids
+            var lstEmailContactIds = (await Core.Contacts.Email.FindAll(_form.Email)).Select(r => r.Contact_Id).ToList();
+
+            lstFilters_Contact.Add(Core.Contacts.Contact.FilterOption.Ids, lstEmailContactIds);
+        }
+
+        _contacts = await Core.Contacts.Contact.ListPagedAsync(lstFilters_Contact.Filters);
+        lstFilters_Contact = null;
+
+        if (_contacts.TotalPages > 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Warning,
+                    Message = "More than 25 contacts found that met your criteria, please refine your search."
+                });
+        }
+        else if (_contacts.TotalItemsFound == 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Warning,
+                    Message = "No contacts found, please refine your search."
+                });
+        }
+
+        await EndProcessingAsync();
+    }
+
+    private async Task SelectClickAsync()
+    {
+        if (_sfGrid?.SelectedRecords.Count < 1 || _sfGrid == null)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a contact." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        if (MultipleSelect)
+        {
+            objResponse.Selected_Ids = _sfGrid.SelectedRecords.Select(r => r.Id).ToList();
+        }
+        else
+        {
+            objResponse.Selected_Id = _sfGrid.SelectedRecords.Select(r => r.Id).FirstOrDefault();
+        }
+
+        objResponse.Successful = true;
+
+        await EndProcessingAsync();
+
+        Close();
+
+        await OnClosed.InvokeAsync(objResponse);
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null)
+        {
+            Close();
+            _modalAdd.Open();
+        }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+            {
+                var objNewResponse = new Models.ModalResponse();
+
+                if (MultipleSelect)
+                {
+                    objNewResponse.Selected_Ids = new List<int> { objResponse.Selected_Id.Value };
+                }
+                else
+                {
+                    objNewResponse.Selected_Id = objResponse.Selected_Id.Value;
+                }
+
+                objNewResponse.Successful = true;
+
+                Close();
+
+                await OnClosed.InvokeAsync(objNewResponse);
+
+                return;
+            }
+            //else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            //{
+            //    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            //}
+        }
+
+        Close();
+
+        await OnClosed.InvokeAsync(objResponse);
+    }
+}

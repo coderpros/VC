@@ -1,0 +1,115 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.SimplePage>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@{
+    Layout = "Master.cshtml";
+
+    if (Model.Name == "Enquiry Form")
+    {
+        SmidgeHelper.RequiresJs("~/scripts/moment.min.js", 
+            "~/scripts/daterangepicker.min.js");
+    }
+}
+<section>
+    @if (!Model.HideHeroSection)
+    {
+        <div class="page-banner" style="background-image: url(@Model.BackgroundImage?.LocalCrops?.Src);">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-9">
+                        <div class="banner-text">
+                            @Model.TextBlock?
+
+                            @if (Model.IncludeSearchBar)
+                            {
+                                @await Umbraco.RenderMacroAsync("SearchForm")
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.MainContent != null)
+    {
+        @Model.MainContent
+    }
+</section>
+
+@if (Model.Name == "Enquiry Form")
+{
+    @section BottomJavascriptSection
+    {
+    <script>
+        /*$(function() {
+          $('input[name="daterange"]').daterangepicker({
+            opens: 'right'
+          }, function(start, end, label) {
+            console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+          }).on('show.daterangepicker', function (ev, picker) {
+                    picker.container.addClass('daterange1-my-custom-css');
+                }).on('hide.daterangepicker', function (ev, picker) {
+                    picker.container.show();
+                });
+        });*/
+
+        $(function () {
+            // $('input[name="daterange"]').daterangepicker({
+            //     opens: 'right'
+            // }, function (start, end, label) {
+            //     console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+            // }).on('show.daterangepicker', function (ev, picker) {
+            //     picker.container.addClass('daterange1-my-custom-css');
+            // }).on('hide.daterangepicker', function (ev, picker) {
+            //     picker.container.show();
+            // });
+            // setTimeout(() => { $('input[name="daterange"]').focus(); }, 1000);
+
+            $('#span-daterange').daterangepicker({
+                /*showDropdowns: true,
+                minYear: 1901,*/
+                opens: 'center',
+                locale: {
+                    firstDay: 1,
+                    daysOfWeek: [
+                        "S",
+                        "M",
+                        "T",
+                        "W",
+                        "T",
+                        "F",
+                        "S"
+                    ],
+                    monthNames: [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December"
+                    ],
+                }
+            }, function (start, end, label) {
+                $('input[name="daterange"]').val(start.format('DD-MM-YYYY') + '-' + end.format('DD-MM-YYYY'));
+            }).on('show.daterangepicker', function (ev, picker) {
+                picker.container.addClass('custom-daterange');
+            }).on('hide.daterangepicker', function (ev, picker) {
+                const propval = $('.month-view').css("display");
+                if (propval == "block") {
+                    picker.container.show();
+                }
+            });
+        });
+
+        $("document").delegate(".custom-daterange .available", "click", function (evt) {
+            debugger;
+        });
+    </script>
+    }
+}

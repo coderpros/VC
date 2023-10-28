@@ -1,0 +1,65 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.JournalArticle>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@{
+	Layout = "Master.cshtml";
+}
+<section>
+
+    <!-- Start -->
+    <div class="page-banner" style="background-image: url(@Model.BackgroundImage.LocalCrops.Src);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="banner-text animate__animated animate__zoomIn">
+                        <span>@Model.ArticleType</span>
+                        <h1>@Model.TextBlock</h1>
+                        @if (Model.IncludeSearchBar)
+                        {
+                            @await Umbraco.RenderMacroAsync("SearchForm")
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="journal-article">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-xxl-9">
+                    <div class="section-head text-center animate__animated animate__slideInUp">
+                        <span>@Model.ArticleType</span>
+                        <h2>@Model.TitleSentence</h2>
+                        @Model.TopContent
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    @Model.MainContent
+    <!-- End -->
+    @if (Model.DisplayJournal)
+    {
+        <!-- Start -->
+        <div class="explore-the-journal">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xxl-12">
+                        <div class="section-head animate__animated animate__slideInUp">
+                            <span>EXPLORE THE JOURNAL</span>
+                            <h2>DISCOVER MORE</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    @await this.Umbraco.RenderMacroAsync("RecentJournalArticles", new { numberOfArticles = 2 })
+                </div>
+            </div>
+        </div>
+        <!-- End -->
+    }
+</section>

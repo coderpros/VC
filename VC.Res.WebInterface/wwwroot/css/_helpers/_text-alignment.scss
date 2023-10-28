@@ -1,0 +1,39 @@
+﻿////
+//// ALIGNMENT
+////
+
+.align--left {
+    text-align: left;
+}
+
+.align--center {
+    text-align: center;
+}
+
+.align--right {
+    text-align: right;
+}
+
+
+@each $name, $value in $breakpoints {
+    .#{$name}-align--left {
+        @include breakpoint($name) {
+            text-align: left;
+        }  
+    }
+    .#{$name}-align--center {
+        @include breakpoint($name) {
+            text-align: center;
+        }  
+    }
+    .#{$name}-align--right {
+        @include breakpoint($name) {
+            text-align: right;
+        }  
+    }
+}
+
+
+
+
+

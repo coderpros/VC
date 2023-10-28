@@ -1,0 +1,306 @@
+﻿@page "/"
+@layout Shared.Layouts.NoAuthLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Login</PageTitle>
+
+@if (!_loginForm.Hidden)
+{
+    <div class="login">
+        <div class="login__window-wrapper">
+            <div class="login__window">
+                <div class="login__logo">
+                    
+				    <img src="@strLogoUrl" alt=""  />
+			    </div>
+			    <div class="login__header">
+				    <h4 class="login__header-title">Welcome To Villa Collective</h4>
+				    <p class="login__header-intro">Enter your details below</p>
+			    </div>
+
+                <EditForm Model="@_loginForm" OnValidSubmit="@Login_SubmitAsync">
+                    <DataAnnotationsValidator />
+                    <div class="login__content">
+                        <div class="form__item">
+					        <label for="tb_LoginForm_Email" class="form__label">Email address</label>
+                            <InputText id="tb_LoginForm_Email" @bind-Value="_loginForm.Email" class="form__input" type="email" maxlength="50" />
+                            <ValidationMessage For="@(() => _loginForm.Email)" />
+				        </div>    
+				        <div class="form__item"> 
+					        <label for="tb_LoginForm_Password" class="form__label">Password</label>
+                            <InputText id="tb_LoginForm_Password" @bind-Value="_loginForm.Password" class="form__input" type="password" maxlength="50" autocomplete="nope" />
+                            <ValidationMessage For="@(() => _loginForm.Password)" />
+				        </div>
+
+				        <div class="y-spacer y-spacer__16"></div>
+
+                        <button type="submit" class="button button--wide" disabled=@_processing value="Login">Log in</button>
+                    </div>
+                </EditForm>
+
+                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Password_Forgot)" class="login__button">Forgot your password?</a>
+		    </div>
+	    </div>
+    </div>
+}
+
+@if (!_authForm.Hidden)
+{
+    <div class="login">
+        <div class="login__window-wrapper">
+            <div class="login__window">
+                <div class="login__logo">
+                    <img src="@strLogoUrl" alt=""  />
+                </div>
+                <div class="login__header">
+                    <h4 class="login__header-title">Authentication Code</h4>
+                    <p class="login__header-intro">Enter your details below</p>
+                </div>
+
+                <EditForm Model="@_authForm" OnValidSubmit="@AuthCode_SubmitAsync">
+                    <DataAnnotationsValidator />
+                    <div class="login__content">
+                        <div class="form__item">
+                            <label for="Tb_AuthForm_Code" class="form__label">Code</label>
+                            <InputText id="Tb_AuthForm_Code" @bind-Value="_authForm.Code" class="form__input" maxlength="6" />
+                            <ValidationMessage For="@(() => _authForm.Code)" />
+                        </div>
+
+                        <div class="y-spacer y-spacer__16"></div>
+
+                        <button type="submit" class="button button--wide" disabled=@_processing value="Verify" >Verify</button>
+                    </div>
+                </EditForm>
+
+                <a href="" class="login__button" disabled=@_processing @onclick="@AuthCode_ResendAsync" @onclick:preventDefault >Resend code</a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int? iUserId = null;
+    private string strLogoUrl = "/imgs/logo-icon.png?width=250&height=150&rmode=max";
+
+    private class LoginForm
+    {
+        public bool Hidden { get; set; } = false;
+
+        //public bool Processing { get; set; } = false;
+
+        [Required(ErrorMessage = "This field is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Password { get; set; }
+    }
+
+    private class AuthForm
+    {
+        public bool Hidden { get; set; } = true;
+
+        //public bool Processing { get; set; } = false;
+
+        public string Instructions { get; set; } = "";
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Code { get; set; }
+    }
+
+    private LoginForm _loginForm = new LoginForm();
+    private AuthForm _authForm = new AuthForm();
+
+    protected override void OnInitialized()
+    {
+        if (SessionInfo.Valid(bForceRefresh: true))
+        {
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Dashboard), forceLoad: true);
+            return;
+        }
+    }
+
+    private async Task Login_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objUser = await Core.Users.Login.Credentials_WebAsync(_loginForm.Email, _loginForm.Password, strIP: SessionInfo.IPAddress);
+
+        if (!objUser.Loaded)
+        {
+            await EndProcessingAsync();
+
+            if (objUser.Auth_Password_UpdateRequired)
+            {
+                // no password set or requires update
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please set or reset your account password to login." });
+            }
+            else if (objUser.Auth_Account_Locked)
+            {
+                // account is locked
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but this account has been temporarily locked, please try again later." });
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but the email address and/or password entered are incorrect." });
+            }
+
+            return;
+        }
+
+        if (!objUser.Enabled)
+        {
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but the account you are trying to access has been disabled. Please contact support for further assistance." });
+            return;
+        }
+
+        if (objUser.Auth_AuthCodeRequired)
+        {
+            iUserId = objUser.Id;
+
+            switch (objUser.TwoFA_Method)
+            {
+                case Core.Enums.Shared_TwoFAMethod.Email:
+                    _authForm.Instructions = "A 6 digit authentication code has been sent to your given email address.";
+                    break;
+
+                case Core.Enums.Shared_TwoFAMethod.MobileText:
+                    _authForm.Instructions = "A 6 digit authentication code has been sent to your given mobile phone number.";
+                    break;
+            }
+
+            _authForm.Code = "";
+
+            await EndProcessingAsync();
+
+            _loginForm.Hidden = true;
+
+            _authForm.Hidden = false;
+        }
+        else
+        {
+            await Login_SuccessAsync(objUser);
+        }
+    }
+
+    private async Task AuthCode_SubmitAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        if (!iUserId.HasValue)
+        {
+            // lost the user
+            await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem sending you another code, please login to continue." });
+
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        var objUser = await Core.Users.Login.AuthCode_WebAsync(iUserId.Value, _authForm.Code, strIP: SessionInfo.IPAddress);
+
+        _authForm.Code = "";
+
+        if (!objUser.Loaded)
+        {
+            await EndProcessingAsync();
+
+            if (objUser.Auth_Account_Locked)
+            {
+                await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but this account has been temporarily locked, please try again later." });
+
+                NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but the code is incorrect." });
+            }
+            return;
+        }
+
+        if (!objUser.Enabled)
+        {
+            await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but the account you are trying to access has been disabled. Please contact support for further assistance." });
+
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        if (objUser.Auth_AuthCodeRequired)
+        {
+            // the ip being used is different to the one the code was requested from... resend code
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "We're sorry but there has been a problem verifying your code. We have sent you another code." });
+        }
+        else
+        {
+            await Login_SuccessAsync(objUser);
+        }
+    }
+
+    private async Task AuthCode_ResendAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        if (!iUserId.HasValue)
+        {
+            // lost the user
+            await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem sending you another code, please login to continue." });
+
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        if (!(await Core.Users.AuthCode.SendAsync(iUserId.Value, SessionInfo.IPAddress)))
+        {
+            // issue sending auth code
+            await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem sending you another code, please login to continue." });
+
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Your code has been resent and you should receive shortly." });
+    }
+
+    private async Task Login_SuccessAsync(Core.Users.Login objUser)
+    {
+        // create new session
+        var objNewSession = await Core.Users.Session.CreateAsync(Core.Enums.Users_Session_Type.Web, objUser.Id, SessionInfo.IPAddress);
+
+        // create new user session
+        if (!objNewSession.Loaded)
+        {
+            // failed to setup session, this will be because the user already has a session and cookies not found on this browser/device
+            // log out and display message
+            await niceUIService.ToastShowAfterReloadAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but you currently have another session in progress." });
+
+            NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Login), forceLoad: true);
+            return;
+        }
+
+        //  construct parameters to auth login page
+        var dicQueryParameters = new Dictionary<string, string>
+        {
+            { "t1", Core.Utilities.Security.EncryptString(objNewSession.Id.ToString()) },
+            { "t2", Core.Utilities.Security.EncryptString(objNewSession.Key3) }
+        };
+
+        _ = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query).TryGetValue("rtnpath", out var strReturnPath);
+
+        // check if redirecting to a return address or if going to account select
+        if (!string.IsNullOrWhiteSpace(strReturnPath) && !strReturnPath.ToString().ToLower().StartsWith("http") && !strReturnPath.ToString().ToLower().StartsWith("www"))
+        {
+            dicQueryParameters.Add("rtnpath", strReturnPath.ToString());
+        }
+        
+        NavigationManager.NavigateTo(VC.Res.Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Auth_Login, dicQuerystringParms: dicQueryParameters), forceLoad: true);
+    }
+}

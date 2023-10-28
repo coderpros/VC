@@ -1,0 +1,43 @@
+﻿@inherits Umbraco.Cms.Web.Common.Macros.PartialViewMacroPage
+@{
+    // Get all of the press entries.
+    var pressRoot = Umbraco.ContentAtRoot().Where(c => c.Name == "Press");
+}
+
+@if (pressRoot != null)
+{
+    <div class="press-box" @((Model.MacroParameters["backgroundColor"] != null ? $"style=background-color:{Model.MacroParameters["backgroundColor"]};" : string.Empty))>
+        <div class="section-head text-center">
+            <span>VILLA COLLECTIVE</span>
+            <h2>Press</h2>
+        </div>
+        <div class="row">
+            @foreach (PressEntity entity in pressRoot.First().Children)
+            {
+                @if (Model.MacroParameters["verbose"] == string.Empty || Convert.ToBoolean(Model.MacroParameters["verbose"]) == false)
+                {
+                    <div class="col-6 col-sm-4 col-md-4 col-lg-2 col-xl-2 col-xxl-2">
+                        <div class="press-logo">
+                            <a href="javascript:void(0);">
+                                <img src="@entity.PressPhoto.LocalCrops.Src" alt="@entity.Name" class="img-fluid">
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-4">
+                        <div class="press-logo-cnt">
+                            <div class="press-logo-img">
+                                <img src="@entity.PressPhoto.LocalCrops.Src" alt="@entity.Name" class="img-fluid">
+                            </div>
+                            <p>
+                                @entity.PressDescription
+                            </p>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}

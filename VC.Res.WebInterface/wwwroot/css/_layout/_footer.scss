@@ -1,0 +1,38 @@
+﻿////
+//// FOOTER
+////
+
+.footer {
+    $self: &;
+
+    position: relative;
+    z-index: 20;
+    //height: 40px;
+    //line-height: 40px;
+    color: $mono-0;
+    background: $primary-color;
+    padding: 16px 20px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 13px;
+
+    &--fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+    }
+
+    svg {
+        width: 94px;
+        height: 24px;
+        fill: #fff;
+        margin-bottom: 24px;
+        vertical-align: bottom;
+        display: block;
+    }
+
+    a {
+        color: $mono-0;
+    }
+}

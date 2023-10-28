@@ -1,0 +1,389 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Contacts</h4>
+
+        @if (SelectedItem.Group_Id.HasValue)
+        {
+            // using group contacts is an option
+            <div class="panel__header-button">
+                @*<label class="form__label">&nbsp;</label>*@
+                <span class="form__asp-checkbox">
+                    <input type="checkbox" id="Cb_UseGroup" disabled=@_processing checked="@SelectedItem.Group_Use_Contacts" @onchange="@(async (e) => await UseGroupContactsChangeHandlerAsync(e))" />
+                    <label for="Cb_UseGroup">Use group contacts</label>
+                </span>
+            </div>
+        }
+
+        @if (!SelectedItem.Group_Use_Contacts)
+        {
+            // using direct contacts
+            <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAdd" value="Add">
+                Add
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+                </svg>
+            </button>
+        }
+    </div>
+
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_premiseContacts" AllowTextWrap="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Core.Premises.Contact.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Contacts_Edit, iParameterId1: obj.Contact_Id)" class="button button__clear button--icon" title="View" target="_blank">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__view"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px" Visible="@(!SelectedItem.Group_Use_Contacts)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Name">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                var objContact = _contacts.FirstOrDefault(r => r.Id == obj.Contact_Id);
+                                if (objContact != null)
+                                {
+                                        @objContact.Name_Full
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Company">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                var objContact = _contacts.FirstOrDefault(r => r.Id == obj.Contact_Id);
+                                if (objContact != null)
+                                {
+                                        @objContact.CompanyName
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Role(s) at property">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                    @string.Join(", ", obj.Categories.Select(r => Core.Enums.Label(r)).ToList())
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn HeaderText="Property configuration" Width="171px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+
+                            if (obj != null)
+                            {
+                                if (obj.Config_Primary)
+                                {
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__tick"></use>
+                                    </svg>
+                                }
+                                else if (!SelectedItem.Group_Use_Contacts)
+                                {
+                                    <button type="button" class="button" value="Primary" @onclick="() => SetAsPrimaryAsync(obj.Id)">Use</button>
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px" Visible="@(!SelectedItem.Group_Use_Contacts)">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Contact);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.Contacts.Picker @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Premises.ContactEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandlerAsync"/>
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this contact?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    #region Parameters
+
+    [Parameter] public Core.Premises.Premise SelectedItem { get; set; } = new Core.Premises.Premise();
+
+    [Parameter] public EventCallback OnSelectedItemChanged { get; set; }
+
+    #endregion parameters
+
+    #region Controls
+
+    private Shared.Modals.Contacts.Picker? _modalAdd = null;
+    private Shared.Modals.Premises.ContactEdit? _modalEdit = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    #endregion Controls
+
+    #region Properties
+
+    private List<Core.Premises.Contact> _premiseContacts = new List<Core.Premises.Contact>();
+    private List<Core.Contacts.Contact> _contacts = new List<Core.Contacts.Contact>();
+
+    #endregion properties
+
+    #region Forms
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public bool UseGroup { get; set; } = false;
+    }
+    #endregion forms
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        if (SelectedItem.Group_Id.HasValue && SelectedItem.Group_Use_Contacts)
+        {
+            // want group contacts in a read only fashion
+            _premiseContacts = await Core.Premises.Contact.FindAllBy_GroupAsync(SelectedItem.Group_Id.Value);
+        }
+        else
+        {
+            // want contacts assigned directly to the premise
+            _premiseContacts = await Core.Premises.Contact.FindAllBy_PremiseAsync(SelectedItem.Id);
+        }
+
+        _contacts = await Core.Contacts.Contact.FindAllAsync(_premiseContacts.Select(r => r.Contact_Id).ToList());
+
+        await EndProcessingAsync(bShowSpinner);
+
+        this.StateHasChanged();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null)
+        {
+            List<int>? lstExcludeIds = null;
+
+            if (_premiseContacts.Count > 0)
+            {
+                lstExcludeIds = _premiseContacts.Select(r => r.Contact_Id).ToList();
+            }
+
+            _modalAdd.Open(bMultipleSelect: false, bCreateNew: true, lstExclusionIds: lstExcludeIds);
+        }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+            {
+                if (!(await StartProcessingAsync())) { return; }
+
+                var obj = new Core.Premises.Contact();
+
+                if (await obj.CreateAsync(SelectedItem.Id, null, objResponse.Selected_Id.Value, SessionInfo.Current_User.Name_Full))
+                {
+                    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+                }
+                else
+                {
+                    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the selected item, please try again or contact support for further assistance." });
+                }
+
+                await OnSelectedItemChanged.InvokeAsync();
+
+                await EndProcessingAsync();
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = objResponse.Message_Type, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = objResponse.Message_Type, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing){ return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); } 
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Contact.DeleteFullAsync(objResponse.Selected_Id.Value, SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await OnSelectedItemChanged.InvokeAsync();
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+
+    private async Task UseGroupContactsChangeHandlerAsync(Microsoft.AspNetCore.Components.ChangeEventArgs value)
+    {
+        if (value?.Value == null){ return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objMessage = new Models.ToastNotification
+            {
+                Type = Models.ToastNotification.Types.Error,
+                Message = "We're sorry but there has been a problem updating the selected item, please try again or contact support for further assistance."
+            };
+
+        await SelectedItem.RefreshAsync();
+
+        if (SelectedItem.Group_Id.HasValue)
+        {
+            SelectedItem.Group_Use_Contacts = (bool)value.Value;
+
+            if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Changes saved.";
+            }
+        }
+
+        await OnSelectedItemChanged.InvokeAsync();
+
+        await EndProcessingAsync();
+
+        await RefreshAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task SetAsPrimaryAsync(int iId)
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objMessage = new Models.ToastNotification
+        {
+            Type = Models.ToastNotification.Types.Error,
+            Message = "We're sorry but there has been a problem updating the selected item, please try again or contact support for further assistance."
+        };
+
+        if (await Core.Premises.Contact.Set_PrimaryAsync(iId))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Success;
+            objMessage.Message = "Properties that use this group will use the selected contacts configuration.";
+        }
+
+        await OnSelectedItemChanged.InvokeAsync();
+
+        await EndProcessingAsync();
+
+        await RefreshAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+}

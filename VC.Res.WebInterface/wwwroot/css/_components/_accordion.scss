@@ -1,0 +1,85 @@
+////
+//// ACCORDION
+////
+
+.accordion {
+	margin: 16px;
+	border: 1px solid $mono-300;
+	border-radius: 4px;
+
+	&__item {
+		background-color: $mono-0;
+
+		&:not(:last-child) {
+			border-bottom: 1px solid $mono-300;
+		}
+
+		&:first-child {
+			border-radius: 4px 4px 0 0;
+		}
+
+		&:last-child {
+			border-radius: 0 0 4px 4px;
+		}
+	}
+
+	&__header {
+		padding: 16px 56px 16px 16px;
+		color: $mono-900;
+		@include responsive-font(7vw, 21px, 18px);
+		font-weight: 600;
+		cursor: pointer;
+		position: relative;
+		@include transition(all .2s ease);
+
+
+		@include breakpoint(sm) {
+			padding: 16px 72px 16px 24px;
+		}
+
+		&:last-child {
+			border-radius: 0 0 4px 4px;
+		}
+
+		&:after {
+			content: "";
+			display: inline-block;
+			width: 24px;
+			height: 24px;
+			background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#{$mono-500}"><path d="M38,12.8,35.2,10,24,21.2,12.8,10,10,12.8,21.2,24,10,35.2,12.8,38,24,26.8,35.2,38,38,35.2,26.8,24Z" /></svg>');
+			background-size: 24px 24px;
+			background-position: center center;
+			background-repeat: no-repeat;
+			position: absolute;
+			top: 18px;
+			right: 40px;
+			@include transform(rotate(-45deg));
+			@include transition(transform .4s ease);
+		}
+
+		&:hover {
+			background-color: $mono-50;
+
+			&:after {
+				background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#{$mono-700}"><path d="M38,12.8,35.2,10,24,21.2,12.8,10,10,12.8,21.2,24,10,35.2,12.8,38,24,26.8,35.2,38,38,35.2,26.8,24Z" /></svg>');
+			}
+		}
+
+		&.is-active {
+			background-color: $mono-50;
+
+			&:after {
+				@include transform(rotate(0deg));
+				background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#{$mono-700}"><path d="M38,12.8,35.2,10,24,21.2,12.8,10,10,12.8,21.2,24,10,35.2,12.8,38,24,26.8,35.2,38,38,35.2,26.8,24Z" /></svg>');
+			}
+		}
+	}
+
+	&__content {
+		padding: 16px;
+
+		@include breakpoint(sm) {
+			padding: 16px 24px;
+		}
+	}
+}

@@ -1,0 +1,533 @@
+﻿@page "/properties"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Syncfusion.XlsIO;
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<style>
+    .e-toolbar .e-toolbar-items {
+        border-radius: 0 0 0 0;
+        display: flex;
+        height: auto;
+        justify-content: end;
+        min-height: 45px;
+    }
+
+    .e-toolbar-item .e-tbar-btn.e-btn {
+        background-color: #2D5177;
+        color: #f8f9fa;
+        vertical-align: middle;
+    }
+
+    .e-toolbar-item .e-btn:hover {
+        background-color: #264464;
+        border: 0px solid #264464;
+        color: #f2f2f2;
+        box-shadow: 0px 1px 10px 0px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<PageTitle>Properties</PageTitle>
+
+
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    @*<div class="sub-header__btn sub-header__btn--menu-toggle" data-sidebar-toggle data-hScroll-item>
+    <svg class="icon">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+    </svg>
+    <span class="sub-header__btn-text">Hide</span>
+    </div>
+
+    <div class="sub-header__btn" data-hScroll-item>
+    <span class="sub-header__btn-text">Properties</span>
+    </div>
+
+    <a @onclick="(() => RequestAddAsync())" @onclick:preventDefault class="sub-header__btn" title="Add new Property" data-hScroll-item>
+    <svg class="icon">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+    </svg>
+    <span class="sub-header__btn-text">Add</span>
+    </a>
+
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Quote)" class="sub-header__btn" title="Generate Quote" data-hScroll-item>
+    <svg class="icon">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__tick"></use>
+    </svg>
+    <span class="sub-header__btn-text">Generate Quote</span>
+    </a>*@
+
+    <ul id="breadcrumb">
+        <li data-sidebar-toggle data-hScroll-item>
+            <a href="javascript:;">
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+                </svg>
+                <span class="sub-header__btn-text">Hide</span>
+            </a>
+        </li>
+        <li data-hScroll-item><a href="javascript:;">Properties</a></li>
+        <li data-hScroll-item>
+            <a href="javascript:;" @onclick="(() => RequestAddAsync())" @onclick:preventDefault>
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                </svg>Add
+            </a>
+        </li>
+        <li data-hScroll-item>
+            <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Quote)">
+                <svg class="icon">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__tick"></use>
+                </svg>
+                Generate quote
+            </a>
+        </li>
+    </ul>
+</section>
+
+<section class="main-content__wrapper">
+    <section class="sidebar__wrapper" data-sidebar>
+        <div class="sidebar">
+            <EditForm Model="@_frmFilters" OnValidSubmit="@Premises_RefreshAsync">
+                <div class="form__item">
+                    <label class="form__label">Name</label>
+                    <InputText @bind-Value="_frmFilters.Name" class="form__input" maxlength="100" />
+                    <ValidationMessage For="@(() => _frmFilters.Name)" />
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Group</label>
+                    <div class="form__select">
+                        <InputSelect @bind-Value="_frmFilters.Group_Id">
+                            @{
+                                <option value="0">Select group</option>
+                                foreach (var group in _groups)
+                                {
+                                    <option value="@group.Id">@(group.Name)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+                <div class="form__item">
+                    <label class="form__label">Country</label>
+                    <div class="form__select">
+                        <InputSelect @bind-Value="_frmFilters.Country_Id">
+                            @{
+                                <option value="0">Select country</option>
+                                foreach (var country in _countries)
+                                {
+                                    <option value="@country.Id">@(country.Name)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__16"></div>
+
+                <button type="submit" class="button" disabled=@_processing value="Filter">Filter</button>
+                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_Clear" value="Clear">Clear</button>
+            </EditForm>
+        </div>
+    </section>
+
+    <div class="main-content">
+        <SfGrid DataSource="@_pagedData.ExportElements" @ref=@DefaultGrid AllowTextWrap="true" Toolbar="@(new List<string>() { "Export to excel"})" AllowExcelExport="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents ExcelQueryCellInfoEvent="ExcelQueryCellInfoHandler" OnToolbarClick="ToolbarClickHandler" TValue="Core.Premises.Premise"></GridEvents>
+
+            <GridColumns>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Id) Visible=false HeaderText="tblProperty_id"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Premise);
+                            if (obj != null)
+                            {
+                                if (!string.IsNullOrWhiteSpace(obj.Website_URL))
+                                {
+                                    <a href="@string.Format("{0}/{1}", Core.Settings.Global.Fetch.Website_URL.TrimEnd('/'), obj.Website_URL.TrimStart('/'))" class="button button__clear button--icon" title="View" target="_blank">
+                                        <svg class="icon">
+                                            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__view"></use>
+                                        </svg>
+                                    </a>
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Premise);
+                            if (obj != null)
+                            {
+                                <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: obj.Id)" class="button button__clear button--icon" title="View">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Display_Name) HeaderText="Display Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Id) Visible=false HeaderText="tblProperty_websiteId"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_URL) Visible=false HeaderText="tblProperty_websiteURL"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.OtherWebsiteURLs) Visible=false HeaderText="tblProperty_otherWebsiteURLs">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Premise);
+                            if (obj != null)
+                            {
+                                string.Join(',', obj.OtherWebsiteURLs);
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Channel) Visible=false HeaderText="tblProperty_channel"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line1) Visible=false HeaderText="tblProperty_addressLine1"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line2) Visible=false HeaderText="tblProperty_addressLine2"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line3) Visible=false HeaderText="tblProperty_addressLine3"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Town) Visible=false HeaderText="tblProperty_addressTown"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Region) Visible=false HeaderText="tblProperty_addressRegion"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Address_PostCode) Visible=false HeaderText="tblProperty_addressPostCode"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Country_Id) Visible=false HeaderText="tblCountry_id"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Region_Id) Visible=false HeaderText="tblRegion_id"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Latitude) Visible=false HeaderText="tblProperty_lat"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Longitude) Visible=false HeaderText="tblProperty_long"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Guests_Max) Visible=false HeaderText="tblProperty_maxGuests"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Guests_Additional) Visible=false HeaderText="tblProperty_maxGuestsAdditional"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Size) Visible=false HeaderText="tblProperty_size"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Rooms_NoBathrooms) Visible=false HeaderText="tblProperty_noBathrooms"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Group_Id) Visible=false HeaderText="tblPropertyGroup_id"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Group_Use_Contacts) Visible=false HeaderText="tblProperty_groupUseContacts"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.LicenceNo) Visible=false HeaderText="tblProperty_licenceNo"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbol) Visible=false HeaderText="tblProperty_webPriceCurrencySymb"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbolDisplay) Visible=false HeaderText="tblProperty_webPriceCurrencyDisplay"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Min) Visible=false HeaderText="tblProperty_webPriceMin"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Max) Visible=false HeaderText="tblProperty_webPriceMax"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Type) Visible=false HeaderText="tblProperty_webPriceType"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Created_UTC) Visible=false HeaderText="tblProperty_createdUTC"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Created_By) Visible=false HeaderText="tblProperty_createdBy"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Edited_UTC) Visible=false HeaderText="tblProperty_editedUTC"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Edited_By) Visible=false HeaderText="tblProperty_editedBy"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Deleted_UTC) Visible=false HeaderText="tblProperty_deletedUTC"></GridColumn>
+                <GridColumn Field=@nameof(Core.Premises.Premise.Deleted_By) Visible=false HeaderText="tblProperty_deletedBy"></GridColumn>
+                <GridColumn HeaderText="Country">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Premise);
+                            if (obj != null)
+                            {
+                                if (obj.Country_Id.HasValue)
+                                {
+                                    var objCountry = _countries.FirstOrDefault(r => r.Id == obj.Country_Id.Value);
+                                    if (objCountry != null)
+                                    {
+                                        @objCountry.Name
+                                    }
+                                    objCountry = null;
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Premises.Premise);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+        @if (_pagedData.TotalPages > 1)
+        {
+            <div class="pagination">
+                @foreach (var vPage in _pagedData.PagingData())
+                {
+                    <a @onclick="(() => ChangePage(vPage.Page))" @onclick:preventDefault title="@vPage.Title" class="pagination__item">@((MarkupString)vPage.Text)</a>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<VC.Res.WebInterface.Shared.Modals.Premises.PremiseAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this property?" OnClosed="ModalDeleteConfirmClosedHandler" />
+
+@code {
+    private SfGrid<Core.Premises.Premise> DefaultGrid;
+
+    private Shared.Modals.Premises.PremiseAdd? _modalAdd = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Premises.Group> _groups = new();
+    private List<Core.Common.Country> _countries = new();
+    private List<Core.Common.Region> _regions = new();
+
+    private Core.Utilities.PagedData<Core.Premises.Premise> _pagedData = new Core.Utilities.PagedData<Core.Premises.Premise>(0);
+
+    private Models.PageFilters.Premises_List _frmFilters = new Models.PageFilters.Premises_List();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // populate lists
+            _groups = await Core.Premises.Group.FindAllAsync();
+            _countries = await Core.Common.Country.FindAllAsync();
+            _regions = await Core.Common.Region.FindAllAsync();
+
+            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Premises_List>("Filters_Premises");
+
+            if (previousFilters.Success)
+            {
+                if (previousFilters.Value != null)
+                {
+                    _frmFilters = previousFilters.Value;
+                }
+            }
+        }
+        catch (Exception)
+        {
+
+        }
+        finally
+        {
+            await Premises_RefreshAsync();
+        }
+    }
+
+
+    private async Task Premises_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var lstFilters_Premises = new Core.Utilities.FilterList<Core.Premises.Premise.FilterOption>();
+        lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
+
+        if (!string.IsNullOrWhiteSpace(_frmFilters.Name))
+        {
+            lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Name, _frmFilters.Name);
+        }
+
+        if (_frmFilters.Group_Id != 0)
+        {
+            lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Group_Id, _frmFilters.Group_Id);
+        }
+
+        if (_frmFilters.Country_Id != 0)
+        {
+            lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Country_Id, _frmFilters.Country_Id);
+        }
+
+        _pagedData = await Core.Premises.Premise.ListPagedAsync(lstFilters_Premises.Filters, iPage: _frmFilters.CurrentPage);
+        lstFilters_Premises = null;
+
+        if (_pagedData.CurrentPage != _frmFilters.CurrentPage) { _frmFilters.CurrentPage = _pagedData.CurrentPage; }
+
+        await ProtectedSessionStore.SetAsync("Filters_Premises", _frmFilters);
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    private async Task Filters_Clear()
+    {
+        if (_processing) { return; }
+
+        _frmFilters = new();
+        await Premises_RefreshAsync();
+    }
+
+    private async Task ChangePage(int iPage)
+    {
+        if (_processing) { return; }
+
+        _frmFilters.CurrentPage = iPage;
+        await Premises_RefreshAsync();
+    }
+
+    private async Task RequestAddAsync()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { await _modalAdd.OpenAsync(); }
+    }
+
+    private async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: objResponse.Selected_Id));
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Premises.Premise.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Item deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Premises_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text.Equals("Export to excel")) //Id is combination of Grid's ID and itemname
+        {
+            ExcelExportProperties prop = new ExcelExportProperties();
+            prop.IncludeHiddenColumn = true;
+            ExcelHeader header = new ExcelHeader();
+            header.HeaderRows = 3;
+            List<ExcelCell> cell = new List<ExcelCell>
+            {
+                new ExcelCell() { Index= 2, Value= "",  } ,
+                new ExcelCell() { Index= 3, Value= "Corfu", Style = new ExcelStyle() { BackColor="#ffe599" }  },
+                new ExcelCell() { Index= 4, Value= "Ionian Sea", Style = new ExcelStyle() { BackColor="#c9daf8" }  },
+                new ExcelCell() { Index= 4, Value= "Aegean Sea", Style = new ExcelStyle() { BackColor="#d9d2e9" }  },
+                new ExcelCell() { Index= 4, Value= "The Peloponnesse", Style = new ExcelStyle() { BackColor="#00ffff" }  },
+                new ExcelCell() { Index= 4, Value= "France", Style = new ExcelStyle() { BackColor="#d0e0e3" }  },
+                new ExcelCell() { Index= 4, Value= "Italy", Style = new ExcelStyle() { BackColor="#93c47d" }  },
+                new ExcelCell() { Index= 4, Value= "Spain", Style = new ExcelStyle() { BackColor="#f6b26b" }  },
+                new ExcelCell() { Index= 4, Value= "Morocco", Style = new ExcelStyle() { BackColor="#dd7e6b" }  },
+            };
+
+            List<ExcelRow> HeaderContent = new List<ExcelRow>
+            {
+                new ExcelRow() {  Cells = new List<ExcelCell>(), Index = 2 },
+                new ExcelRow() {  Cells = cell, Index = 5 }
+            };
+            header.Rows = HeaderContent;
+            prop.Header = header;
+            await this.DefaultGrid.ExcelExport(prop, true);
+        }
+    }
+
+    public void ExcelQueryCellInfoHandler(ExcelQueryCellInfoEventArgs<Core.Premises.Premise> args)
+    {
+        // Here you can customize your code
+        //if (args.Column.Field == "Country_Id")
+        //{
+        //if (args.Data.Country_Id == 1)
+        //{
+        //    args.Style.BackColor = "#DC143C";
+        //}
+        if (args.Data.Country_Id == 2)
+        {
+            args.Style.BackColor = "#93c47d";
+        }
+        else if (args.Data.Country_Id == 3)
+        {
+            args.Style.BackColor = "#d0e0e3";
+        }
+        else if (args.Data.Country_Id == 4)
+        {
+            args.Style.BackColor = "#dd7e6b";
+        }
+        else if (args.Data.Country_Id == 4)
+        {
+            args.Style.BackColor = "#dd7e6b";
+        }
+        else if (args.Data.Country_Id == 5)
+        {
+            args.Style.BackColor = "#f6b26b";
+        }
+    }
+
+    private async void ExportPremise()
+    {
+        var lstPremise = _pagedData.Elements;
+        if (!(await StartProcessingAsync())) { return; }
+        using (ExcelEngine excelEngine = new ExcelEngine())
+        {
+            //Step 2 : Instantiate the excel application object
+            IApplication application = excelEngine.Excel;
+            application.DefaultVersion = ExcelVersion.Excel2016;
+
+            //Creating new workbook
+            var workbook = application.Workbooks.Create(1);
+            var sheet = workbook.Worksheets[0];
+
+            var strFileName = string.Format("{0}-{1}.xlsx", Core.Utilities.General.MakeFriendlyFileName("Premise"), DateTime.Now.ToString("dd-MM-yyyy"));
+            sheet.ImportDataTable(Core.Premises.Premise.Export(_pagedData.ExportElements, _countries), true, 1, 1, -1, -1);
+            IListObject table = sheet.ListObjects.Create("Premise", sheet.UsedRange);
+
+            sheet.UsedRange.AutofitColumns();
+
+            //Save the document as a stream and retrun the stream
+            using (MemoryStream stream = new MemoryStream())
+            {
+                //Save the created Excel document to MemoryStream
+                workbook.SaveAs(stream);
+
+                //await JS.SaveAs("Sample.xlsx", excelStream.ToArray());
+
+                await JS.InvokeAsync<object>("SaveAsFile", strFileName, Convert.ToBase64String(stream.ToArray()));
+            }
+
+            sheet = null;
+            workbook.Close();
+
+            application = null;
+        }
+        await EndProcessingAsync();
+    }
+
+}
+

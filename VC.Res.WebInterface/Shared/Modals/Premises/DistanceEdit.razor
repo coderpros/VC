@@ -1,0 +1,170 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="600px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit @string.Format("{0}: {1}", Core.Enums.Label(SelectedItem.Type), SelectedItem.Name)</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Name</label>
+                                <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="100" />
+                                <ValidationMessage For="@(() => _form.Name)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Distance (KM)</label>
+                                <InputNumber @bind-Value="_form.KM" class="form__input" />
+                                <ValidationMessage For="@(() => _form.KM)" />
+                            </div>
+                        </div>
+                        @*<div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Latitude</label>
+                                <InputNumber @bind-Value="_form.Latitude" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Latitude)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Longitude</label>
+                                <InputNumber @bind-Value="_form.Longitude" class="form__input" />
+                                <ValidationMessage For="@(() => _form.Longitude)" />
+                            </div>
+                        </div>*@
+
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. walk</label>
+                                <InputNumber @bind-Value="_form.MinBy_Walk" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Walk)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. drive</label>
+                                <InputNumber @bind-Value="_form.MinBy_Drive" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Drive)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-3">
+                            <div class="form__item">
+                                <label class="form__label">Min. boat</label>
+                                <InputNumber @bind-Value="_form.MinBy_Boat" class="form__input" />
+                                <ValidationMessage For="@(() => _form.MinBy_Boat)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private Core.Premises.Distance SelectedItem = new Core.Premises.Distance();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+
+        public double KM { get; set; } = 0;
+        public decimal? Latitude { get; set; } = null;
+        public decimal? Longitude { get; set; } = null;
+        public int? MinBy_Walk { get; set; } = null;
+        public int? MinBy_Drive { get; set; } = null;
+        public int? MinBy_Boat { get; set; } = null;
+    }
+
+    public async Task OpenAsync(int iDistanceId)
+    {
+        SelectedItem = await Core.Premises.Distance.FindAsync(iDistanceId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            _form = new ModalForm()
+                {
+                    Name = SelectedItem.Name,
+                    Description = SelectedItem.Description,
+                    KM = SelectedItem.KM,
+                    Longitude = SelectedItem.Longitude,
+                    Latitude = SelectedItem.Latitude,
+                    MinBy_Walk = SelectedItem.MinBy_Walk,
+                    MinBy_Drive = SelectedItem.MinBy_Drive,
+                    MinBy_Boat = SelectedItem.MinBy_Boat
+                };
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+        
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Name = _form.Name.Trim();
+        SelectedItem.Description = _form.Description.Trim();
+
+        SelectedItem.KM = _form.KM;
+        SelectedItem.Latitude = _form.Latitude;
+        SelectedItem.Longitude = _form.Longitude;
+            SelectedItem.MinBy_Walk = _form.MinBy_Walk;
+        SelectedItem.MinBy_Drive = _form.MinBy_Drive;
+        SelectedItem.MinBy_Boat = _form.MinBy_Boat;
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem editing the selected item, please try again or contact support for further assistance." });
+        }
+    }
+}

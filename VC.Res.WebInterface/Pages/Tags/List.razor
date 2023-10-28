@@ -1,0 +1,311 @@
+﻿@page "/tags"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Tags</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn sub-header__btn--menu-toggle" data-sidebar-toggle data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__close"></use>
+        </svg>
+        <span class="sub-header__btn-text">Hide</span>
+    </div>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Tags: @Title</span>
+	</div>
+
+    <a @onclick="(() => RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new tag" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <section class="sidebar__wrapper" data-sidebar>
+        <div class="sidebar">
+            <EditForm Model="@_filtersForm" OnValidSubmit="@RefreshAsync">
+                <div class="form__item">
+                    <label class="form__label">Type</label>
+                    <div class="form__select">
+                        <InputSelect @bind-Value="_filtersForm.Type">
+                            @{
+                                foreach (Core.Enums.Common_Tag_Type enumTagType in Enum.GetValues(typeof(Core.Enums.Common_Tag_Type)))
+                                {
+                                    if (enumTagType == Core.Enums.Common_Tag_Type.Unknown) { continue; }
+
+                                    <option value="@enumTagType">@Core.Enums.Label(enumTagType)</option>
+                                }
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__16"></div>
+                
+                <button type="submit" class="button" disabled=@_processing value="Filter" >Filter</button>
+                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_ClearAsync" value="Clear">Clear</button>
+            </EditForm>
+        </div>
+    </section>
+
+    <div class="main-content">
+        <SfGrid DataSource="@_tags" AllowTextWrap="true" AllowRowDragAndDrop="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents TValue="Core.Common.Tag" RowDropping="RowDroppingHandlerAsync" OnActionComplete="ActionCompleteHandlerAsync"></GridEvents>
+            <GridColumns>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Tag);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestEditAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Edit">
+                                    <svg class="icon">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Tag.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Width="50px" HeaderText="Icon" Visible=@Show_Icon>
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Tag);
+                            if (obj != null)
+                            {
+                                if (obj.Icon != VC.Shared.Enums.Common_Tag_Icon.None)
+                                {
+                                    @((MarkupString)string.Format("<svg class=\"icon  icon--standalone\"><use xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"/imgs/{0}\"></use></svg>", VC.Shared.Enums.Common_Tag_Icon_Image(obj.Icon)))
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Tag.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Tag.Description) HeaderText="Description"></GridColumn>
+                <GridColumn HeaderText="Categories" Visible=@Show_PremiseCategories>
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Tag);
+                            if (obj != null)
+                            {
+                                @string.Join(", ", obj.PremiseCategories.Select(r => Core.Enums.Label(r)).OrderBy(r => r))
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Tag);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</section>
+
+<VC.Res.WebInterface.Shared.Modals.TagAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.TagEdit @ref="_modalEdit" OnClosed="ModalEditClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this tag?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    private string Title = "";
+    private bool Show_Icon = false;
+    private bool Show_PremiseCategories = false;
+
+    private VC.Res.WebInterface.Shared.Modals.TagAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.TagEdit? _modalEdit = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Tag> _tags = new List<Core.Common.Tag>();
+
+    private Models.PageFilters.Tags_List _filtersForm = new Models.PageFilters.Tags_List();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Tags_List>("Filters_Tags");
+
+            if (previousFilters.Success)
+            {
+                if (previousFilters.Value != null)
+                {
+                    _filtersForm = previousFilters.Value;
+                }
+            }
+        }
+        catch (Exception)
+        {
+        }
+        finally
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        Title = Core.Enums.Label(_filtersForm.Type);
+        Show_Icon = _filtersForm.Type == Core.Enums.Common_Tag_Type.PropertyFeature;
+        Show_PremiseCategories = _filtersForm.Type == Core.Enums.Common_Tag_Type.PropertyFeature;
+
+        _tags = await Core.Common.Tag.FindAllAsync(_filtersForm.Type);
+
+        await ProtectedSessionStore.SetAsync("Filters_Tags", _filtersForm);
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+    }
+
+    private async Task Filters_ClearAsync()
+    {
+        if (_processing) { return; }
+
+        _filtersForm = new Models.PageFilters.Tags_List();
+        await RefreshAsync();
+    }
+
+    public async Task RowDroppingHandlerAsync(RowDroppingEventArgs<Core.Common.Tag> args)
+    {
+        if (args.DropIndex == args.FromIndex)
+        {
+            return;
+        }
+
+        if (args.Data.Count > 0)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objDropIndexItem = _tags[Convert.ToInt32(args.DropIndex)];
+            var objMoved = args.Data[0];
+
+            _ = await Core.Common.Tag.Move_ToPositionAsync(objMoved.Id, objDropIndexItem.Order);
+
+            objDropIndexItem = null;
+            objMoved = null;
+
+            await EndProcessingAsync();
+        }
+    }
+
+    public async Task ActionCompleteHandlerAsync(ActionEventArgs<Core.Common.Tag> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Refresh) { return; }
+
+        await RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(_filtersForm.Type); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                //refresh grid
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestEditAsync(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalEdit != null) { await _modalEdit.OpenAsync(iId); }
+    }
+
+    private async Task ModalEditClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." });
+
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected tag, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Common.Tag.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Tag deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

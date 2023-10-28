@@ -1,0 +1,98 @@
+﻿@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@implements IDisposable
+@inject Services.NiceUIService NiceUIService
+@inject ProtectedSessionStorage ProtectedSessionStore
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<SfToast ID="toast_default" @ref="ToastObj">
+    <ToastPosition X="Right"></ToastPosition>
+</SfToast>
+
+<SfSpinner @ref="SpinnerObj" CssClass="e-spin-overlay  e-spin-fixedPosition">
+</SfSpinner>
+
+@code {
+    private SfToast? ToastObj;
+    private SfSpinner? SpinnerObj;
+
+    protected override void OnInitialized()
+    {
+        NiceUIService.OnToastShow += ShowToast;
+        NiceUIService.OnToastShowAfterReload += RecordReloadToast;
+
+        NiceUIService.OnSpinnerShow += SpinnerShow;
+        NiceUIService.OnSpinnerHide += SpinnerHide;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var msg = await ProtectedSessionStore.GetAsync<Models.ToastNotification>("toast");
+
+        if (msg.Success)
+        {
+            if (msg.Value != null)
+            {
+                await ShowToast(msg.Value);
+
+                await ProtectedSessionStore.DeleteAsync("toast");
+            }
+        }
+    }
+
+    private async Task ShowToast(Models.ToastNotification msg)
+    {
+        if (ToastObj != null)
+        {
+            switch (msg.Type)
+            {
+                case Models.ToastNotification.Types.General:
+                    await ToastObj.ShowAsync(new ToastModel { Title = msg.Title, Content = msg.Message, CssClass = "e-toast-info" });
+                    break;
+                case Models.ToastNotification.Types.Success:
+                    await ToastObj.ShowAsync(new ToastModel { Title = msg.Title, Content = msg.Message, CssClass = "e-toast-success" });
+                    break;
+                case Models.ToastNotification.Types.Warning:
+                    await ToastObj.ShowAsync(new ToastModel { Title = msg.Title, Content = msg.Message, CssClass = "e-toast-warning" });
+                    break;
+                case Models.ToastNotification.Types.Error:
+                    await ToastObj.ShowAsync(new ToastModel { Title = msg.Title, Content = msg.Message, CssClass = "e-toast-danger" });
+                    break;
+            }
+        }
+    }
+
+    private async Task RecordReloadToast(Models.ToastNotification msg)
+    {
+        await ProtectedSessionStore.SetAsync("toast", msg);
+    }
+
+    private async Task SpinnerShow()
+    {
+        if (SpinnerObj != null)
+        {
+            await SpinnerObj.ShowAsync();
+        }
+    }
+
+    private async Task SpinnerHide()
+    {
+        await JS.InvokeVoidAsync("sessMan.Refresh");
+
+        if (SpinnerObj != null)
+        {
+            await SpinnerObj.HideAsync();
+        }
+    }
+
+    void IDisposable.Dispose()
+    {
+        NiceUIService.OnToastShow -= ShowToast;
+        NiceUIService.OnToastShowAfterReload -= RecordReloadToast;
+
+        NiceUIService.OnSpinnerShow -= SpinnerShow;
+        NiceUIService.OnSpinnerHide -= SpinnerHide;
+
+        ToastObj?.Dispose();
+        SpinnerObj?.Dispose();
+    }
+}

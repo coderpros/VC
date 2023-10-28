@@ -1,0 +1,10 @@
+﻿////
+//// LINEAR GRADIENT
+//// @include linear-gradient(#ffff00, #ff00ff);
+////
+
+@mixin linear-gradient ($from, $to) {
+  background-color: $from;
+  background-image: -webkit-linear-gradient(top, $from, $to);
+  background-image:         linear-gradient(to bottom, $from, $to);
+}

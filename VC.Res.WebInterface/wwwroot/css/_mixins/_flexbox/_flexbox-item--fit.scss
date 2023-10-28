@@ -1,0 +1,12 @@
+////
+//// FLEXBOX ITEM - FIT
+//// @include flexbox-item--fit();
+////
+
+@mixin flexbox-item--fit() {
+    -webkit-box-flex: 0;
+    -webkit-flex: 0 0 auto;
+    -ms-flex: 0 0 auto;
+    flex: 0 0 auto;
+    width: auto;
+}

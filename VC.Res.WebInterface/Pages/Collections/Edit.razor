@@ -1,0 +1,120 @@
+﻿@page "/collections/edit/{Id:int}/"
+@page "/collections/edit/{Id:int}/{PropertiesInCollection:int}"
+@layout Shared.Layouts.StandardLayout
+
+@using Azure
+@using Microsoft.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Mvc.Rendering
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Collections - Edit</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Collections_List)" class="sub-header__btn" title="Return to collections" data-hScroll-item>
+        <svg class="icon icon--small">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+        </svg>
+        <span class="sub-header__btn-text">Back to list</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Collections > Edit: @SelectedItem.Name</span>
+    </div>
+    @* BDO
+    @if (Core.Settings.Global.Fetch.Website_APIEnabled && !_SelectedItem.Website_Id.HasValue)
+    {
+    <a @onclick="(() => this.RequestAddToWebsiteAsync())" @onclick:preventDefault class="sub-header__btn" title="Add to website" data-hScroll-item>
+    <svg class="icon">
+    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__link"></use>
+    </svg>
+    <span class="sub-header__btn-text">Add to website</span>
+    </a>
+    }
+    *@
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (SelectedItem.Loaded)
+        {
+            <SfTab @bind-SelectedItem="SelectedTab">
+                <TabAnimationSettings>
+                    <TabAnimationNext Effect="AnimationEffect.None" />
+                    <TabAnimationPrevious Effect="AnimationEffect.None" />
+                </TabAnimationSettings>
+                <TabEvents Selecting="OnTabSelecting" />
+                <TabItems>
+                    <TabItem>
+                        <HeaderTemplate>Details</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Collections.Details SelectedItem=@SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                    <TabItem>
+                        <HeaderTemplate>Properties</HeaderTemplate>
+                        <ContentTemplate>
+                            <VC.Res.WebInterface.Shared.Collections.CollectionPremises SelectedItem=@SelectedItem />
+                        </ContentTemplate>
+                    </TabItem>
+                </TabItems>
+            </SfTab>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [Parameter] public int? PropertiesInCollection { get; set; }
+
+    private int SelectedTab { get; set; }
+    private Core.Common.Collection SelectedItem { get; set; } = new Core.Common.Collection();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        SelectedItem = await Core.Common.Collection.FindAsync(Id);
+        SelectedTab = this.PropertiesInCollection != null ? 1 : 0;
+
+        if (!SelectedItem.Loaded || SelectedItem.Deleted_UTC.HasValue)
+        {
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Collections_List));
+            return;
+        }
+    }
+
+    private void OnTabSelecting(SelectingEventArgs args)
+    {
+        if (args.IsSwiped) { args.Cancel = true; }
+    }
+
+    /* BDO
+    private async Task RequestAddToWebsiteAsync()
+        {
+        if (!(await StartProcessingAsync())) { return; }
+
+        // try and submit to the website
+        _ = await _SelectedItem.RefreshAsync();
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem submitting the country to the website, please try again or contact support for further assistance." };
+
+        if ((await Core.Integrations.Website.API.Country_CreateAsync(_SelectedItem)).Result)
+            {
+            // successfully submitted to the website
+            _ = await _SelectedItem.RefreshAsync();
+
+            objMessage.Type = Models.ToastNotification.Types.Success;
+            objMessage.Message = "Country added to the website.";
+        }
+
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+    */
+}

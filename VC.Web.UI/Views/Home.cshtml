@@ -1,0 +1,1209 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<ContentModels.Home>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@{
+    Layout = "Master.cshtml";
+}
+<section>
+    <!-- Start -->
+    <div class="home-banner" style="background-image:url(@Model.BackgroundImage.LocalCrops.Src);">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="banner-text">
+                        @Model.TextBlock
+
+                        @if (Model.IncludeSearchBar)
+                        {
+                            @await Umbraco.RenderMacroAsync("SearchForm")
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="unparalleled-luxury">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-9 m-auto">
+                    <div class="unparalleled-luxury-cnt animate__animated animate__slideInUp">
+                        <h2>@Model.TopHeaderText</h2>
+                        <p>
+                            @Model.TopTextBlock
+                        </p>
+                        @if (Model.TopButtonLink != null)
+                        {
+                            <a href="@Model.TopButtonLink.Url" target="@Model.TopButtonLink.Target" class="thm-btn-3">@Model.TopButtonLink.Name</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="destinations">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head text-center animate__animated animate__slideInUp">
+                        <span>EXPLORE</span>
+                        <h2>DESTINATIONS</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="carousel-wrap animate__animated animate__slideInUp">
+                        <div id="destinations" class="owl-carousel owl-theme">
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>France & Corsica</h4>
+                                        <span>19 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Greece</h4>
+                                        <span>112 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Morocco</h4>
+                                        <span>8 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>spain & the Balearics</h4>
+                                        <span>17 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="destinations-slider">
+                                    <div class="destinations-slide-cnt">
+                                        <h4>Italy</h4>
+                                        <span>30 villas</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="curated-collections">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head text-center animate__animated animate__slideInUp">
+                        <span>EXCLUSIVE</span>
+                        <h2>CURATED COLLECTIONS</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="carousel-wrap animate__animated animate__slideInUp">
+                        <div id="curated-collections" class="owl-carousel owl-theme">
+                            <div class="item">
+                                <div class="curated-collections-box">
+                                    <a>
+                                        <div class="curated-collections-img">
+                                            <img src="images/home/WATERFRONT.jpg" alt="WATERFRONT" class="img-fluid">
+                                        </div>
+                                        <div class="curated-collections-cnt">
+                                            <h6>WATERFRONT</h6>
+                                            <p>
+                                                Stay at a seafront villa and you’re just steps away from diving in ffor a refreshing dip or hopping aboiard your private boat.
+                                            </p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="curated-collections-box">
+                                    <a>
+                                        <div class="curated-collections-img">
+                                            <img src="images/home/WALK-TO-THE-BEACH.jpg" alt="WALK TO THE BEACH" class="img-fluid">
+                                        </div>
+                                        <div class="curated-collections-cnt">
+                                            <h6>WALK TO THE BEACH</h6>
+                                            <p>
+                                                Whether you want to swim, scuba dive or stretch out on the sands, the beach is just a stroll away from these luxury villas.
+                                            </p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="curated-collections-box">
+                                    <a>
+                                        <div class="curated-collections-img">
+                                            <img src="images/home/WALK-TO-RESTAURANTS.jpg" alt="WALK TO RESTAURANTS" class="img-fluid">
+                                        </div>
+                                        <div class="curated-collections-cnt">
+                                            <h6>WALK TO RESTAURANTS</h6>
+                                            <p>
+                                                Eat, drink and be merry: indulge in all the local delicacies on offer, knowing you wont need to drive home.
+                                            </p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="curated-collections-box">
+                                    <a>
+                                        <div class="curated-collections-img">
+                                            <img src="images/home/EXCEPTIONAL-DESIGN.jpg" alt="EXCEPTIONAL DESIGN" class="img-fluid">
+                                        </div>
+                                        <div class="curated-collections-cnt">
+                                            <h6>EXCEPTIONAL DESIGN</h6>
+                                            <p>
+                                                From awesome architecture to inspiring interiors, each of these exclusive villas is designed to delight.
+                                            </p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="curated-collections-box">
+                                    <a>
+                                        <div class="curated-collections-img">
+                                            <img src="images/home/EXCEPTIONAL-DESIGN.jpg" alt="EXCEPTIONAL DESIGN" class="img-fluid">
+                                        </div>
+                                        <div class="curated-collections-cnt">
+                                            <h6>EXCEPTIONAL DESIGN</h6>
+                                            <p>
+                                                From awesome architecture to inspiring interiors, each of these exclusive villas is designed to delight.
+                                            </p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="experience-wonders">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="experience-wonders-bg" style="background-image:url(images/home/experience-wonders.jpg);">
+                        <div class="experience-wonders-cnt animate__animated animate__zoomIn">
+                            <span>CORFU, GREECE</span>
+                            <h2>EXPERIENCE THE WONDERS OF VILLA ANEMOI</h2>
+                            <a href="villa.html" class="thm-btn-3">EXPLORE THE VILLA</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="curated-collections">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head animate__animated animate__slideInUp">
+                        <span>VILLA COLLECTIVE</span>
+                        <h2>NOT SURE WHERE TO GO?</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="villa-collective-sure animate__animated animate__slideInUp">
+                        <ul class="nav nav-tabs justify-content-end" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="great-for-families-tab" data-bs-toggle="tab" data-bs-target="#great-for-families" type="button" role="tab" aria-controls="great-for-families" aria-selected="true">GREAT FOR FAMILIES</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="swimming-pool-tab" data-bs-toggle="tab" data-bs-target="#swimming-pool" type="button" role="tab" aria-controls="swimming-pool" aria-selected="false">SWIMMING POOL</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="water-front-tab" data-bs-toggle="tab" data-bs-target="#water-front" type="button" role="tab" aria-controls="water-front" aria-selected="false">WATER FRONT</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="suitable-for-events-tab" data-bs-toggle="tab" data-bs-target="#suitable-for-events" type="button" role="tab" aria-controls="suitable-for-events" aria-selected="false">SUITABLE FOR EVENTS</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="urban-tab" data-bs-toggle="tab" data-bs-target="#urban" type="button" role="tab" aria-controls="urban" aria-selected="false">URBAN</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="myTabContent">
+                            <div class="tab-pane show active" id="great-for-families" role="tabpanel" aria-labelledby="great-for-families-tab">
+                                <div class="villa-collective-box">
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="view-all-link">
+                                                <a>View All</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="carousel-wrap">
+                                                <div id="great-for-families-slider" class="owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/exclusive.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label">Exclusive</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA LAGO</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>8</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/WALK-TO-THE-BEACH.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label new">New</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Apasa</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>14</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="swimming-pool" role="tabpanel" aria-labelledby="swimming-pool-tab">
+                                <div class="villa-collective-box">
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="view-all-link">
+                                                <a>View All</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="carousel-wrap">
+                                                <div id="swimming-pool-slider" class="owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/exclusive.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label">Exclusive</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA LAGO</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>8</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/WALK-TO-THE-BEACH.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label new">New</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Apasa</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>14</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="water-front" role="tabpanel" aria-labelledby="water-front-tab">
+                                <div class="villa-collective-box">
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="view-all-link">
+                                                <a>View All</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="carousel-wrap">
+                                                <div id="water-front-slider" class="owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/exclusive.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label">Exclusive</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA LAGO</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>8</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/WALK-TO-THE-BEACH.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label new">New</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Apasa</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>14</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="suitable-for-events" role="tabpanel" aria-labelledby="suitable-for-events-tab">
+                                <div class="villa-collective-box">
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="view-all-link">
+                                                <a>View All</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="carousel-wrap">
+                                                <div id="suitable-for-events-slider" class="owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/exclusive.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label">Exclusive</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA LAGO</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>8</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/WALK-TO-THE-BEACH.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label new">New</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Apasa</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>14</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="urban" role="tabpanel" aria-labelledby="urban-tab">
+                                <div class="villa-collective-box">
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="view-all-link">
+                                                <a>View All</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-xxl-12">
+                                            <div class="carousel-wrap">
+                                                <div id="urban-slider" class="owl-carousel owl-theme">
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/exclusive.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label">Exclusive</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA LAGO</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>8</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>4</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/WALK-TO-THE-BEACH.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label new">New</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Apasa</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>14</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="villa-collective-sure-box">
+                                                            <div class="villa-collective-sure-box-img" style="background-image:url(images/home/discount.jpg);">
+                                                                <div class="villa-collective-info">
+                                                                    <div class="label discount">Discount</div>
+                                                                    <i class="fa-regular fa-heart"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="villa-collective-cnt">
+                                                                <span>CORFU, GREECE</span>
+                                                                <h5>VILLA Agnes</h5>
+                                                                <div class="amount">€10,000 - 20,000 / per week</div>
+                                                                <div class="row justify-content-center">
+                                                                    <div class="col-5 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>12</h6>
+                                                                            <span>GUESTS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-7 col-md-6 col-lg-6 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>6</h6>
+                                                                            <span>BEDROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-8 col-md-6 col-lg-12 col-xxl-4">
+                                                                        <div class="villa-collective-amenity">
+                                                                            <h6>7</h6>
+                                                                            <span>BATHROOMS</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="how-we-are-different">
+        <div class="container">
+            @if (Enumerable.Count(Model.MiddleContent[0].Areas) == 2)
+            {
+                <div class="row gx-5 d-flex align-items-center">
+                    @await Html.GetBlockGridHtmlAsync(Model.MiddleContent)
+                </div>
+
+            }
+        </div>
+    </div>
+    <!-- End -->
+    <!-- Start -->
+    <div class="press">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12 animate__animated animate__slideInUp">
+                    @await Umbraco.RenderMacroAsync("PressBox")
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+@if (Model.DisplayJournal)
+{
+    <!-- Start -->
+    <div class="explore-the-journal">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head animate__animated animate__slideInUp">
+                        <span>EXPLORE THE JOURNAL</span>
+                        <h2>LOOKING FOR INSPIRATION</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                @await this.Umbraco.RenderMacroAsync("RecentJournalArticles", new { numberOfArticles = 2 })
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+}
+    <!-- Start -->
+    <div class="share-the-moment">
+        <div class="container">
+            <div class="row">
+                <div class="col-xxl-12">
+                    <div class="section-head text-center animate__animated animate__slideInUp">
+                        <span>FOLLOW US</span>
+                        <h2>SHARE THE MOMENT</h2>
+                        <div class="sub-head">#villacollective</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6 col-sm-6 col-md-6 col-lg-3 col-xl-3 col-xxl-3 animate__animated animate__slideInUp">
+                    <div class="share-the-moment-box">
+                        <a>
+                            <div class="share-the-moment-img" style="background-image:url(images/home/share1.jpg);">
+                                <i class="fa-solid fa-clone"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6 col-md-6 col-lg-3 col-xl-3 col-xxl-3 animate__animated animate__slideInUp">
+                    <div class="share-the-moment-box">
+                        <a>
+                            <div class="share-the-moment-img" style="background-image:url(images/home/share2.jpg);">
+                                <i class="fa-solid fa-clone"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6 col-md-6 col-lg-3 col-xl-3 col-xxl-3 animate__animated animate__slideInUp">
+                    <div class="share-the-moment-box">
+                        <a>
+                            <div class="share-the-moment-img" style="background-image:url(images/home/share3.jpg);">
+                                <i class="fa-solid fa-clapperboard"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-6 col-sm-6 col-md-6 col-lg-3 col-xl-3 col-xxl-3 animate__animated animate__slideInUp">
+                    <div class="share-the-moment-box">
+                        <a>
+                            <div class="share-the-moment-img" style="background-image:url(images/home/share4.jpg);">
+                                <i class="fa-solid fa-clone"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+</section>

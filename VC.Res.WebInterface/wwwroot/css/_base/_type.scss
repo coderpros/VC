@@ -1,0 +1,210 @@
+﻿////
+//// TYPE
+////
+
+
+// Headings
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0 0 10px 0;
+    line-height: 1.1;
+    /*color: $mono-700;*/
+
+    a {
+        text-decoration: none;
+    }
+
+    sup {
+        font-size: 0.6em;
+    }
+
+    span {
+        font-size: 0.8em;
+        opacity: 0.6;
+    }
+}
+
+h1 {
+	@include responsive-font(7vw, 36px, 45px);
+	font-weight: 700;
+}
+h2 {
+	@include responsive-font(5vw, 30px, 30px);
+	font-weight: 700;
+}
+h3 {
+	@include responsive-font(7vw, 24px, 24px);
+	font-weight: 700;
+}
+h4 {
+	@include responsive-font(7vw, 21px, 18px);
+	font-weight: 600;
+}
+h5 {
+	@include responsive-font(7vw, 18px, 14px);
+	font-weight: 600;
+}
+h6 {
+	@include responsive-font(7vw, 16px, 12px);
+	font-weight: 600;
+}
+
+////
+//// EYEBROW
+////
+
+.eyebrow {
+	font-size: 13px;
+	line-height: 1.25;
+	font-weight: bold;
+	text-transform: uppercase;
+	opacity: .75;
+	letter-spacing: 0.024em;
+	color: $senary-color;
+}
+
+////
+//// DISPLAY HEADING
+////
+
+.display-heading { 
+
+    &__1 {
+		@include responsive-font(7vw, 48px, 110px);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    &__2 {
+		@include responsive-font(7vw, 36px, 72px);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+}
+
+
+// Paragraph
+p {
+	margin: 0;
+
+	&:not(:last-of-type) {
+		margin-bottom: 16px;
+	}
+
+	&:only-of-type {
+		margin-bottom: 16px;
+	}
+}
+
+.col {
+    p {
+        margin: 0;
+        
+        &:not(:last-of-type) {
+            margin-bottom: 20px;
+        }
+    }  
+}
+
+
+// Bold and Strong
+b, 
+strong, 
+.strong { 
+    font-weight: 700; 
+}
+
+
+// Italics
+em, 
+.em { 
+    font-style: italic; 
+}
+
+
+// Small
+small,
+.small {
+	font-size: 13px;
+	line-height: 1.5;
+	color: $mono-600;
+	display: inline-block;
+
+	a {
+		color: $mono-700;
+		text-decoration: underline;
+	}
+}
+
+
+// Code
+code {
+    background-color: #f5f5f5;
+    color: #ff3860;
+    font-weight: normal;
+    font-size: 14px;
+    padding: 3px 6px;
+} 
+
+// Anchor
+a {
+    /*color: $primary-color;*/
+    text-decoration: underline;
+    text-decoration-color: $primary-color;
+    font-weight: 500;
+}
+
+
+// Address
+address {
+	font-style: normal;
+
+	strong {
+		font-weight: 600;
+		color: $mono-900;
+	}
+}	
+
+// Unordered List
+ul {
+	display: block;
+	list-style-type: disc;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 0;
+	margin-right: 0;
+	padding-left: 0;
+
+	li {
+		display: list-item;
+	}
+}
+
+// Ordered List
+ol {
+	display: block;
+	list-style-type: decimal;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 0;
+	margin-right: 0;
+	padding-left: 0;
+
+	li {
+		display: list-item;
+	}
+}
+
+
+// Blockquote
+blockquote {
+	border-left: 2px solid #0095d9;
+	padding-left: 32px;
+	font-size: 19px;
+	color: $mono-500;
+	margin-left: 0;
+}

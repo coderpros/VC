@@ -1,0 +1,10 @@
+////
+//// FLEXBOX - STRETCH#
+//// @include flexbox-stretch();
+////
+
+@mixin flexbox-stretch() {
+    -webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+}

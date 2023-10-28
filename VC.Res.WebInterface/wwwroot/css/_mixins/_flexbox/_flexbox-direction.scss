@@ -1,0 +1,12 @@
+////
+//// FLEXBOX DIRECTION
+//// @include flexbox-direction(row);
+//// row | row-reverse | column | column-reverse
+////
+
+@mixin flexbox-direction($direction) {
+    -webkit-flex-direction: $direction;
+    -moz-flex-direction: $direction;
+    -ms-flex-direction: $direction;
+    flex-direction: $direction;
+}

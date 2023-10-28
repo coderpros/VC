@@ -1,0 +1,179 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@*@inject Services.SessionInfoService SessionInfo*@
+
+<div class="table__wrapper table__wrapper--availability">
+    <div class="table__scroll" data-table-scroll>
+        <div class="table__shadow table__shadow-left"></div>
+        <div class="table__shadow table__shadow-right"></div>
+
+        <table class="table table--availability">
+            <thead>
+                <tr>
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        @*<th>@(new DateTime(_dtStart.Year, _dtStart.Month, 1).ToString("dddd"))</th>*@
+                        <th>@_dtStart.AddDays(i).ToString("dddd")</th>
+                        var monday = @_dtStart.AddDays(DayOfWeek.Monday - DateTime.Now.DayOfWeek);
+                        var sunday = @_dtStart.AddDays(DayOfWeek.Sunday - DateTime.Now.DayOfWeek);
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var lstWeek in _lstAvailability.Chunk(7))
+                {
+                    <tr>
+                        @foreach (var objAvailability in lstWeek)
+                        {
+                            @*Core.Enums.Premises_Premise_Availability bookstatus = objAvailability.State;
+
+                            switch (new Random().Next(1, 7))
+                            {
+                                case 1: bookstatus = Core.Enums.Premises_Premise_Availability.Unknown; break;
+                                case 2: bookstatus = Core.Enums.Premises_Premise_Availability.Available; break;
+                                case 3: bookstatus = Core.Enums.Premises_Premise_Availability.AvailableEnquire; break;
+                                case 4: bookstatus = Core.Enums.Premises_Premise_Availability.Unavailable; break;
+                                case 5: bookstatus = Core.Enums.Premises_Premise_Availability.OnHold; break;
+                                case 6: bookstatus = Core.Enums.Premises_Premise_Availability.BookedExt; break;
+                                case 7: bookstatus = Core.Enums.Premises_Premise_Availability.Booked; break;
+                            }*@
+
+                            <td class="@CalculateClass(objAvailability)">
+                                @*"dd/MM/yyyy"*@
+                                <p class="date">@objAvailability.Night.ToString("dd/MM/yyyy")</p>
+                                @*<span title="@VC.Res.Core.Enums.Label(objAvailability.State)"></span>*@
+                                <span title="@VC.Res.Core.Enums.Label(objAvailability.State)"></span>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (ShowKey)
+        {
+            <div class="table__legend">
+                <div class="table__legend-item">
+                    <strong>Key:</strong>
+                </div>
+                <div class="table__legend-item table__legend-item--available">
+                    <span></span> Available
+                </div>
+                <div class="table__legend-item table__legend-item--available-enq">
+                    <span></span> Available (Enquire)
+                </div>
+                <div class="table__legend-item table__legend-item--on-hold">
+                    <span></span> On Hold
+                </div>
+                <div class="table__legend-item table__legend-item--booked">
+                    <span></span> Booked
+                </div>
+                <div class="table__legend-item table__legend-item--booked-ext">
+                    <span></span> Booked (External)
+                </div>
+                <div class="table__legend-item table__legend-item--not-available">
+                    <span></span> Unavailable
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Premise_Id { get; set; } = 0; // property we're looking at
+    [Parameter] public DayOfWeek StartDayOfWeek { get; set; } = DayOfWeek.Sunday; // day of week calendar should start
+    [Parameter] public DateTime Start { get; set; } = DateTime.Today.Date; // specific start date to look at
+    [Parameter] public DateTime End { get; set; } = DateTime.Today.Date.AddDays(28); // specific end day to look up to
+    [Parameter] public int PadDays { get; set; } = 0; // number of days to add to start/end to include a larger range
+    [Parameter] public bool ShowKey { get; set; } = true;
+
+    private DateTime _dtStart = DateTime.Today.Date;
+    private DateTime _dtEnd = DateTime.Today.Date.AddDays(28);
+
+    private List<Core.Premises.Availability> _lstAvailability = new List<Core.Premises.Availability>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync(bShowSpinner: false);
+    }
+
+    public async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        // correct end date incase it is before the start
+        if (End < Start) { End = Start; }
+
+        // Old
+        // start by working out the start/end date range we're looking at
+        //_dtStart = Start.Date.AddDays(-PadDays);
+        //_dtEnd = End.Date.AddDays(PadDays);
+
+        //New 
+        _dtStart = Start.Date;
+        _dtEnd = End.Date;
+
+        // Old
+        // align start to start day of calendar
+        //while (_dtStart.DayOfWeek != StartDayOfWeek)
+        //{
+        //    _dtStart = _dtStart.AddDays(-1);
+        //}
+
+        //// align end so the day after is the start day of the calendar
+        //while (_dtEnd.AddDays(1).DayOfWeek != StartDayOfWeek)
+        //{
+        //    _dtEnd = _dtEnd.AddDays(1);
+        //}
+
+        // get the availablity records for the period
+        _lstAvailability = (await Core.Premises.Availability.FindAllBy_PremiseDatesAsync(Premise_Id, _dtStart, _dtEnd)).OrderBy(r => r.Night).ToList();
+
+        this.StateHasChanged();
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+    //Core.Enums.Premises_Premise_Availability bookstatus
+    private string CalculateClass(Core.Premises.Availability availability)
+    {
+        var strReturn = "not-available";
+
+        if (availability != null)
+        {
+
+            //switch (bookstatus)
+            switch (availability.State)
+            {
+                case Core.Enums.Premises_Premise_Availability.Available:
+                    strReturn = "available";
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.AvailableEnquire:
+                    strReturn = "available-enq";
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.OnHold:
+                    strReturn = "on-hold";
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.Booked:
+                    strReturn = "booked";
+                    break;
+
+                case Core.Enums.Premises_Premise_Availability.BookedExt:
+                    strReturn = "booked-ext";
+                    break;
+
+                default:
+                    strReturn = "not-available";
+                    break;
+            }
+
+            if (availability.Night < DateTime.Today.Date) { strReturn += "  past"; }
+            else if (availability.Night >= Start.Date && availability.Night <= End.Date) { strReturn += "  selected"; }
+            else { strReturn += "  not-selected"; }
+        }
+
+        return strReturn;
+    }
+}

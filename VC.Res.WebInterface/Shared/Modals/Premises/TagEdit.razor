@@ -1,0 +1,106 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit: @Title</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Description</label>
+                                <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Description)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private string Title = "";
+
+    private Core.Premises.Tag SelectedItem = new Core.Premises.Tag();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public string Description { get; set; } = "";
+    }
+
+    public async Task OpenAsync(int iPremiseTagId)
+    {
+        SelectedItem = await Core.Premises.Tag.FindAsync(iPremiseTagId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            if (SelectedItem.Tag_Type != Core.Enums.Common_Tag_Type.PropertyFeature)
+            {
+                Title = string.Format("{0}: {1}", Core.Enums.Label(SelectedItem.Tag_Type), SelectedItem.Tag_Name);
+            }
+            else
+            {
+                Title = string.Format("{0}: {1}", Core.Enums.Label(SelectedItem.Category), SelectedItem.Tag_Name);
+            }
+
+            _form = new ModalForm()
+                {
+                    Description = SelectedItem.Description
+                };
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Description = _form.Description.Trim();
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem saving changes to the item, please try again or contact support for further assistance." });
+        }
+    }
+}

@@ -1,0 +1,134 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add Extra</Header>
+        <Content>
+             <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Extra(s)</label>
+                                <SfMultiSelect @ref="Ddl_Extras" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select extras" @bind-Value="_form.Extras" Mode="VisualMode.CheckBox" DataSource="@Extras" AllowFiltering="true">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                    <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_Extras_OnFilter"></MultiSelectEvents>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int Premise_Id = 0;
+    private List<int> lstSelectedExtras = new List<int>();
+
+    private List<Models.DropDownItem> Extras { get; set; } = new List<Models.DropDownItem>();
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_Extras { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public int[] Extras { get; set; } = Array.Empty<int>();
+    }
+
+    private async Task Ddl_Extras_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Extras, Extras, args); }
+
+    public async Task OpenAsync(int iPremiseId, List<int> lstExtras)
+    {
+        Premise_Id = iPremiseId;
+
+        lstSelectedExtras = lstExtras;
+
+        _form = new ModalForm();
+
+        await RefreshAsync();
+
+        if (Extras.Count > 0)
+        {
+            _visible = true;
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional extras available." });
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task RefreshAsync()
+    {
+        Extras = new List<Models.DropDownItem>();
+
+        foreach (var vExtra in await Core.Premises.Extra.FindAllBy_PremiseAsync(Premise_Id))
+        {
+            if (lstSelectedExtras.Contains(vExtra.Id)) { continue; }
+
+            Extras.Add(new Models.DropDownItem
+                {
+                    Text = vExtra.Name,
+                    Value_Int = vExtra.Id
+                });
+        }
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+
+        if (_form.Extras.Length < 1)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a extra." });
+            return;
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+
+        foreach (var iExtraId in _form.Extras)
+        {
+            objResponse.Selected_Ids.Add(iExtraId);
+        }
+
+        if (objResponse.Selected_Ids.Count > 0)
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = Premise_Id;
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+
+
+}

@@ -1,0 +1,275 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="750px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Edit: @Title</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Role(s) at property</label>
+                                <SfMultiSelect TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select role(s)" @bind-Value="_form.Categories" Mode="VisualMode.CheckBox" DataSource="@_Categories">
+                                    <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__24"></div>
+                    <h4>Portal Access - Property Management</h4>
+                    <div class="row">
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Property</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Info id="Cb_PAPM_Info" />
+                                    <label for="Cb_PAPM_Info">Information</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Availability id="Cb_PAPM_Availability" />
+                                    <label for="Cb_PAPM_Availability">Availability</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Rates id="Cb_PAPM_Rates" />
+                                    <label for="Cb_PAPM_Rates">Rates</label>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Bookings</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Bookings id="Cb_PAPM_Bookings" />
+                                    <label for="Cb_PAPM_Bookings">Details</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Booking_Confirmation id="Cb_PAPM_BookingsConfirmation" />
+                                    <label for="Cb_PAPM_BookingsConfirmation">Confirmation authorisation</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.PAPM_Remit_Slip id="Cb_PAPM_Remit_Slip" />
+                                    <label for="Cb_PAPM_Remit_Slip">Remit slips</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__24"></div>
+                    <h4>Notifications</h4>
+                    <div class="row">
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Property</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Info id="Cb_Notifi_Info" />
+                                    <label for="Cb_Notifi_Info">Information</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Availability id="Cb_Notifi_Availability" />
+                                    <label for="Cb_Notifi_Availability">Availability</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Rates id="Cb_Notifi_Rates" />
+                                    <label for="Cb_Notifi_Rates">Rates</label>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">Bookings</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Bookings id="Cb_Notifi_Bookings" />
+                                    <label for="Cb_Notifi_Bookings">Details</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Booking_Confirmation id="Cb_Notifi_BookingsConfirmation" />
+                                    <label for="Cb_Notifi_BookingsConfirmation">Confirmation requests</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-4">
+                            <div class="form__item">
+                                <label class="form__label">&nbsp;</label>
+                                <span class="form__asp-checkbox">
+                                    <InputCheckbox @bind-Value=_form.Notifi_Remit_Slip id="Cb_Notifi_Remit_Slip" />
+                                    <label for="Cb_Notifi_Remit_Slip">Remit slips</label>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Save" Disabled=@_processing IsPrimary="true" OnClick="@SaveClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private string Title = "";
+
+    private Core.Premises.Contact SelectedItem = new Core.Premises.Contact();
+
+    private List<Models.DropDownItem> _Categories { get; set; } = new List<Models.DropDownItem>();
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        public int[] Categories { get; set; } = new int[]{};
+
+        public bool PAPM_Info { get; set; } = false;
+        public bool PAPM_Bookings { get; set; } = false;
+        public bool PAPM_Booking_Confirmation { get; set; } = false;
+        public bool PAPM_Rates { get; set; } = false;
+        public bool PAPM_Availability { get; set; } = false;
+        public bool PAPM_Remit_Slip { get; set; } = false;
+
+        public bool Notifi_Info { get; set; } = false;
+        public bool Notifi_Rates { get; set; } = false;
+        public bool Notifi_Availability { get; set; } = false;
+        public bool Notifi_Bookings { get; set; } = false;
+        public bool Notifi_Booking_Confirmation { get; set; } = false;
+        public bool Notifi_Remit_Slip { get; set; } = false;
+    }
+
+    public async Task OpenAsync(int iPremiseContactId)
+    {
+        SelectedItem = await Core.Premises.Contact.FindAsync(iPremiseContactId);
+
+        if (!SelectedItem.Loaded)
+        {
+            await OnClosed.InvokeAsync(new Models.ModalResponse { Successful = false, Message_Wording = "Item not found." });
+        }
+        else
+        {
+            Title = (await Core.Contacts.Contact.FindAsync(SelectedItem.Contact_Id)).Name_Full;
+
+            _Categories = new List<Models.DropDownItem>();
+            foreach (Core.Enums.Contacts_Contact_Category enumContactCategory in Enum.GetValues(typeof(Core.Enums.Contacts_Contact_Category)))
+            {
+                _Categories.Add(new Models.DropDownItem
+                    {
+                        Text = Core.Enums.Label(enumContactCategory),
+                        Value_Int = (int)enumContactCategory
+                    });
+            }
+            _Categories = _Categories.OrderBy(r => r.Text).ToList();
+
+            _form = new ModalForm()
+                {
+                    Categories = Core.Utilities.General.ConvertToListInt(SelectedItem.Categories).ToArray(),
+
+                    PAPM_Availability = SelectedItem.PAPM_Availability,
+                    PAPM_Bookings = SelectedItem.PAPM_Bookings,
+                    PAPM_Booking_Confirmation = SelectedItem.PAPM_Booking_Confirmation,
+                    PAPM_Info = SelectedItem.PAPM_Info,
+                    PAPM_Rates = SelectedItem.PAPM_Rates,
+                    PAPM_Remit_Slip = SelectedItem.PAPM_RemitSlip,
+
+                    Notifi_Availability = SelectedItem.Notifi_Availability,
+                    Notifi_Bookings = SelectedItem.Notifi_Bookings,
+                    Notifi_Booking_Confirmation = SelectedItem.Notifi_Booking_Confirmation,
+                    Notifi_Info = SelectedItem.Notifi_Info,
+                    Notifi_Rates = SelectedItem.Notifi_Rates,
+                    Notifi_Remit_Slip = SelectedItem.Notifi_RemitSlip
+                };
+
+            _visible = true;
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task SaveClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+        
+        _ = await SelectedItem.RefreshAsync();
+
+        SelectedItem.Categories = Core.Utilities.General.ConvertToListEnums<Core.Enums.Contacts_Contact_Category>(_form.Categories.ToList());
+
+        SelectedItem.PAPM_Availability = _form.PAPM_Availability;
+        SelectedItem.PAPM_Bookings = _form.PAPM_Bookings;
+        SelectedItem.PAPM_Booking_Confirmation = _form.PAPM_Booking_Confirmation;
+        SelectedItem.PAPM_Info = _form.PAPM_Info;
+        SelectedItem.PAPM_Rates = _form.PAPM_Rates;
+        SelectedItem.PAPM_RemitSlip = _form.PAPM_Remit_Slip;
+
+        SelectedItem.Notifi_Availability = _form.Notifi_Availability;
+        SelectedItem.Notifi_Bookings = _form.Notifi_Bookings;
+        SelectedItem.Notifi_Booking_Confirmation = _form.Notifi_Booking_Confirmation;
+        SelectedItem.Notifi_Info = _form.Notifi_Info;
+        SelectedItem.Notifi_Rates = _form.Notifi_Rates;
+        SelectedItem.Notifi_RemitSlip = _form.Notifi_Remit_Slip;
+
+        if (await SelectedItem.SaveAsync(SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+            objResponse.Selected_Id = SelectedItem.Id;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem saving changes to the item, please try again or contact support for further assistance." });
+        }
+    }
+}

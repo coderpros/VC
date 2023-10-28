@@ -1,0 +1,442 @@
+﻿@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<EditForm Model="@_form" OnValidSubmit="@Details_SaveAsync">
+    <DataAnnotationsValidator />
+    <div class="panel">
+        <div class="panel__header">
+            <h4 class="panel__title">Default property settings</h4>
+        </div>
+        <div class="panel__content">
+            <div class="form">
+                <div class="row">
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Availability status</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.DefaultAvailability">
+                                    <option value="@Core.Enums.Premises_Premise_Availability.Available">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.Available)</option>
+                                    <option value="@Core.Enums.Premises_Premise_Availability.AvailableEnquire">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.AvailableEnquire)</option>
+                                    <option value="@Core.Enums.Premises_Premise_Availability.Unavailable">@Core.Enums.Label(Core.Enums.Premises_Premise_Availability.Unavailable)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Bookings require pre approval</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_PremiseDefaults_General_BookingReqApproval" @bind-Value="_form.RequireBookingApproval" />
+                                <label for="Cb_PremiseDefaults_General_BookingReqApproval">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Prices entered are</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.PriceEntryMode">
+                                    <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                    <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Currency</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.Currency_Id">
+                                    <option value="0">Please select</option>
+                                    @{
+                                        foreach (var currency in currencies)
+                                        {
+                                            <option value="@currency.Id">@(currency.Name)</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Commission type</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.Commission_AmountType">
+                                    <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                    <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Commission amount</label>
+                            <InputNumber @bind-Value="_form.Commission_Amount" class="form__input" />
+                            <ValidationMessage For="@(() => _form.Commission_Amount)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Checkin time</label>
+                            <SfTimePicker TValue="TimeSpan" PlaceHolder="Select a time" Step=30 Format="@("hh\\:mm")" @bind-Value="_form.Checkin" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Checkout time</label>
+                            <SfTimePicker TValue="TimeSpan" PlaceHolder="Select a time" Step=30 Format="@("hh\\:mm")" @bind-Value="_form.Checkout" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Changeover day</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.ChangeoverDay">
+                                    <option value="-1">Open/flexible</option>
+                                    <option value="@((int)DayOfWeek.Sunday)">@DayOfWeek.Sunday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Monday)">@DayOfWeek.Monday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Tuesday)">@DayOfWeek.Tuesday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Wednesday)">@DayOfWeek.Wednesday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Thursday)">@DayOfWeek.Thursday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Friday)">@DayOfWeek.Friday.ToString()</option>
+                                    <option value="@((int)DayOfWeek.Saturday)">@DayOfWeek.Saturday.ToString()</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Min nights rental</label>
+                            <InputNumber @bind-Value="_form.MinRental_Days" class="form__input" />
+                            <ValidationMessage For="@(() => _form.MinRental_Days)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+                <h4>Payment schedule</h4>
+                <div class="row">
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit required</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_PremiseDefaults_PaymentSch_DepositRequired" @bind-Value="_form.PaySchedule_Deposit_Required" />
+                                <label for="Cb_PremiseDefaults_PaymentSch_DepositRequired">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit type</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.PaySchedule_Deposit_AmountType">
+                                    <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                    <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-4">
+                        <div class="form__item">
+                            <label class="form__label">Deposit amount</label>
+                            <InputNumber @bind-Value="_form.PaySchedule_Deposit_Amount" class="form__input" />
+                            <ValidationMessage For="@(() => _form.PaySchedule_Deposit_Amount)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim required</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_PremiseDefaults_PaymentSch_InterimRequired" @bind-Value="_form.PaySchedule_Interim_Required" />
+                                <label for="Cb_PremiseDefaults_PaymentSch_InterimRequired">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim type</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.PaySchedule_Interim_AmountType">
+                                    <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                    <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Interim amount</label>
+                            <InputNumber @bind-Value="_form.PaySchedule_Interim_Amount" class="form__input" />
+                            <ValidationMessage For="@(() => _form.PaySchedule_Interim_Amount)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Days interim due before arrival</label>
+                            <InputNumber @bind-Value="_form.PaySchedule_Interim_Days" class="form__input" />
+                            <ValidationMessage For="@(() => _form.PaySchedule_Interim_Days)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Days balance due before arrival</label>
+                            <InputNumber @bind-Value="_form.PaySchedule_Balance_Days" class="form__input" />
+                            <ValidationMessage For="@(() => _form.PaySchedule_Balance_Days)" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="y-spacer y-spacer__32"></div>
+                <h4>Security deposit</h4>
+                <div class="row">
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Required</label>
+                            <span class="form__asp-checkbox">
+                                <InputCheckbox id="Cb_PremiseDefaults_SecDeposit_Required" @bind-Value="_form.SecurityDeposit_Required" />
+                                <label for="Cb_PremiseDefaults_SecDeposit_Required">Yes</label>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Amount type</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.SecurityDeposit_AmountType">
+                                    <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                    <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Amount</label>
+                            <InputNumber @bind-Value="_form.SecurityDeposit_Amount" class="form__input" />
+                            <ValidationMessage For="@(() => _form.SecurityDeposit_Amount)" />
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Calculate from</label>
+                            <div class="form__select">
+                                <InputSelect @bind-Value="_form.SecurityDeposit_CalcFrom">
+                                    <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                    <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Days due before arrival</label>
+                            <InputNumber @bind-Value="_form.SecurityDeposit_DaysBeforeDue" class="form__input" />
+                            <ValidationMessage For="@(() => _form.SecurityDeposit_DaysBeforeDue)" />
+                        </div>
+                    </div>
+
+                    <div class="col col-12 sm-6">
+                        <div class="form__item">
+                            <label class="form__label">Days refunded after departure</label>
+                            <InputNumber @bind-Value="_form.SecurityDeposit_DaysAfterDue" class="form__input" />
+                            <ValidationMessage For="@(() => _form.SecurityDeposit_DaysAfterDue)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col col-12  align--right">
+            <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Details_ResetAsync" value="Cancel">Cancel</button>
+            <button type="submit" class="button" disabled=@_processing value="Save">Save</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private List<Core.Common.Currency> currencies = new List<Core.Common.Currency>();
+
+    private DetailsForm _form = new DetailsForm();
+
+    public class DetailsForm
+    {
+        public Core.Enums.Premises_Premise_Availability DefaultAvailability { get; set; } = Core.Enums.Premises_Premise_Availability.Available;
+
+        public bool RequireBookingApproval { get; set; } = false;
+
+        public Core.Enums.Shared_PriceValueType PriceEntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+
+        public int Currency_Id { get; set; } = 0;
+
+        public Core.Enums.Shared_NumericValueType Commission_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        [Required(ErrorMessage = "This field is required")]
+        public decimal Commission_Amount { get; set; } = 0;
+
+        [Required(ErrorMessage = "This field is required")]
+        public TimeSpan Checkin { get; set; } = new TimeSpan(15, 0, 0);
+        [Required(ErrorMessage = "This field is required")]
+        public TimeSpan Checkout { get; set; } = new TimeSpan(11, 0, 0);
+        public int ChangeoverDay { get; set; } = -1; // null value represents open/flexible changeover day
+        [Required(ErrorMessage = "This field is required")]
+        public int MinRental_Days { get; set; } = 3;
+
+        public bool PaySchedule_Deposit_Required { get; set; } = true;
+        public Core.Enums.Shared_NumericValueType PaySchedule_Deposit_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        [Required(ErrorMessage = "This field is required")]
+        public decimal PaySchedule_Deposit_Amount { get; set; } = 10;
+
+        public bool PaySchedule_Interim_Required { get; set; } = false;
+        public Core.Enums.Shared_NumericValueType PaySchedule_Interim_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        [Required(ErrorMessage = "This field is required")]
+        public decimal PaySchedule_Interim_Amount { get; set; } = 20;
+        [Required(ErrorMessage = "This field is required")]
+        public int PaySchedule_Interim_Days { get; set; } = 28; // Number of days before arrival the interim is expected.
+
+        [Required(ErrorMessage = "This field is required")]
+        public int PaySchedule_Balance_Days { get; set; } = 14;
+
+        public bool SecurityDeposit_Required { get; set; } = false;
+        public Core.Enums.Shared_NumericValueType SecurityDeposit_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        [Required(ErrorMessage = "This field is required")]
+        public decimal SecurityDeposit_Amount { get; set; } = 10;
+        public Core.Enums.Shared_PriceValueType SecurityDeposit_CalcFrom { get; set; } = Core.Enums.Shared_PriceValueType.Gross;
+        [Required(ErrorMessage = "This field is required")]
+        public int SecurityDeposit_DaysBeforeDue { get; set; } = 7; // number of days before arrival the security deposit is expected
+        [Required(ErrorMessage = "This field is required")]
+        public int SecurityDeposit_DaysAfterDue { get; set; } = 7; // number of days after departure the security deposit is expected to be returned
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        currencies = await Core.Common.Currency.FindAllAsync();
+
+        Details_Load();
+    }
+
+    private void Details_Load()
+    {
+        var obj = Core.Settings.PremiseDefaults.Fetch;
+
+        _form = new DetailsForm
+            {
+                DefaultAvailability = obj.DefaultAvailability,
+                RequireBookingApproval = obj.RequireBookingApproval,
+                PriceEntryMode = obj.PriceEntryMode,
+                Currency_Id = obj.Currency_Id,
+
+                Commission_Amount = obj.Commission_Amount,
+
+                Checkin = obj.Checkin,
+                Checkout = obj.Checkout,
+                ChangeoverDay = obj.ChangeoverDay.HasValue ? (int)obj.ChangeoverDay : -1,
+                MinRental_Days = obj.MinRental_Days,
+
+                PaySchedule_Deposit_Required = obj.PaySchedule_Deposit_Required,
+                PaySchedule_Deposit_AmountType = obj.PaySchedule_Deposit_AmountType,
+                PaySchedule_Deposit_Amount = obj.PaySchedule_Deposit_Amount,
+
+                PaySchedule_Interim_Required = obj.PaySchedule_Interim_Required,
+                PaySchedule_Interim_AmountType = obj.PaySchedule_Interim_AmountType,
+                PaySchedule_Interim_Amount = obj.PaySchedule_Interim_Amount,
+                PaySchedule_Interim_Days = obj.PaySchedule_Interim_Days,
+
+                PaySchedule_Balance_Days = obj.PaySchedule_Balance_Days,
+
+                SecurityDeposit_Required = obj.SecurityDeposit_Required,
+                SecurityDeposit_AmountType = obj.SecurityDeposit_AmountType,
+                SecurityDeposit_Amount = obj.SecurityDeposit_Amount,
+                SecurityDeposit_CalcFrom = obj.SecurityDeposit_CalcFrom,
+                SecurityDeposit_DaysBeforeDue = obj.SecurityDeposit_DaysBeforeDue,
+                SecurityDeposit_DaysAfterDue = obj.SecurityDeposit_DaysAfterDue
+            };
+
+        obj = null;
+    }
+
+    private async Task Details_SaveAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (_form.Currency_Id == 0)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Please select a currency." });
+            return;
+        }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var obj = new Core.Settings.PremiseDefaults
+            {
+                DefaultAvailability = _form.DefaultAvailability,
+                RequireBookingApproval = _form.RequireBookingApproval,
+                PriceEntryMode = _form.PriceEntryMode,
+                Currency_Id = _form.Currency_Id,
+
+                Commission_Amount = _form.Commission_Amount,
+
+                Checkin = _form.Checkin,
+                Checkout = _form.Checkout,
+                ChangeoverDay = null,
+                MinRental_Days = _form.MinRental_Days,
+
+                PaySchedule_Deposit_Required = _form.PaySchedule_Deposit_Required,
+                PaySchedule_Deposit_AmountType = _form.PaySchedule_Deposit_AmountType,
+                PaySchedule_Deposit_Amount = _form.PaySchedule_Deposit_Amount,
+
+                PaySchedule_Interim_Required = _form.PaySchedule_Interim_Required,
+                PaySchedule_Interim_AmountType = _form.PaySchedule_Interim_AmountType,
+                PaySchedule_Interim_Amount = _form.PaySchedule_Interim_Amount,
+                PaySchedule_Interim_Days = _form.PaySchedule_Interim_Days,
+
+                PaySchedule_Balance_Days = _form.PaySchedule_Balance_Days,
+
+                SecurityDeposit_Required = _form.SecurityDeposit_Required,
+                SecurityDeposit_AmountType = _form.SecurityDeposit_AmountType,
+                SecurityDeposit_Amount = _form.SecurityDeposit_Amount,
+                SecurityDeposit_CalcFrom = _form.SecurityDeposit_CalcFrom,
+                SecurityDeposit_DaysBeforeDue = _form.SecurityDeposit_DaysBeforeDue,
+                SecurityDeposit_DaysAfterDue = _form.SecurityDeposit_DaysAfterDue
+            };
+
+        if (_form.ChangeoverDay != -1) { obj.ChangeoverDay = (DayOfWeek)_form.ChangeoverDay; }
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Changes saved." };
+
+        if (!(await obj.SaveAsync()))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Error;
+            objMessage.Message = "We're sorry but there has been an issue saving the changes, please try again or contact support for further assistance.";
+        }
+        else
+        {
+            Details_Load();
+        }
+
+        await EndProcessingAsync();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private async Task Details_ResetAsync()
+    {
+        Details_Load();
+
+        await JS.InvokeVoidAsync("ScrollToTop");
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "Changes cancelled." });
+    }
+}

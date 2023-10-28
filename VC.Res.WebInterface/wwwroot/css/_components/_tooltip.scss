@@ -1,0 +1,21 @@
+﻿////
+//// TOOLTIP
+////
+
+.tooltip {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+	//border-radius: 9px;
+	//background-color: $mono-400;
+	background-size: 18px 18px;
+	background-image: svg('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#{$primary-color}"><path d="M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0m1 15H9V9h2v6zm0-8H9V5h2v2z"/></svg>');
+	vertical-align: middle;
+	margin-left: 5px;
+	cursor: pointer;
+	opacity: 0.6;
+
+	&:hover {
+		opacity: 1;
+	}
+}

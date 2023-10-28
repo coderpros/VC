@@ -1,0 +1,10 @@
+////
+//// FLEXBOX - SPACE BETWEEN
+//// @include flexbox-space-around();
+////
+
+@mixin flexbox-space-around() {
+    -webkit-justify-content: space-around;
+    -ms-flex-pack: distribute;
+    justify-content: space-around; 
+}

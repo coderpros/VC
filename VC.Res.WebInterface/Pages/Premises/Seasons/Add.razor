@@ -1,0 +1,773 @@
+﻿@page "/properties/seasons/add/{PremiseId:int}"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+
+<PageTitle>Properties - Season - Add</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <a href="@Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: PremiseId, dicQuerystringParms: new Dictionary<string, string> { { "view", "seasons" } })" class="sub-header__btn" title="Return to property" data-hScroll-item>
+        <svg class="icon icon--small">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__left-arrow"></use>
+        </svg>
+        <span class="sub-header__btn-text">Back to property</span>
+    </a>
+
+    <div class="sub-header__btn" data-hScroll-item>
+        <span class="sub-header__btn-text">Properties > Edit: @_selectedPremise.Name > Add season</span>
+    </div>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        @if (_selectedPremise.Loaded)
+        {
+            <EditForm EditContext="editContext">
+                <DataAnnotationsValidator />
+                <div class="panel">
+                    <div class="panel__header">
+                        <h4 class="panel__title">Add season</h4>
+                    </div>
+                    <div class="panel__content">
+                        <div class="form">
+                            <div class="row">
+
+                                @if (_seasons.Count > 0)
+                                {
+                                    <div class="col col-12">
+                                        <div class="form__item">
+                                            <label class="form__label">Create from</label>
+                                            <SfDropDownList @ref="Ddl_PrevSeasons" TValue="int?" TItem="Models.DropDownItem" Placeholder="Select a season" ShowClearButton="true" DataSource="@_seasons" AllowFiltering="true" @bind-Value="@_form.CreateFrom">
+                                                <DropDownListFieldSettings Text="Text" Value="Value_Int"></DropDownListFieldSettings>
+                                                <DropDownListEvents TValue="int?" TItem="Models.DropDownItem" Filtering="Ddl_PrevSeasons_OnFilter"></DropDownListEvents>
+                                            </SfDropDownList>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="col col-12">
+                                    <div class="form__item">
+                                        <label class="form__label">Name</label>
+                                        <InputText @bind-Value="_form.Name" class="form__input" type="text" maxlength="100" />
+                                        <ValidationMessage For="@(() => _form.Name)" />
+                                    </div>
+                                </div>
+
+                                <div class="col col-12">
+                                    <div class="form__item">
+                                        <label class="form__label">Dates</label>
+                                        <SfGrid DataSource="@_form.Dates" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" AllowTextWrap="true">
+                                            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                                            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+                                            <GridEvents OnActionBegin="DatesGridActionBeginHandler" OnActionComplete="DatesGridActionCompleteHandlerAsync" TValue="Core.Premises.Seasons.Date"></GridEvents>
+                                            <GridColumns>
+                                                <GridColumn Field=@nameof(Core.Premises.Seasons.Date.Id_Guid) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" AllowEditing="false"></GridColumn>
+                                                <GridColumn HeaderText="Start">
+                                                    <Template Context="datesContext">
+                                                        @{
+                                                            var obj = (datesContext as Core.Premises.Seasons.Date);
+                                                            if (obj != null)
+                                                            {
+                                                                @(obj.Start.ToString("dd MMM yyyy"))
+                                                            }
+                                                        }
+                                                    </Template>
+                                                    <EditTemplate Context="datesContext">
+                                                        <SfDatePicker @bind-Value="@((datesContext as Core.Premises.Seasons.Date).Start)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                                    </EditTemplate>
+                                                </GridColumn>
+                                                <GridColumn HeaderText="End">
+                                                    <Template Context="datesContext">
+                                                        @{
+                                                            var obj = (datesContext as Core.Premises.Seasons.Date);
+                                                            if (obj != null)
+                                                            {
+                                                                @(obj.End.ToString("dd MMM yyyy"))
+                                                            }
+                                                        }
+                                                    </Template>
+                                                    <EditTemplate Context="datesContext">
+                                                        <SfDatePicker @bind-Value="@((datesContext as Core.Premises.Seasons.Date).End)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                                    </EditTemplate>
+                                                </GridColumn>
+                                            </GridColumns>
+                                        </SfGrid>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="y-spacer y-spacer__32"></div>
+                            <h4 class="form__label--flex" for="Cb_GenerateRates">
+                                Rates
+                                <InputCheckbox id="Cb_GenerateRates" class="form__checkbox--secondary" @bind-Value="_form.GenerateRates" title="Generate rates" />
+                                <label for="Cb_GenerateRates">Generate &nbsp;<span></span></label>
+                            </h4>
+                            @if (_form.GenerateRates)
+                            {
+                                <div class="row">
+                                    @if (_form.CreateFrom.HasValue)
+                                    {
+                                        <div class="col col-12 sm-4">
+                                            <div class="form__item">
+                                                <label class="form__label">Shift rate dates by (days)</label>
+                                                <InputNumber @bind-Value="_form.ShiftRateDaysBy" class="form__input" />
+                                                <ValidationMessage For="@(() => _form.ShiftRateDaysBy)" />
+                                            </div>
+                                        </div>
+                                        <div class="col col-12 sm-4">
+                                            <div class="form__item">
+                                                <label class="form__label">Change rate prices by (%)</label>
+                                                <InputNumber @bind-Value="_form.ChangeRatePricesBy" class="form__input" format="F2" />
+                                                <ValidationMessage For="@(() => _form.ChangeRatePricesBy)" />
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="col col-12 sm-3">
+                                            <div class="form__item">
+                                                <label class="form__label">Changeover day</label>
+                                                <div class="form__select">
+                                                    <InputSelect @bind-Value="_form.ChangeoverDay">
+                                                        <option value="-1">Open/flexible</option>
+                                                        <option value="@((int)DayOfWeek.Sunday)">@DayOfWeek.Sunday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Monday)">@DayOfWeek.Monday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Tuesday)">@DayOfWeek.Tuesday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Wednesday)">@DayOfWeek.Wednesday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Thursday)">@DayOfWeek.Thursday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Friday)">@DayOfWeek.Friday.ToString()</option>
+                                                        <option value="@((int)DayOfWeek.Saturday)">@DayOfWeek.Saturday.ToString()</option>
+                                                    </InputSelect>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col col-12 sm-3">
+                                            <div class="form__item">
+                                                <label class="form__label">Prices entered are</label>
+                                                <div class="form__select">
+                                                    <InputSelect @bind-Value="_form.PriceEntryMode">
+                                                        <option value="@Core.Enums.Shared_PriceValueType.Gross">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Gross)</option>
+                                                        <option value="@Core.Enums.Shared_PriceValueType.Net">@Core.Enums.Label(Core.Enums.Shared_PriceValueType.Net)</option>
+                                                    </InputSelect>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col col-12 sm-3">
+                                            <div class="form__item">
+                                                <label class="form__label">Default price</label>
+                                                <InputNumber @bind-Value="_form.DefaultPrice" class="form__input" />
+                                                <ValidationMessage For="@(() => _form.DefaultPrice)" />
+                                            </div>
+                                        </div>
+                                        <div class="col col-12 sm-3">
+                                            <div class="form__item">
+                                                <label class="form__label">Price is</label>
+                                                <div class="form__select">
+                                                    <InputSelect @bind-Value="_form.Price_Type">
+                                                        <option value="0">Total for period</option>
+                                                        <option value="1">Nightly</option>
+                                                    </InputSelect>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col col-12 sm-4">
+                                            <div class="form__item">
+                                                <label class="form__label">Commission type</label>
+                                                <div class="form__select">
+                                                    <InputSelect @bind-Value="_form.Commission_AmountType">
+                                                        <option value="@Core.Enums.Shared_NumericValueType.Percentage">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Percentage)</option>
+                                                        <option value="@Core.Enums.Shared_NumericValueType.Fixed">@Core.Enums.Label(Core.Enums.Shared_NumericValueType.Fixed)</option>
+                                                    </InputSelect>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col col-12 sm-4">
+                                            <div class="form__item">
+                                                <label class="form__label">Commission amount</label>
+                                                <InputNumber @bind-Value="_form.Commission_Amount" class="form__input" />
+                                                <ValidationMessage For="@(() => _form.Commission_Amount)" />
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="col col-12 sm-4">
+                                        <div class="form__item">
+                                            <label class="form__label">Provisional</label>
+                                            <span class="form__asp-checkbox">
+                                                <InputCheckbox id="Cb_Rate_Provisional" @bind-Value="_form.Provisional" />
+                                                <label for="Cb_Rate_Provisional">Yes</label>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col col-12">
+                                        <div class="form__item">
+                                            <label class="form__label">Proposed rates</label>
+                                            <SfGrid DataSource="@_form.Rates" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowTextWrap="true">
+                                                <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                                                <GridEditSettings AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+                                                <GridEvents OnActionBegin="RatesGridActionBeginHandler" TValue="Models.Premises.Rates.Proposed"></GridEvents>
+                                                <GridColumns>
+                                                    <GridColumn Field=@nameof(Models.Premises.Rates.Proposed.Id_Guid) HeaderText="ID" Width="80px" IsPrimaryKey="true" Visible="false" AllowEditing="false"></GridColumn>
+                                                    <GridColumn HeaderText="Start Day">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Arrive.ToString("dddd"))
+                                                                }
+                                                            }
+                                                        </Template>
+                                                    </GridColumn>
+                                                    <GridColumn HeaderText="From">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Arrive.ToString("dd MMM yyyy"))
+                                                                }
+                                                            }
+                                                        </Template>
+                                                        <EditTemplate Context="rateContext">
+                                                            <SfDatePicker @bind-Value="@((rateContext as Models.Premises.Rates.Proposed).Arrive)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                                        </EditTemplate>
+                                                    </GridColumn>
+                                                    <GridColumn HeaderText="To">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Depart.ToString("dd MMM yyyy"))
+                                                                }
+                                                            }
+                                                        </Template>
+                                                        <EditTemplate Context="rateContext">
+                                                            <SfDatePicker @bind-Value="@((rateContext as Models.Premises.Rates.Proposed).Depart)" TValue="DateTime" Format="dd/MM/yyyy" />
+                                                        </EditTemplate>
+                                                    </GridColumn>
+                                                    <GridColumn HeaderText="Gross rate">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Price_POA ? "POA" : Core.Common.Currency.Format(_currency, string.Format("{0:n2}", obj.Price_Gross)))
+                                                                }
+                                                            }
+                                                        </Template>
+                                                        <EditTemplate Context="rateContext">
+                                                            <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((rateContext as Models.Premises.Rates.Proposed).Editable_Price_Gross)" />
+                                                        </EditTemplate>
+                                                    </GridColumn>
+                                                    <GridColumn HeaderText="Net rate">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Price_POA ? "POA" : Core.Common.Currency.Format(_currency, string.Format("{0:n2}", obj.Price_Net)))
+                                                                }
+                                                            }
+                                                        </Template>
+                                                        <EditTemplate Context="rateContext">
+                                                            <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((rateContext as Models.Premises.Rates.Proposed).Editable_Price_Net)" />
+                                                        </EditTemplate>
+                                                    </GridColumn>
+                                                    <GridColumn HeaderText="Commission">
+                                                        <Template Context="rateContext">
+                                                            @{
+                                                                var obj = (rateContext as Models.Premises.Rates.Proposed);
+                                                                if (obj != null)
+                                                                {
+                                                                    @(obj.Commission.HasValue ? Core.Common.Currency.Format(_currency, string.Format("{0:n2}", obj.Commission.Value)) : "n/a")
+                                                                }
+                                                            }
+                                                        </Template>
+                                                        <EditTemplate Context="rateContext">
+                                                            <SfNumericTextBox TValue="decimal?" Format="F2" ShowSpinButton=false @bind-Value="@((rateContext as Models.Premises.Rates.Proposed).Editable_Commission)" />
+                                                        </EditTemplate>
+                                                    </GridColumn>
+                                                </GridColumns>
+                                            </SfGrid>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col col-12 align--right">
+                    <button type="button" class="button  button__outline" disabled=@_processing @onclick="@CancelClick" value="Cancel">Cancel</button>
+                    <button type="submit" class="button" disabled=@_processing value="Save" @onclick="@AddClickAsync">Save</button>
+                </div>
+            </div>
+        </EditForm>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public int PremiseId { get; set; }
+
+    private Core.Premises.Premise _selectedPremise { get; set; } = new Core.Premises.Premise();
+
+    private List<Models.DropDownItem> _seasons { get; set; } = new List<Models.DropDownItem>();
+    private Core.Common.Currency _currency = new Core.Common.Currency();
+
+    SfDropDownList<int?, Models.DropDownItem>? Ddl_PrevSeasons { get; set; } = new SfDropDownList<int?, Models.DropDownItem>();
+
+    private EditContext? editContext;
+    private Form _form = new Form();
+
+    public class Form
+    {
+        public int? CreateFrom { get; set; } = null;
+
+        [Required(ErrorMessage = "This field is required")]
+        public string Name { get; set; } = "";
+
+        public List<Core.Premises.Seasons.Date> Dates { get; set; } = new List<Core.Premises.Seasons.Date>();
+
+        public bool GenerateRates { get; set; } = false;
+
+        public int ShiftRateDaysBy { get; set; } = 0;
+
+        public decimal ChangeRatePricesBy { get; set; } = 0;
+
+        public int ChangeoverDay { get; set; } = -1;
+        public Core.Enums.Shared_PriceValueType PriceEntryMode { get; set; } = Core.Enums.Shared_PriceValueType.Net;
+
+        public Core.Enums.Shared_NumericValueType Commission_AmountType { get; set; } = Core.Enums.Shared_NumericValueType.Percentage;
+        public decimal Commission_Amount { get; set; } = 0;
+
+        public decimal DefaultPrice { get; set; } = 0;
+
+        public bool Tax_Exempt { get; set; } = false;
+        public decimal Tax_Value { get; set; } = 0;
+
+        public bool Provisional { get; set; } = true;
+        public int Price_Type { get; set; } = 0;
+
+        public List<Models.Premises.Rates.Proposed> Rates { get; set; } = new List<Models.Premises.Rates.Proposed>();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _selectedPremise = await Core.Premises.Premise.FindAsync(PremiseId, bUseCache: false);
+
+        if (!_selectedPremise.Loaded || _selectedPremise.Deleted_UTC.HasValue)
+        {
+            // shouldn't be accessing
+            NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_List));
+            return;
+        }
+
+        _form = new Form();
+
+        _seasons = new List<Models.DropDownItem>();
+
+        foreach (var objSeason in await Core.Premises.Seasons.Season.FindAllBy_PremiseAsync(PremiseId))
+        {
+            _seasons.Add(new Models.DropDownItem
+                {
+                    Text = objSeason.Name,
+                    Value_Int = objSeason.Id
+                });
+        }
+
+        // defaults for a completely new season
+        var objPremiseConfig = await Core.Premises.Config.FindBy_PremiseAsync(PremiseId);
+        if (objPremiseConfig.ChangeoverDay_Calculated.HasValue)
+        {
+            _currency = await Core.Common.Currency.FindAsync(objPremiseConfig.Currency_Id_Calculated);
+
+            if (objPremiseConfig.ChangeoverDay_Calculated.HasValue)
+            {
+                _form.ChangeoverDay = (int)objPremiseConfig.ChangeoverDay_Calculated.Value;
+            }
+
+            _form.PriceEntryMode = objPremiseConfig.PriceEntryMode_Calculated;
+
+            _form.Commission_AmountType = objPremiseConfig.Commission_AmountType_Calculated;
+            _form.Commission_Amount = objPremiseConfig.Commission_Amount_Calculated;
+
+            _form.Tax_Exempt = objPremiseConfig.Tax_Exempt_Calculated;
+            _form.Tax_Value = objPremiseConfig.Tax_Value_Calculated;
+        }
+
+        editContext = new(_form);
+        editContext.OnFieldChanged += EditContext_OnFieldChangedAsync;
+    }
+
+    private async void EditContext_OnFieldChangedAsync(object sender, FieldChangedEventArgs e)
+    {
+        switch (e.FieldIdentifier.FieldName)
+        {
+            case nameof(Form.CreateFrom):
+                {
+                    // reset the dates
+                    _form.Dates = new List<Core.Premises.Seasons.Date>();
+
+                    if (_form.CreateFrom.HasValue)
+                    {
+                        // look up the season to use as source
+                        var objSourceSeason = await Core.Premises.Seasons.Season.FindAsync(_form.CreateFrom.Value);
+                        if (objSourceSeason.Loaded)
+                        {
+                            foreach (var vDate in objSourceSeason.Dates)
+                            {
+                                _form.Dates.Add(new Core.Premises.Seasons.Date
+                                    {
+                                        Start = vDate.Start.AddYears(1),
+                                        End = vDate.End.AddYears(1)
+                                    });
+                            }
+
+                            var objSeasonConfig = await Core.Premises.Config.FindBy_SeasonAsync(objSourceSeason.Id);
+                            if (objSeasonConfig.ChangeoverDay_Calculated.HasValue)
+                            {
+                                _currency = await Core.Common.Currency.FindAsync(objSeasonConfig.Currency_Id_Calculated);
+
+                                _form.ChangeoverDay = -1;
+                                if (objSeasonConfig.ChangeoverDay_Calculated.HasValue)
+                                {
+                                    _form.ChangeoverDay = (int)objSeasonConfig.ChangeoverDay_Calculated.Value;
+                                }
+
+                                _form.PriceEntryMode = objSeasonConfig.PriceEntryMode_Calculated;
+
+                                _form.Commission_AmountType = objSeasonConfig.Commission_AmountType_Calculated;
+                                _form.Commission_Amount = objSeasonConfig.Commission_Amount_Calculated;
+
+                                _form.Tax_Exempt = objSeasonConfig.Tax_Exempt_Calculated;
+                                _form.Tax_Value = objSeasonConfig.Tax_Value_Calculated;
+                            }
+                            objSeasonConfig = null;
+                        }
+                    }
+                    else
+                    {
+                        var objPremiseConfig = await Core.Premises.Config.FindBy_PremiseAsync(PremiseId);
+                        if (objPremiseConfig.ChangeoverDay_Calculated.HasValue)
+                        {
+                            _currency = await Core.Common.Currency.FindAsync(objPremiseConfig.Currency_Id_Calculated);
+
+                            _form.ChangeoverDay = -1;
+                            if (objPremiseConfig.ChangeoverDay_Calculated.HasValue)
+                            {
+                                _form.ChangeoverDay = (int)objPremiseConfig.ChangeoverDay_Calculated.Value;
+                            }
+
+                            _form.PriceEntryMode = objPremiseConfig.PriceEntryMode_Calculated;
+
+                            _form.Commission_AmountType = objPremiseConfig.Commission_AmountType_Calculated;
+                            _form.Commission_Amount = objPremiseConfig.Commission_Amount_Calculated;
+
+                            _form.Tax_Exempt = objPremiseConfig.Tax_Exempt_Calculated;
+                            _form.Tax_Value = objPremiseConfig.Tax_Value_Calculated;
+                        }
+                        objPremiseConfig = null;
+                    }
+
+                    if (_form.GenerateRates) { await Rates_GenerateAsync(); }
+                }
+                break;
+
+            case nameof(Form.GenerateRates):
+                {
+                    if (_form.GenerateRates)
+                    {
+                        await Rates_GenerateAsync();
+                    }
+                    else
+                    {
+                        // clear rates
+                        _form.Rates = new List<Models.Premises.Rates.Proposed>();
+                    }
+                }
+                break;
+
+            case nameof(Form.Dates):
+            case nameof(Form.ShiftRateDaysBy):
+            case nameof(Form.ChangeRatePricesBy):
+            case nameof(Form.ChangeoverDay):
+            case nameof(Form.PriceEntryMode):
+            case nameof(Form.Commission_AmountType):
+            case nameof(Form.Commission_Amount):
+            case nameof(Form.DefaultPrice):
+            case nameof(Form.Price_Type):
+                {
+                    if (_form.GenerateRates) { await Rates_GenerateAsync(); }
+                }
+                break;
+
+            default: break;
+        }
+    }
+
+    private async Task Rates_GenerateAsync()
+    {
+        // clear rates to start again
+        _form.Rates = new List<Models.Premises.Rates.Proposed>();
+
+        if (_form.GenerateRates)
+        {
+            if (_form.CreateFrom.HasValue)
+            {
+                // create the rates from the selected season, realigning for new date ranges
+                var objSourceSeason = await Core.Premises.Seasons.Season.FindAsync(_form.CreateFrom.Value);
+                if (objSourceSeason.Loaded)
+                {
+                    var lstSourceSeasonRates = await Core.Premises.Seasons.Rate.FindAllBy_SeasonAsync(objSourceSeason.Id);
+
+                    // loop over the source season date ranges and align to new season date ranges to
+                    // match original rate dates to new date ranges
+                    for (var i = 0; i < objSourceSeason.Dates.Count; i++)
+                    {
+                        // check there is a corisponding new date range
+                        if (i >= _form.Dates.Count) { continue; }
+
+                        var objOriginalDates = objSourceSeason.Dates[i];
+                        var objNewDates = _form.Dates[i];
+
+                        var iDaysDiff = (objNewDates.Start - objOriginalDates.Start).Days + _form.ShiftRateDaysBy;
+
+                        foreach (var vOriginalRate in lstSourceSeasonRates.Where(r => r.Arrive >= objOriginalDates.Start && r.Arrive <= objOriginalDates.End))
+                        {
+                            var dtArrive = vOriginalRate.Arrive.AddDays(iDaysDiff);
+
+                            // check arrive date is within the date range
+                            if (dtArrive < objNewDates.Start || dtArrive > objNewDates.End) { continue; }
+                                                       
+                            var objProposedRate = new Models.Premises.Rates.Proposed
+                                {
+                                    Arrive = dtArrive,
+                                    Depart = dtArrive.AddDays(7),
+                                    MinPartySize = vOriginalRate.Min_PartySize,
+                                    Price_POA = vOriginalRate.Price_POA,
+                                    Price_EntryMode = vOriginalRate.Price_EntryMode,
+                                    Price = vOriginalRate.Price,
+                                    Commission_AmountType = vOriginalRate.Commission_AmountType,
+                                    Commission_Amount = vOriginalRate.Commission_Amount,
+                                    Commission_Note = vOriginalRate.Commission_Note,
+                                    Tax_Exempt = vOriginalRate.Tax_Exempt,
+                                    Tax_Value = vOriginalRate.Tax_Value,
+                                    Discount = vOriginalRate.Discount,
+                                    Discount_Nights = vOriginalRate.Discount_Nights,
+                                    Discount_EntryMode = vOriginalRate.Discount_EntryMode,
+                                    Discount_AmountType = vOriginalRate.Discount_AmountType,
+                                    Discount_Amount = vOriginalRate.Discount_Amount,
+                                    Discount_Note = vOriginalRate.Discount_Note
+                                };
+
+                            objProposedRate.Calculate();
+
+                            if (_form.ChangeRatePricesBy != 0)
+                            {
+                                // update the price according to the change
+                                objProposedRate.Price = Math.Round(vOriginalRate.Price / 100 * (100 + _form.ChangeRatePricesBy), 2, MidpointRounding.AwayFromZero);
+
+                                objProposedRate.Editable_Updated();
+                            }
+
+                            _form.Rates.Add(objProposedRate);
+                        }
+
+                        objOriginalDates = null;
+                        objNewDates = null;
+                    }
+
+                    lstSourceSeasonRates = null;
+                }
+                objSourceSeason = null;
+            }
+            else
+            {
+                // generate new rates from scratch
+                foreach (var vDateRange in _form.Dates)
+                {
+                    var dtRateNight = vDateRange.Start.Date;
+
+                    if (_form.ChangeoverDay != -1)
+                    {
+                        while (dtRateNight.DayOfWeek != (DayOfWeek)_form.ChangeoverDay)
+                        {
+                            dtRateNight = dtRateNight.AddDays(1);
+                        }
+                    }
+
+                    var dPrice = _form.DefaultPrice;
+
+                    if (_form.Price_Type == 1) { dPrice = _form.DefaultPrice * 7; }
+
+                    while (dtRateNight <= vDateRange.End.Date)
+                    {
+                        var objProposedRate = new Models.Premises.Rates.Proposed
+                            {
+                                Arrive = dtRateNight,
+                                Depart = dtRateNight.AddDays(7),
+                                Price_EntryMode = _form.PriceEntryMode,
+                                Price = dPrice,
+                                Commission_AmountType = _form.Commission_AmountType,
+                                Commission_Amount = _form.Commission_Amount,
+                                Tax_Exempt = _form.Tax_Exempt,
+                                Tax_Value = _form.Tax_Value
+                            };
+
+                        objProposedRate.Calculate();
+
+                        _form.Rates.Add(objProposedRate);
+
+                        dtRateNight = dtRateNight.AddDays(7);
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task Ddl_PrevSeasons_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_PrevSeasons, _seasons, args); }
+
+    public void DatesGridActionBeginHandler(ActionEventArgs<Core.Premises.Seasons.Date> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
+        {
+            Args.Data.Start = DateTime.Today.Date;
+            Args.Data.End = Args.Data.Start.AddMonths(3);
+
+            if (_form.Dates.Count > 0)
+            {
+                Args.Data.Start = _form.Dates.Max(r => r.End).AddDays(1);
+                Args.Data.End = Args.Data.Start.AddMonths(3).AddDays(-1);
+            }
+        }
+    }
+
+    public async Task DatesGridActionCompleteHandlerAsync(ActionEventArgs<Core.Premises.Seasons.Date> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            _form.Dates = _form.Dates.OrderBy(r => r.Start).ToList();
+
+            await Rates_GenerateAsync();
+        }
+    }
+
+    public void RatesGridActionBeginHandler(ActionEventArgs<Models.Premises.Rates.Proposed> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (Args.Action == "Edit")
+            {
+                Args.Data.Editable_Updated();
+            }
+        }
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var obj = new Core.Premises.Seasons.Season()
+            {
+                Name = _form.Name.Trim(),
+                Dates = _form.Dates
+            };
+
+        var lstValidationResults = await obj.ValidateAsync(PremiseId);
+
+        if (lstValidationResults.Count > 0)
+        {
+            // done processing
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = string.Join("\n", lstValidationResults) });
+
+            return;
+        }
+
+        if (!await obj.CreateAsync(PremiseId, strBy: SessionInfo.Current_User.Name_Full, _form.CreateFrom))
+        {
+            await EndProcessingAsync();
+
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem creating the new item, please try again or contact support for further assistance." });
+
+            return;
+        }
+
+        if (_form.CreateFrom == null)
+        {
+            // creating a blank/completely new season, configure the settings and generate default rates
+            var objSeasonConfig = await Core.Premises.Config.FindBy_SeasonAsync(obj.Id, bUseCache: false);
+
+            objSeasonConfig.ChangeoverDay_Inherit = false;
+            objSeasonConfig.ChangeoverDay = (DayOfWeek)_form.ChangeoverDay;
+
+            objSeasonConfig.PriceEntryMode_Inherit = false;
+            objSeasonConfig.PriceEntryMode = _form.PriceEntryMode;
+
+            objSeasonConfig.Commission_Inherit = false;
+            objSeasonConfig.Commission_AmountType = _form.Commission_AmountType;
+            objSeasonConfig.Commission_Amount = _form.Commission_Amount;
+
+            _ = await objSeasonConfig.SaveAsync(SessionInfo.Current_User.Name_Full);
+
+            objSeasonConfig = null;
+        }
+
+        // create any proposed rates
+        if (_form.GenerateRates)
+        {
+            foreach (var vProposedRate in _form.Rates)
+            {
+                var objRate = new Core.Premises.Seasons.Rate
+                    {
+                        Arrive = vProposedRate.Arrive,
+                        Depart = vProposedRate.Depart,
+                        Min_PartySize = vProposedRate.MinPartySize,
+                        Available = true,
+                        Price_POA = vProposedRate.Price_POA,
+                        Price_EntryMode = vProposedRate.Price_EntryMode,
+                        Price = vProposedRate.Price,
+                        Commission_AmountType = vProposedRate.Commission_AmountType,
+                        Commission_Amount = vProposedRate.Commission_Amount,
+                        Commission_Note = vProposedRate.Commission_Note,
+                        Tax_Exempt = vProposedRate.Tax_Exempt,
+                        Tax_Value = vProposedRate.Tax_Value,
+                        Discount = vProposedRate.Discount,
+                        Discount_Nights = vProposedRate.Discount_Nights,
+                        Discount_EntryMode = vProposedRate.Discount_EntryMode,
+                        Discount_AmountType = vProposedRate.Discount_AmountType,
+                        Discount_Amount = vProposedRate.Discount_Amount,
+                        Discount_Note = vProposedRate.Discount_Note,
+                        Provisional = _form.Provisional
+                    };
+
+                _ = await objRate.CreateAsync(PremiseId, obj.Id, SessionInfo.Current_User.Name_Full, bUseConfigDefaults: false);
+
+                objRate = null;
+            }
+        }
+
+        // got to here then everything is done
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+        NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Seasons_Edit, iParameterId1: PremiseId, iParameterId2: obj.Id));
+    }
+
+    private void CancelClick()
+    {
+        NavigationManager.NavigateTo(Core.UrlHelpers.Interface.URL_Get(Core.UrlHelpers.Interface.Pages.Premises_Edit, iParameterId1: PremiseId, dicQuerystringParms: new Dictionary<string, string> { { "view", "seasons" } }));
+    }
+}

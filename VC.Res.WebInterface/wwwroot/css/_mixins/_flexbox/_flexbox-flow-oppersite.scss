@@ -1,0 +1,11 @@
+////
+//// FLEXBOX - FLOW OPPERSITE
+//// @include flexbox-flow-oppersite();
+////
+
+@mixin flexbox-flow-oppersite() {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: reverse;
+    -ms-flex-direction: row-reverse;
+    flex-direction: row-reverse;
+}

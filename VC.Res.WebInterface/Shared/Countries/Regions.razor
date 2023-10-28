@@ -1,0 +1,181 @@
+﻿@inherits Bases.Component
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<div class="panel">
+    <div class="panel__header">
+        <h4 class="panel__title">Regions</h4>
+        <button type="button" class="panel__header-button" disabled=@_processing @onclick="@RequestAdd" value="Add">
+            Add
+            <svg class="icon">
+                <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+            </svg>
+        </button>
+    </div>
+    <div class="panel__full-content">
+        <SfGrid DataSource="@_regions" AllowTextWrap="true" class="sfGrid--noHeader">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridColumns>
+                <GridColumn Width="42px" Visible=@Core.Settings.Global.Fetch.Website_APIEnabled>
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Region);
+                            if (obj != null)
+                            {
+                                if (!obj.Website_Id.HasValue && SelectedItem.Website_Id.HasValue)
+                                {
+                                    <a @onclick="(() => RequestAddToWebsiteAsync(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Add to website">
+                                        <svg class="icon">
+                                            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__link"></use>
+                                        </svg>
+                                    </a>
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Region.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Region);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+</div>
+
+<VC.Res.WebInterface.Shared.Modals.RegionAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this region?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+
+@code {
+    [Parameter] public Core.Common.Country SelectedItem { get; set; } = new Core.Common.Country();
+
+    private VC.Res.WebInterface.Shared.Modals.RegionAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Region> _regions = new List<Core.Common.Region>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        _regions = await Core.Common.Region.FindAllBy_CountryAsync(SelectedItem.Id);
+
+        await EndProcessingAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(SelectedItem.Id); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                // refresh list
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task RequestAddToWebsiteAsync(int iId)
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem submitting the region to the website, please try again or contact support for further assistance." };
+
+        // get the region
+        var objRegion = await Core.Common.Region.FindAsync(iId);
+
+        if (!objRegion.Loaded)
+        {
+            objMessage.Message = "Region not found.";
+        }
+        else if (objRegion.Country_Id != SelectedItem.Id || !SelectedItem.Website_Id.HasValue)
+        {
+            objMessage.Message = "We're sorry but the region is not eligible to be added to the website.";
+        }
+        else
+        {
+            // try and submit the property to the website
+            if ((await Core.Integrations.Website.API.Region_CreateAsync(objRegion)).Result)
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Region added to the website.";
+            }
+        }
+
+        await EndProcessingAsync();
+
+        await RefreshAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+
+        objMessage = null;
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected region, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Common.Region.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Region deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

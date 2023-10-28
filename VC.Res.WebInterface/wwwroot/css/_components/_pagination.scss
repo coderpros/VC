@@ -1,0 +1,32 @@
+﻿////
+//// PAGINATION
+////
+
+.pagination {
+	$self: &;
+
+	box-sizing: border-box;
+	text-align: center;
+	padding: 0;
+	/*margin: 40px 0px;*/
+    margin-top: 20px;
+
+	&__item {
+		display: inline-block;
+		/*margin-left: 5px;
+		margin-right: 5px;*/
+		padding: 6px;
+		border-bottom: 2px solid transparent;
+		color: $primary-color;
+
+		&--active {
+			border-color: $quaternary-color;
+			color: darken($primary-color, 5%);
+		}
+
+		&:hover {
+			color: lighten($primary-color, 10%);
+            cursor: pointer;
+		}
+	}
+}

@@ -1,0 +1,47 @@
+////
+//// SPACERS
+////
+
+$spacer: 8;
+$spacer-base: $spacer * 2;
+$spacers: (
+    0: 0,
+    $spacer: $spacer,
+    ($spacer * 2): ($spacer * 2),
+    ($spacer * 3): ($spacer * 3),
+    ($spacer * 4): ($spacer * 4),
+    ($spacer * 5): ($spacer * 5),
+    ($spacer * 6): ($spacer * 6),
+    ($spacer * 7): ($spacer * 7),
+    ($spacer * 8): ($spacer * 8),
+    ($spacer * 9): ($spacer * 9),
+    ($spacer * 10): ($spacer * 10),
+    ($spacer * 11): ($spacer * 11),
+    ($spacer * 12): ($spacer * 12),
+    ($spacer * 13): ($spacer * 13),
+    ($spacer * 14): ($spacer * 14),
+    ($spacer * 15): ($spacer * 15),
+    ($spacer * 16): ($spacer * 16),
+    ($spacer * 17): ($spacer * 17),
+    ($spacer * 18): ($spacer * 18),
+    ($spacer * 19): ($spacer * 19),
+    ($spacer * 20): ($spacer * 20)
+);
+
+// 2: $spacer / 4
+// 4: $spacer / 2
+// 8: $spacer
+// 16: $spacer * 2
+// 24: $spacer * 3
+// 32: $spacer * 4
+// 40: $spacer * 5
+// 48: $spacer * 6
+// 56: $spacer * 7
+// 64: $spacer * 8
+// 72: $spacer * 9
+// 80: $spacer * 10
+// 88: $spacer * 11
+// 96: $spacer * 12
+// 104: $spacer * 13
+// 112: $spacer * 14
+// 120: $spacer * 15

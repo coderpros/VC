@@ -1,0 +1,12 @@
+////
+//// OPACITY
+//// @include opacity(0); - invisible
+//// @include opacity(0.5);
+//// @include opacity(1); - solid
+////
+
+@mixin opacity($opacity) {
+    opacity: $opacity;
+    $opacity-ie: $opacity * 100;
+    filter: alpha(opacity=$opacity-ie); //IE8
+}

@@ -1,0 +1,102 @@
+////
+//// LOGIN 
+////
+
+.login {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 15;
+    overflow-y: auto;
+    overflow-x: hidden;
+    //height: 100%;
+    height: calc(100% - 99px);
+    width: 100%;
+
+    &__window {
+        cursor: default;
+        position: relative;
+        width: 100%;
+
+        &-wrapper {
+            position: relative;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            min-height: calc(100% - 48px);
+            margin: auto;
+            max-width: 330px;
+            padding: 24px 24px;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+    }
+
+
+
+
+
+
+    &__logo {
+        padding: 0 24px 24px;
+
+        svg {
+            margin: 0 auto;
+            display: block;
+        }
+
+        img {
+            margin: 0 auto;
+            display: block;
+        }
+    }
+
+    &__header {
+        padding: 24px 24px 0 24px;
+        border-top: 3px solid $primary-color;
+        border-radius: 3px 3px 0 0;
+        text-align: center;
+        background-color: $mono-0;
+
+        &-title {
+            margin-bottom: 5px;
+        }
+
+        &-intro {
+            margin-bottom: 0 !important;
+        }
+    }
+
+    &__content {
+        padding: 15px 24px 24px 24px;
+        background-color: $mono-0;
+    }
+
+    &__button {
+        display: block;
+        background: $tertiary-color;
+        border-radius: 0 0 3px 3px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        padding: 15px;
+        border-top: 1px solid $tertiary-color;
+        cursor: pointer;
+        color: $quaternary-color;
+        text-decoration: none;
+        @include transition(background .3s ease);
+        -webkit-appearance: none;
+
+        &:hover {
+            background: darken($tertiary-color, 5%);
+        }
+    }
+}

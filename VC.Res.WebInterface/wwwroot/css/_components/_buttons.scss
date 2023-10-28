@@ -1,0 +1,111 @@
+////
+//// BUTTON
+////
+
+@mixin button($bg-color, $border-color, $border-width, $color) {
+	background-color: $bg-color;
+	border: $border-width solid $border-color;
+	color: $color;
+}
+
+
+.button {
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 1;
+    padding: 10px 16px;
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    outline: 0;
+    box-sizing: border-box;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    @include transition(all .2s ease);
+    //box-shadow: 0 1px 10px 0 rgba(0,0,0,.1);
+    margin: 4px;
+    // BUTTON COLOURS
+    @include button($primary-color, $primary-color, 0px, $mono-0);
+    // BUTTON HOVER/FOCUS
+    &:focus,
+    &:hover {
+        @include button(darken($primary-color, 5%), darken($primary-color, 5%), 0px, darken($mono-0,5%));
+        box-shadow: 0px 1px 10px 0px rgba(0, 0, 0, 0.2);
+    }
+    // DISABLED
+    &[disabled] {
+        cursor: default;
+        opacity: .5;
+    }
+    ////
+    //// WRAPPER
+    ////
+    &__wrapper {
+        padding: 10px;
+    }
+    ////
+    //// SIZES
+    ////
+
+    &--wide {
+        width: 100%;
+    }
+    // SMALL
+    &--small {
+        padding: 7px 16px;
+        font-size: 12px;
+    }
+    // LARGE
+    &--large {
+        padding: 0 40px;
+        font-size: 16px;
+        line-height: 44px;
+    }
+    // XLARGE
+    &--xlarge {
+        padding: 0 48px;
+        font-size: 18px;
+        line-height: 56px;
+    }
+    // ICON
+    &--icon {
+        /*padding: 10px;*/
+        padding: 0px;
+        margin: 0px;
+    }
+    ////
+    //// VARIANTS
+    ////
+    // OUTLINE BUTTON COLOURS
+    &__outline {
+        /*@include button(transparent, $quinary-color, 1px, $quinary-color);
+        
+        // OUTLINE BUTTON HOVER/FOCUS
+        &:focus,
+	    &:hover {
+		    @include button(transparent, darken($quinary-color, 10%), 1px, darken($quinary-color, 5%));
+        }*/
+
+        @include button($mono-0, $quinary-color, 1px, $quinary-color);
+        // OUTLINE BUTTON HOVER/FOCUS
+        &:focus,
+        &:hover {
+            @include button($mono-0, darken($quinary-color, 10%), 1px, darken($quinary-color, 5%));
+        }
+    }
+    // CLEAR BUTTON COLOURS
+    &__clear {
+        @include button(transparent, transparent, 0, $quinary-color);
+        box-shadow: none;
+        // CLEAR BUTTON HOVER/FOCUS
+        &:focus,
+        &:hover {
+            @include button(transparent, transparent, 0, darken($quinary-color,10%));
+            box-shadow: none;
+        }
+    }
+}

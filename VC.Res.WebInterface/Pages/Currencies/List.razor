@@ -1,0 +1,210 @@
+﻿@page "/currencies"
+@layout Shared.Layouts.StandardLayout
+@inherits Bases.Component
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject NiceUIService niceUIService
+@inject NavigationManager NavigationManager
+@inject Services.SessionInfoService SessionInfo
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+<PageTitle>Currencies</PageTitle>
+
+<section class="sub-header dragscroll" data-hScroll-wrapper>
+    <div class="sub-header__btn" data-hScroll-item>
+		<span class="sub-header__btn-text">Currencies</span>
+	</div>
+
+    <a @onclick="(() => RequestAdd())" @onclick:preventDefault class="sub-header__btn" title="Add new Currency" data-hScroll-item>
+        <svg class="icon">
+            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__edit"></use>
+        </svg>
+        <span class="sub-header__btn-text">Add</span>
+    </a>
+</section>
+
+<section class="main-content__wrapper">
+    <div class="main-content">
+        <SfGrid DataSource="@_currencies" AllowTextWrap="true" AllowRowDragAndDrop="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+            <GridEvents TValue="Core.Common.Currency" RowDropping="RowDroppingHandlerAsync" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Core.Common.Currency.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Currency.Name) HeaderText="Name"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Currency.Code) HeaderText="Code"></GridColumn>
+                <GridColumn Field=@nameof(Core.Common.Currency.Symbol) HeaderText="Symbol"></GridColumn>
+                <GridColumn Width="142px">
+                    <Template>
+                        @{
+                            var CurrencyInfo = (context as Core.Common.Currency);
+
+                            if (CurrencyInfo != null)
+                            {
+                                if (!CurrencyInfo.Default)
+                                {
+                                    <button type="button" class="button" value="Default" @onclick="() => DefaultCurrency(CurrencyInfo.Id)">Set as default</button>
+                                }
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Width="42px">
+                    <Template>
+                        @{
+                            var obj = (context as Core.Common.Currency);
+                            if (obj != null)
+                            {
+                                <a @onclick="(() => RequestDelete(obj.Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                    <svg class="icon icon--red">
+                                        <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+        <VC.Res.WebInterface.Shared.Modals.CurrencyAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
+
+        <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this currency?" OnClosed="ModalDeleteConfirmClosedHandler" />
+    </div>
+</section>
+
+
+
+@code {
+    private VC.Res.WebInterface.Shared.Modals.CurrencyAdd? _modalAdd = null;
+    private VC.Res.WebInterface.Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+
+    private List<Core.Common.Currency> _currencies = new List<Core.Common.Currency>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Currencies_RefreshAsync();
+    }
+
+    private async Task Currencies_RefreshAsync()
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        _currencies = await Core.Common.Currency.FindAllAsync();
+
+        await EndProcessingAsync();
+    }
+
+    public async Task RowDroppingHandlerAsync(RowDroppingEventArgs<Core.Common.Currency> args)
+    {
+        if (args.DropIndex == args.FromIndex)
+        {
+            return;
+        }
+
+        if (args.Data.Count > 0)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objDropIndexItem = _currencies[Convert.ToInt32(args.DropIndex)];
+            var objMoved = args.Data[0];
+
+            _ = await Core.Common.Currency.Move_ToPositionAsync(objMoved.Id, objDropIndexItem.Order);
+
+            objDropIndexItem = null;
+            objMoved = null;
+
+            await EndProcessingAsync();
+        }
+    }
+
+    public async Task ActionCompleteHandler(ActionEventArgs<Core.Common.Currency> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Refresh) { return; }
+
+        await Currencies_RefreshAsync();
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(); }
+    }
+
+    private async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                // update list
+                await Currencies_RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+    private async Task DefaultCurrency(int iId)
+    {
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objMessage = new Models.ToastNotification
+            {
+                Type = Models.ToastNotification.Types.Error,
+                Message = "We're sorry but there has been a problem updating the currency, please try again or contact support for further assistance."
+            };
+
+        if (await Core.Common.Currency.Default_SetAsync(iId))
+        {
+            objMessage.Type = Models.ToastNotification.Types.Success;
+            objMessage.Message = "Currency default updated.";
+        }
+        await EndProcessingAsync();
+
+        await niceUIService.ToastShowAsync(objMessage);
+        objMessage = null;
+
+        await Currencies_RefreshAsync();
+    }
+
+    private void RequestDelete(int iId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+    }
+
+    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected currency, please try again or contact support for further assistance."
+                };
+
+            if (await Core.Common.Currency.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
+            {
+                objMessage.Type = Models.ToastNotification.Types.Success;
+                objMessage.Message = "Currency deleted.";
+            }
+
+            await EndProcessingAsync();
+
+            await Currencies_RefreshAsync();
+
+            await niceUIService.ToastShowAsync(objMessage);
+
+            objMessage = null;
+        }
+    }
+}

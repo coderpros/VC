@@ -1,0 +1,259 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Add @Title</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="form__item">
+                                @if (MultipleSelect)
+                                {
+                                    <label class="form__label">Tag(s)</label>
+                                    <SfMultiSelect @ref="Ddl_Tags" TValue="int[]" TItem="Models.DropDownItem" Placeholder="Select tags" @bind-Value="_form.Tags" Mode="VisualMode.CheckBox" DataSource="@Tags" AllowFiltering="true">
+                                        <MultiSelectFieldSettings Value="Value_Int" Text="Text"></MultiSelectFieldSettings>
+                                        <MultiSelectEvents TValue="int[]" TItem="Models.DropDownItem" Filtering="Ddl_Tags_OnFilter"></MultiSelectEvents>
+                                    </SfMultiSelect>
+                                }
+                                else
+                                {
+                                    <label class="form__label">Tag</label>
+                                    <SfDropDownList @ref="Ddl_Tag" TValue="int?" TItem="Models.DropDownItem" Placeholder="Select a tag" ShowClearButton="true" DataSource="@Tags" AllowFiltering="true" @bind-Value="@_form.Tag_Id">
+                                        <DropDownListFieldSettings Text="Text" Value="Value_Int"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="int?" TItem="Models.DropDownItem" Filtering="Ddl_Tag_OnFilter"></DropDownListEvents>
+                                    </SfDropDownList>
+                                }
+                            </div>
+                        </div>
+                        @if (!MultipleSelect)
+                        {
+                            <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">Description</label>
+                                    <InputTextArea @bind-Value="_form.Description" class="form__textarea" />
+                                    <ValidationMessage For="@(() => _form.Description)" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Create tag" Disabled=@_processing OnClick="@RequestAdd" />
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Add" Disabled=@_processing IsPrimary="true" OnClick="@AddClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+<VC.Res.WebInterface.Shared.Modals.TagAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandlerAsync" />
+
+
+@code {
+    private bool MultipleSelect { get; set; } = false;
+
+    private string Title = "";
+
+    private VC.Res.WebInterface.Shared.Modals.TagAdd? _modalAdd = null;
+
+    private int PremiseId = 0;
+    private Core.Enums.Common_Tag_Type TagType = Core.Enums.Common_Tag_Type.Unknown;
+    private VC.Shared.Enums.Premises_Tag_Category TagCategoryType = VC.Shared.Enums.Premises_Tag_Category.Unknown;
+
+    private ModalForm _form = new ModalForm();
+
+    private List<Models.DropDownItem> Tags { get; set; } = new List<Models.DropDownItem>();
+
+    SfMultiSelect<int[], Models.DropDownItem>? Ddl_Tags { get; set; } = new SfMultiSelect<int[], Models.DropDownItem>();
+    SfDropDownList<int?, Models.DropDownItem>? Ddl_Tag { get; set; } = new SfDropDownList<int?, Models.DropDownItem>();
+
+    public class ModalForm
+    {
+        public int? Tag_Id { get; set; } = null;
+
+        public int[] Tags { get; set; } = Array.Empty<int>();
+
+        public string Description { get; set; } = "";
+    }
+
+    private async Task Ddl_Tags_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Tags, Tags, args); }
+    private async Task Ddl_Tag_OnFilter(FilteringEventArgs args) { await Helpers.General.OnFilter(Ddl_Tag, Tags, args); }
+
+    public async Task OpenAsync(int iPremiseId, Core.Enums.Common_Tag_Type enumType, VC.Shared.Enums.Premises_Tag_Category enumCategory, bool bMultipleSelect = false)
+    {
+        MultipleSelect = bMultipleSelect;
+
+        PremiseId = iPremiseId;
+        TagType = enumType;
+        TagCategoryType = enumCategory;
+
+        if (enumType != Core.Enums.Common_Tag_Type.PropertyFeature)
+        {
+            Title = Core.Enums.Label(enumType);
+        }
+        else
+        {
+            Title = Core.Enums.Label(enumCategory);
+        }
+
+        _form = new ModalForm();
+
+        // setup a list of available tags
+        await RefreshAsync();
+
+        if (Tags.Count > 0)
+        {
+            _visible = true;
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.General, Message = "No additional tags available." });
+        }
+
+        this.StateHasChanged();
+    }
+
+    private async Task RefreshAsync()
+    {
+        // get a list of tag ids already assigned
+        var lstAssignedIds = new List<int>();
+
+        if (TagType != Core.Enums.Common_Tag_Type.PropertyFeature)
+        {
+            lstAssignedIds = (await Core.Premises.Tag.FindAllBy_PremiseAsync(PremiseId, lstTagTypes: new List<Core.Enums.Common_Tag_Type> { TagType })).Select(r => r.Tag_Id).ToList();
+        }
+        else
+        {
+            lstAssignedIds = (await Core.Premises.Tag.FindAllBy_PremiseAsync(PremiseId, lstCategories: new List<VC.Shared.Enums.Premises_Tag_Category> { TagCategoryType })).Select(r => r.Tag_Id).ToList();
+        }
+
+        Tags = new List<Models.DropDownItem>();
+        foreach (var vTag in await Core.Common.Tag.FindAllAsync(TagType))
+        {
+            if (lstAssignedIds.Contains(vTag.Id)) { continue; }
+
+            if (TagCategoryType != VC.Shared.Enums.Premises_Tag_Category.Unknown)
+            {
+                // check the tag belongs to the category
+                if (!vTag.PremiseCategories.Contains(TagCategoryType)){ continue; }
+            }
+
+            Tags.Add(new Models.DropDownItem
+                {
+                    Text = vTag.Name,
+                    Value_Int = vTag.Id
+                });
+        }
+
+        lstAssignedIds = null;
+    }
+
+    private async Task AddClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (MultipleSelect)
+        {
+            if (_form.Tags.Length < 1)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a tag." });
+                return;
+            }
+        }
+        else
+        {
+            if (!_form.Tag_Id.HasValue)
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = "Please select a tag." });
+                return;
+            }
+        }
+
+        // start processing
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        if (MultipleSelect)
+        {
+            foreach (var iTagId in _form.Tags)
+            {
+                var obj = new Core.Premises.Tag();
+
+                if (await obj.CreateAsync(PremiseId, iTagId, TagCategoryType))
+                {
+                    objResponse.Selected_Ids.Add(obj.Id);
+                }
+            }
+
+            if (objResponse.Selected_Ids.Count > 0)
+            {
+                objResponse.Successful = true;
+            }
+        }
+        else
+        {
+            var obj = new Core.Premises.Tag()
+                {
+                    Description = _form.Description.Trim()
+                };
+
+            if (await obj.CreateAsync(PremiseId, _form.Tag_Id.Value, TagCategoryType))
+            {
+                objResponse.Successful = true;
+                objResponse.Selected_Id = obj.Id;
+            }
+        }
+
+        // done processing
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the item, please try again or contact support for further assistance." });
+        }
+    }
+
+    private void RequestAdd()
+    {
+        if (_processing) { return; }
+
+        if (_modalAdd != null) { _modalAdd.Open(TagType); }
+    }
+
+    private async Task ModalAddClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                // display success
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+
+                //refresh grid
+                await RefreshAsync();
+
+                _form.Tag_Id = objResponse.Selected_Id;
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+}

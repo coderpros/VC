@@ -1,0 +1,117 @@
+﻿@inherits Bases.Modal
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+<SfDialog Width="400px" IsModal="true" @bind-Visible="_visible">
+    <DialogTemplates>
+        <Header>Update Availability</Header>
+        <Content>
+            <EditForm Model="@_form">
+                <DataAnnotationsValidator />
+                <div class="form">
+                    <div class="row">
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">From</label>
+                                <SfDatePicker TValue="DateTime" @bind-Value="_form.From" Format="dd/MM/yyyy" />
+                                <ValidationMessage For="@(() => _form.From)" />
+                            </div>
+                        </div>
+                        <div class="col col-12 sm-6">
+                            <div class="form__item">
+                                <label class="form__label">To</label>
+                                <SfDatePicker TValue="DateTime" @bind-Value="_form.To" Min="_form.From" Format="dd/MM/yyyy" />
+                                <ValidationMessage For="@(() => _form.To)" />
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                                <div class="form__item">
+                                    <label class="form__label">State</label>
+                                    <div class="form__select">
+                                        <InputSelect @bind-Value="_form.State">
+                                        @{
+                                            foreach (Core.Enums.Premises_Premise_Availability enumAvailability in Enum.GetValues(typeof(Core.Enums.Premises_Premise_Availability)).ToListDynamic().OrderBy(r => r.ToString()))
+                                            {
+                                                if(enumAvailability == Core.Enums.Premises_Premise_Availability.Unknown) { continue; }
+
+                                                <option value="@enumAvailability">@Core.Enums.Label(enumAvailability)</option>
+                                            }
+                                         }
+                                        </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col col-12">
+                            <div class="form__item">
+                                <label class="form__label">Notes</label>
+                                <InputTextArea @bind-Value="_form.Note" class="form__textarea" />
+                                <ValidationMessage For="@(() => _form.Note)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+     <DialogButtons>
+        <DialogButton Content="Cancel" Disabled=@_processing OnClick="@CancelClickAsync" />
+        <DialogButton Content="Update" Disabled=@_processing IsPrimary="true" OnClick="@UpdateClickAsync" />
+    </DialogButtons>
+    <DialogEvents OnOverlayModalClick="@OverlayClickAsync"></DialogEvents>
+    <DialogAnimationSettings Effect="@DialogEffect.None"></DialogAnimationSettings>
+</SfDialog>
+
+@code {
+    private int PremiseId = 0;
+
+    private ModalForm _form = new ModalForm();
+
+    public class ModalForm
+    {
+        [Required(ErrorMessage = "This field is required")]
+        public DateTime From { get; set; } = DateTime.Today;
+        public DateTime To { get; set; } = DateTime.Today.AddDays(7);
+
+        public Core.Enums.Premises_Premise_Availability State { get; set; } = Core.Enums.Premises_Premise_Availability.Unavailable;
+
+        public string Note { get; set; } = "";
+    }
+
+    public void Open(int iPremiseId)
+    {
+        PremiseId = iPremiseId;
+
+        _form = new ModalForm();
+
+        _visible = true;
+
+        this.StateHasChanged();
+    }
+
+    private async Task UpdateClickAsync()
+    {
+        if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(_form, new ValidationContext(_form), null)) { return; }
+
+        if (!(await StartProcessingAsync())) { return; }
+
+        var objResponse = new Models.ModalResponse();
+
+        if (await Core.Premises.Availability.UpdateAsync( PremiseId, enumState: _form.State, dtFrom: _form.From, dtTo: _form.To, strNote: _form.Note.Trim(), strBy: SessionInfo.Current_User.Name_Full))
+        {
+            objResponse.Successful = true;
+        }
+
+        await EndProcessingAsync();
+
+        if (objResponse.Successful)
+        {
+            Close();
+
+            await OnClosed.InvokeAsync(objResponse);
+        }
+        else
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem adding the new item, please try again or contact support for further assistance." });
+        }
+    }
+}

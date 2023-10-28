@@ -1,0 +1,54 @@
+﻿@{
+    SmidgeHelper.CreateCssBundle("global-css").RequiresCss(new[] { "~/css/bootstrap.min.css",
+                                                                   "~/css/animate.min.css",
+                                                                   "~/css/owl.carousel.min.css",
+                                                                   "~/css/jquery-ui.css",
+                                                                   "~/css/lightgallery.min.css",
+                                                                   "~/lib/slick-carousel/slick.css",
+                                                                   "~/lib/slick-carousel/slick-theme.css",
+                                                                   "~/lib/intl-tel-input/css/intlTelInput.css",
+                                                                   "~/css/daterangepicker.css",
+                                                                   "~/css/style.css",
+                                                                   "~/css/all.min.css",
+                                                                   "~/css/umbraco-blockgridlayout.css"
+         });
+
+    SmidgeHelper.CreateJsBundle("global-js-bottom").RequiresJs(new[] { "~/scripts/jquery.min.js",
+                                                                       "~/scripts/popper.min.js",
+                                                                       "~/scripts/bootstrap.min.js",
+                                                                       "~/scripts/owl.carousel.min.js",
+                                                                       "~/scripts/jquery-ui.js",
+                                                                       "~/scripts/jquery.mixitup.min.js",
+                                                                       "~/scripts/lightgallery-all.min.js",
+                                                                       "~/lib/slick-carousel/slick.js",
+                                                                       "~/lib/intl-tel-input/js/intlTelInput-jquery.js",
+                                                                       "~/scripts/main.js"
+        });
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Villa Collective - Exceptional Private Retreats</title>
+
+    <!-- CSS -->
+    @await SmidgeHelper.CssHereAsync("global-css", System.Diagnostics.Debugger.IsAttached)
+    @await SmidgeHelper.CssHereAsync(debug: System.Diagnostics.Debugger.IsAttached)
+
+    <!-- Favicon Icon -->
+    <link rel="icon" href="@Url.Content("~/favicon.ico")" type="image/x-icon">
+</head>
+<body>
+    @await Html.CachedPartialAsync("~/Views/Partials/HeaderStandard.cshtml", null, TimeSpan.FromDays(14), false, false)
+    @RenderBody()
+    @await Html.CachedPartialAsync("~/Views/Partials/FooterStandard.cshtml", null, TimeSpan.FromDays(14), false, false)
+
+    <!-- JS -->
+    @await SmidgeHelper.JsHereAsync("global-js-bottom", System.Diagnostics.Debugger.IsAttached)
+    @await SmidgeHelper.JsHereAsync(debug: System.Diagnostics.Debugger.IsAttached)
+    @await RenderSectionAsync("BottomJavascriptSection", false)
+</body>
+</html>

@@ -1,0 +1,759 @@
+﻿@using System.Text;
+@inherits Bases.Component
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NiceUIService niceUIService
+@inject Services.SessionInfoService SessionInfo
+
+    @if (QuoteValid)
+    {
+        <div class="panel">
+            <div class="panel__content">
+            @if (_quoteContainer.Flexible_Arrival)
+            {
+                <div class="y-spacer y-spacer__32"></div>
+                <h4 class="form__label--flex">
+                    Rate Dates
+                </h4>
+                <div class="row">
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Rate Arrival</label>
+                            <SfDatePicker TValue="DateTime" @bind-Value="@_dateForm.Arrive">
+                                <DatePickerEvents TValue="DateTime" ></DatePickerEvents>
+                            </SfDatePicker>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3">
+                        <div class="form__item">
+                            <label class="form__label">Rate Departure</label>
+                            <SfDatePicker TValue="DateTime" @bind-Value="@_dateForm.Depart">
+                                <DatePickerEvents TValue="DateTime" ></DatePickerEvents>
+                            </SfDatePicker>
+                        </div>
+                    </div>
+                    <div class="col col-12 sm-3 sm-align--center">
+                        <div class="form__item">
+                            <br />
+                            <button type="button" class="button " disabled=@_processing @onclick="UpdateQuoteDatesAsync" value="Update">Update Dates</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="y-spacer y-spacer__16"></div>
+                <div class="panel__divider"></div>
+                <div class="y-spacer y-spacer__32"></div>
+            }
+
+                @*<div class="col col-12">
+                    <VC.Res.WebInterface.Shared.Premises.AvailabilityTable @ref="_availabilityTable" Premise_Id="SelectedPremises.Premises.Id" Start=@SelectedPremises.Arrival End=@SelectedPremises.Departure PadDays="7" ShowKey=false />
+                </div>*@
+
+                @if (SelectedPremises.Availability == Core.Enums.Premises_Premise_Availability.Available)
+                {
+                    @*<div class="form">
+                        <div class="y-spacer y-spacer__32"></div>
+                        <h4 class="form__label--flex">
+                            Nightly Prices
+                        </h4>
+                        <div class="panel__divider"></div>
+                        <div class="y-spacer y-spacer__8"></div>
+                        <div class="row">
+                            <div class="col col-12">
+                                <SfGrid DataSource="@lstGridDates" AllowTextWrap="true" Toolbar="@(new List<string>() { "Update", "Cancel" })">
+                                    <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                                    <GridEditSettings AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+                                    <GridEvents OnActionBegin="GridActionBeginHandler" OnActionComplete="GridActionCompleteHandlerAsync" TValue="VC.Res.WebInterface.Models.Quoting.Item"></GridEvents>
+                                    <GridColumns>
+                                        <GridColumn HeaderText="Night" AllowEditing="false" Field=@nameof(VC.Res.WebInterface.Models.Quoting.Item.Night)>
+                                            <Template>
+                                                @{
+                                                    var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                    if (obj != null)
+                                                    {
+                                                        @(obj.Night.ToString("dd/MM/yyyy"))
+                                                    }
+                                                }
+                                            </Template>
+                                        </GridColumn>
+                                        <GridColumn AllowEditing="false" Field=@nameof(VC.Res.WebInterface.Models.Quoting.Item.Calculated_From) HeaderText="Calculated From"></GridColumn>
+                                        <GridColumn HeaderText="Price (Net)" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Price_Net)">
+                                            <Template>
+                                                @{
+                                                    var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                    if (obj != null)
+                                                    {
+                                                        @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Price_Net)))
+                                                    }
+                                                }
+                                            </Template>
+                                            <EditTemplate>
+                                                <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Price_Net)" />
+                                            </EditTemplate>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="Commission" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Commission)">
+                                            <Template>
+                                                @{
+                                                    var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                    if (obj != null)
+                                                    {
+                                                        @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Commission)))
+                                                    }
+                                                }
+                                            </Template>
+                                            <EditTemplate>
+                                                <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Commission)" />
+                                            </EditTemplate>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="Tax" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Tax)">
+                                            <Template>
+                                                @{
+                                                    var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                    if (obj != null)
+                                                    {
+                                                        @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Tax)))
+                                                    }
+                                                }
+                                            </Template>
+                                            <EditTemplate>
+                                                <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Tax)" />
+                                            </EditTemplate>
+                                        </GridColumn>
+                                        <GridColumn HeaderText="Price (Gross)" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Gross)">
+                                            <Template>
+                                                @{
+                                                    var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                    if (obj != null)
+                                                    {
+                                                        @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Gross)))
+                                                    }
+                                                }
+                                            </Template>
+                                            <EditTemplate>
+                                                <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Gross)" />
+                                            </EditTemplate>
+                                        </GridColumn>
+                                    </GridColumns>
+                                    <GridAggregates>
+                                        <GridAggregate>
+                                            <GridAggregateColumns>
+                                                <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Price_Net)" Type="AggregateType.Sum" Format="N2">
+                                                    <FooterTemplate>
+                                                        @{
+                                                            var obj = (context as AggregateTemplateContext);
+                                                            @if (obj != null)
+                                                            {
+                                                                @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                            }
+                                                        }
+                                                    </FooterTemplate>
+                                                </GridAggregateColumn>
+                                                <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Commission)" Type="AggregateType.Sum" Format="N2">
+                                                    <FooterTemplate>
+                                                        @{
+                                                            var obj = (context as AggregateTemplateContext);
+                                                            @if (obj != null)
+                                                            {
+                                                                @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                            }
+                                                        }
+                                                    </FooterTemplate>
+                                                </GridAggregateColumn>
+                                                <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Tax)" Type="AggregateType.Sum" Format="N2">
+                                                    <FooterTemplate>
+                                                        @{
+                                                            var obj = (context as AggregateTemplateContext);
+                                                            @if (obj != null)
+                                                            {
+                                                                @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                            }
+                                                        }
+                                                    </FooterTemplate>
+                                                </GridAggregateColumn>
+                                                <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Gross)" Type="AggregateType.Sum" Format="N2">
+                                                    <FooterTemplate>
+                                                        @{
+                                                            var obj = (context as AggregateTemplateContext);
+                                                            @if (obj != null)
+                                                            {
+                                                                @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                            }
+                                                        }
+                                                    </FooterTemplate>
+                                                </GridAggregateColumn>
+                                            </GridAggregateColumns>
+                                        </GridAggregate>
+                                    </GridAggregates>
+                                </SfGrid>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">
+                        Extras
+                    </h4>
+                    <div class="panel__divider"></div>
+                    <div class="y-spacer y-spacer__8"></div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <div class="panel">
+                                <div class="panel__header">
+                                    <h4 class="panel__title"> </h4>
+                                    <button type="button" class="panel__header-button" disabled=@_processing @onclick="(() => RequestAddExtraAsync(SelectedPremises.Premises.Id))" value="Add">
+                                        Add
+                                        <svg class="icon">
+                                            <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__plus"></use>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="panel__content">
+                                    <SfGrid DataSource="@lstGridExtras" Toolbar="@(new List<string>() { "Update", "Cancel" })" AllowTextWrap="true">
+                                        <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+                                        <GridEditSettings AllowEditing="true"></GridEditSettings>
+                                        <GridEvents OnActionBegin="GridActionBeginHandler_Extra" OnActionComplete="GridActionCompleteHandlerAsync_Extra" TValue="VC.Res.WebInterface.Models.Quoting.Item"></GridEvents>
+                                        <GridColumns>
+                                            <GridColumn AllowEditing="false" Field=@nameof(VC.Res.WebInterface.Models.Quoting.Item.Name) HeaderText="Name"></GridColumn>
+                                            <GridColumn Field=@nameof(VC.Res.WebInterface.Models.Quoting.Item.Description) HeaderText="Description"></GridColumn>
+                                            <GridColumn HeaderText="Price (Net)" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Price_Net)">
+                                                <Template>
+                                                    @{
+                                                        var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                        if (obj != null)
+                                                        {
+                                                            @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Price_Net)))
+                                                        }
+                                                    }
+                                                </Template>
+                                                <EditTemplate>
+                                                    <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Price_Net)" />
+                                                </EditTemplate>
+                                            </GridColumn>
+                                            <GridColumn HeaderText="Commission" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Commission)">
+                                                <Template>
+                                                    @{
+                                                        var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                        if (obj != null)
+                                                        {
+                                                            @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Commission)))
+                                                        }
+                                                    }
+                                                </Template>
+                                                <EditTemplate>
+                                                    <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Commission)" />
+                                                </EditTemplate>
+                                            </GridColumn>
+                                            <GridColumn HeaderText="Tax" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Tax)">
+                                                <Template>
+                                                    @{
+                                                        var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                        if (obj != null)
+                                                        {
+                                                            @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Tax)))
+                                                        }
+                                                    }
+                                                </Template>
+                                                <EditTemplate>
+                                                    <SfNumericTextBox TValue="decimal" Format="F2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Tax)" />
+                                                </EditTemplate>
+                                            </GridColumn>
+                                            <GridColumn AllowEditing="false" HeaderText="Price (Gross)" Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Gross)">
+                                                <Template>
+                                                    @{
+                                                        var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                        if (obj != null)
+                                                        {
+                                                            @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Gross)))
+                                                        }
+                                                    }
+                                                </Template>
+                                                <EditTemplate>
+                                                    <SfNumericTextBox TValue="decimal" Format="N2" ShowSpinButton=false @bind-Value="@((context as VC.Res.WebInterface.Models.Quoting.Item).Editable_Gross)" />
+                                                </EditTemplate>
+                                            </GridColumn>
+                                            <GridColumn Width="42px" AllowEditing="false">
+                                                <Template>
+                                                    @{
+                                                        var obj = (context as VC.Res.WebInterface.Models.Quoting.Item);
+                                                        if (obj != null)
+                                                        {
+                                                            <a @onclick="(() => RequestDelete(obj.Extra_Id))" @onclick:preventDefault class="button button__clear button--icon" title="Delete">
+                                                                <svg class="icon icon--red">
+                                                                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/imgs/icons/icons__defs.svg#icon__delete"></use>
+                                                                </svg>
+                                                            </a>
+                                                        }
+                                                    }
+                                                </Template>
+                                            </GridColumn>
+                                        </GridColumns>
+                                        <GridAggregates>
+                                            <GridAggregate>
+                                                <GridAggregateColumns>
+                                                    <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Price_Net)" Type="AggregateType.Sum" Format="N2">
+                                                        <FooterTemplate>
+                                                            @{
+                                                                var obj = (context as AggregateTemplateContext);
+                                                                @if (obj != null)
+                                                                {
+                                                                    @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                                }
+                                                            }
+                                                        </FooterTemplate>
+                                                    </GridAggregateColumn>
+                                                    <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Commission)" Type="AggregateType.Sum" Format="N2">
+                                                        <FooterTemplate>
+                                                            @{
+                                                                var obj = (context as AggregateTemplateContext);
+                                                                @if (obj != null)
+                                                                {
+                                                                    @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                                }
+                                                            }
+                                                        </FooterTemplate>
+                                                    </GridAggregateColumn>
+                                                    <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Tax)" Type="AggregateType.Sum" Format="N2">
+                                                        <FooterTemplate>
+                                                            @{
+                                                                var obj = (context as AggregateTemplateContext);
+                                                                @if (obj != null)
+                                                                {
+                                                                    @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                                }
+                                                            }
+                                                        </FooterTemplate>
+                                                    </GridAggregateColumn>
+                                                    <GridAggregateColumn Field="@nameof(VC.Res.WebInterface.Models.Quoting.Item.Gross)" Type="AggregateType.Sum" Format="N2">
+                                                        <FooterTemplate>
+                                                            @{
+                                                                var obj = (context as AggregateTemplateContext);
+                                                                @if (obj != null)
+                                                                {
+                                                                    @(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", obj.Sum)))
+                                                                }
+                                                            }
+                                                        </FooterTemplate>
+                                                    </GridAggregateColumn>
+                                                </GridAggregateColumns>
+                                            </GridAggregate>
+                                        </GridAggregates>
+                                    </SfGrid>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="y-spacer y-spacer__32"></div>
+                    <h4 class="form__label--flex">Totals</h4>
+                    <div class="panel__divider"></div>
+                    <div class="y-spacer y-spacer__16"></div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <h5>Accomodation</h5>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Net)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Accomodation_Net)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Commission</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Accomodation_Commission)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Tax</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Accomodation_Tax)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Gross)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Accomodation_Gross)))</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel__divider"></div>
+                    <div class="y-spacer y-spacer__16"></div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <h5>Extras</h5>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Net)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Extra_Net)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Commission</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Extra_Commission)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Tax</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Extra_Tax)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Gross)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Extra_Net)))</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel__divider"></div>
+                    <div class="y-spacer y-spacer__16"></div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <h5>Overall</h5>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Net)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Total_Net)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Commission</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Total_Commission)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Tax</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Total_Tax)))</p>
+                            </div>
+                        </div>
+                        <div class="col col-3">
+                            <div class="form__item">
+                                <label class="form__label">Price (Gross)</label>
+                                <p>@(Core.Common.Currency.Format(SelectedPremises.Currency, string.Format("{0:n2}", SelectedPremises.Total_Gross)))</p>
+                            </div>
+                        </div>
+                    </div>*@
+
+                    @if (!string.IsNullOrEmpty(SelectedPremises.Snippets))
+                    {
+                        <div class="y-spacer y-spacer__32"></div>
+                        <h4 class="form__label--flex">
+                            Snippet
+                        </h4>
+                        <div class="panel__divider"></div>
+                        <div class="y-spacer y-spacer__8"></div>
+                        <div class="row">
+                            <div class="col col-12">
+                            <SfRichTextEditor @bind-Value="@SelectedPremises.Snippets" Height="400px" EnableHtmlSanitizer="false">
+                                    <RichTextEditorToolbarSettings Type="ToolbarType.MultiRow" Items="@Editor_Tools"></RichTextEditorToolbarSettings>
+                                    <RichTextEditorPasteCleanupSettings Prompt="false" PlainText="true" />
+                                </SfRichTextEditor>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="y-spacer y-spacer__16"></div>
+                    <div class="row">
+                        <div class="col col-12">
+                            <p>@SelectedPremises.Premises.Name is unavailable for the selected dates</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to remove this extra?" OnClosed="ModalDeleteConfirmClosedHandlerAsync" />
+        <VC.Res.WebInterface.Shared.Modals.Premises.QuoteExtraAdd @ref="_modalExtraAdd" OnClosed="ModalAddExtraClosedHandlerAsync" />
+    }
+
+
+
+
+@code {
+    [CascadingParameter] public Models.Quoting.Container _quoteContainer { get; set; } = new Models.Quoting.Container();
+    [Parameter] public EventCallback<Shared.Premises.Quote> CallbackQuotePage { get; set; }
+    
+    public Models.Quoting.Quote SelectedPremises { get; set; } = new Models.Quoting.Quote();
+    private bool QuoteValid = false;
+    private Shared.Premises.AvailabilityTable? _availabilityTable = null;
+    List<Models.Quoting.Item> lstGridDates = new List<Models.Quoting.Item>();
+    List<Models.Quoting.Item> lstGridExtras = new List<Models.Quoting.Item>();
+    private Shared.Modals.Premises.QuoteExtraAdd? _modalExtraAdd = null;
+    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+    private DateForm _dateForm = new DateForm();
+
+    private class DateForm
+    {
+        public DateTime Arrive { get; set; } = DateTime.UtcNow.AddDays(1);
+        public DateTime Depart { get; set; } = DateTime.UtcNow;        
+    }
+
+    private List<ToolbarItemModel> Editor_Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
+        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.ClearFormat },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink  },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.SourceCode },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen }
+    };
+
+    public async Task Quote_LoadAsync(int iQuoteId, bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        if (_quoteContainer.Quotes.Count() > 0)
+        {
+            SelectedPremises = _quoteContainer.Quotes.FirstOrDefault() ?? new Models.Quoting.Quote();
+
+            if (SelectedPremises == null || SelectedPremises.Id == 0)
+            {
+                await EndProcessingAsync(bShowSpinner);
+                return;
+            }
+
+            if (_availabilityTable != null)
+            {
+                _availabilityTable.Start = SelectedPremises.Arrival;
+                _availabilityTable.End = SelectedPremises.Departure;
+                await _availabilityTable.RefreshAsync();
+            }
+
+            lstGridDates = SelectedPremises.Items.Where(x => x.Type == Models.Quoting.ItemType.Date).ToList();
+            lstGridExtras = SelectedPremises.Items.Where(x => x.Type == Models.Quoting.ItemType.Extra).ToList();
+
+            if (_quoteContainer.Flexible_Arrival)
+            {
+                _dateForm.Arrive = SelectedPremises.Arrival;
+                _dateForm.Depart = SelectedPremises.Departure;
+            }
+
+            QuoteValid = true;          
+        }
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private async Task RefreshAsync(bool bShowSpinner = true)
+    {
+        if (!(await StartProcessingAsync(bShowSpinner))) { return; }
+
+        lstGridDates = SelectedPremises.Items.Where(x => x.Type == Models.Quoting.ItemType.Date).ToList();
+        lstGridExtras = SelectedPremises.Items.Where(x => x.Type == Models.Quoting.ItemType.Extra).ToList();
+
+        await EndProcessingAsync(bShowSpinner);
+    }
+
+    private async Task UpdateQuoteDatesAsync()
+    {
+        if (_processing) { return; }
+
+        if (_dateForm.Depart < _dateForm.Arrive)
+        {
+            await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "Depart date is less than arrive date" });
+            return;
+        }
+
+        await SelectedPremises.BuildQuote(SelectedPremises.Premises, _quoteContainer.Currency, _dateForm.Arrive, _dateForm.Depart, _quoteContainer.Number_People, true, SelectedPremises);
+        await RefreshAsync();
+    }
+
+    #region Dates
+
+    //Date Grid
+    public async Task GridActionBeginHandler(ActionEventArgs<VC.Res.WebInterface.Models.Quoting.Item> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (await Args.Data.Update(SelectedPremises, Models.Quoting.ItemType.Date))
+            {
+                await RefreshAsync(true);
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "An error occurred updating the field." });
+            }
+        }
+    }
+
+    //Date Grid
+    public async Task GridActionCompleteHandlerAsync(ActionEventArgs<VC.Res.WebInterface.Models.Quoting.Item> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (await Args.Data.Update(SelectedPremises, Models.Quoting.ItemType.Date))
+            {
+                await RefreshAsync(true);
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "An error occurred updating the field." });
+            }
+        }
+    }
+
+    #endregion dates
+
+    #region Extras
+
+    //Extra Grid
+    public async Task GridActionBeginHandler_Extra(ActionEventArgs<VC.Res.WebInterface.Models.Quoting.Item> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (await Args.Data.Update(SelectedPremises, Models.Quoting.ItemType.Extra))
+            {
+                await RefreshAsync(true);
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "An error occurred updating the field." });
+            }
+        }
+    }
+
+    //Date Grid
+    public async Task GridActionCompleteHandlerAsync_Extra(ActionEventArgs<VC.Res.WebInterface.Models.Quoting.Item> Args)
+    {
+        if (Args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            if (await Args.Data.Update(SelectedPremises, Models.Quoting.ItemType.Extra))
+            {
+                await RefreshAsync(true);
+            }
+            else
+            {
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "An error occurred updating the field." });
+            }
+        }
+    }
+
+
+    private async Task RequestAddExtraAsync(int iPremisesId)
+    {
+        if (_processing) { return; }
+
+        var lstExtraIds = SelectedPremises.Items.Where(x => x.Type == Models.Quoting.ItemType.Extra).Select(x => x.Extra_Id).ToList();
+        if (_modalExtraAdd != null) { await _modalExtraAdd.OpenAsync(iPremisesId, lstExtraIds); }
+    }
+
+    private void RequestDelete(int iItemId)
+    {
+        if (_processing) { return; }
+
+        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iItemId); }
+    }
+
+    private async Task ModalAddExtraClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (!objResponse.Cancelled)
+        {
+            if (objResponse.Successful)
+            {
+                var bSuccessful = false;
+                if (objResponse.Selected_Id.HasValue)
+                {
+                    if (SelectedPremises != null)
+                    {
+                        if (objResponse.Selected_Ids.Count > 0)
+                        {
+                            foreach (var iExtraId in objResponse.Selected_Ids)
+                            {
+                                var tmpExtra = await Core.Premises.Extra.FindAsync(iExtraId);
+                                if (tmpExtra != null && tmpExtra.Loaded)
+                                {
+                                    var calculation_Extra = new Core.Models.PriceCalculation(
+                                    false,
+                                    tmpExtra.Price_EntryMode,
+                                    tmpExtra.Price,
+                                    tmpExtra.Commission_SubjectTo,
+                                    tmpExtra.Commission_AmountType,
+                                    tmpExtra.Commission_Amount ?? 0,
+                                    tmpExtra.Tax_Exempt,
+                                    tmpExtra.Tax_Value ?? 0);
+
+                                    var objExtra = SelectedPremises.AddItem(calculation_Extra, Models.Quoting.ItemType.Extra, tmpExtra.Name, tmpExtra.Commission_AmountType, tmpExtra.Commission_Amount ?? 0, iExtra_Id: tmpExtra.Id, strDescription: tmpExtra.Description);
+                                    SelectedPremises.Items.Add(objExtra);
+
+                                    SelectedPremises.Snippet = await SelectedPremises.GenerateSnippet();
+                                    bSuccessful = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bSuccessful)
+                {
+                    // display success
+                    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Success, Message = "Item added." });
+                }
+                else
+                {
+                    await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Warning, Message = objResponse.Message_Wording });
+                }
+
+                //refresh grid
+                await RefreshAsync();
+            }
+            else if (!string.IsNullOrWhiteSpace(objResponse.Message_Wording))
+            {
+                // display message
+                await niceUIService.ToastShowAsync(new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = objResponse.Message_Wording });
+            }
+        }
+    }
+
+
+    private async Task ModalDeleteConfirmClosedHandlerAsync(Models.ModalResponse objResponse)
+    {
+        if (objResponse.Successful && objResponse.Selected_Id.HasValue)
+        {
+            if (!(await StartProcessingAsync())) { return; }
+
+            var objMessage = new Models.ToastNotification
+                {
+                    Type = Models.ToastNotification.Types.Error,
+                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
+                };
+
+            if (SelectedPremises != null)
+            {
+                var tmpExtra = SelectedPremises.Items.FirstOrDefault(x => x.Type == Models.Quoting.ItemType.Extra && x.Extra_Id == objResponse.Selected_Id);
+
+                if (tmpExtra != null)
+                {
+                    SelectedPremises.Items.Remove(tmpExtra);
+                    objMessage.Type = Models.ToastNotification.Types.Success;
+                    objMessage.Message = "Item deleted.";
+                }
+
+            }
+
+            SelectedPremises.Snippet = await SelectedPremises.GenerateSnippet();
+
+            await EndProcessingAsync();
+            await RefreshAsync();
+            await niceUIService.ToastShowAsync(objMessage);
+            objMessage = null;
+        }
+    }
+
+    #endregion extras
+}

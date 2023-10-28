@@ -1,0 +1,81 @@
+﻿////
+//// HANDHELD NAVIGATION
+////
+
+.handheld-navigation {
+	color: $mono-100;
+	display: none;
+
+	&.js-active {
+		display: block;
+	}
+
+	&__list {
+		margin: 0;
+		list-style-type: none;
+	}
+
+	&__item {
+		padding: 0;
+		margin: 0;
+		list-style-type: none;
+	}
+
+	&__link {
+		color: $mono-100;
+		font-weight: 400;
+		padding: 8px 24px;
+		display: inline-block;
+		cursor: pointer;
+		display: block;
+
+		.icon {
+			float: right;
+			position: relative;
+			top: 5px;
+		}
+
+		&:hover {
+			color: $mono-50;
+		}
+
+		&.is-active {
+			color: $mono-0;
+		}
+	}
+
+	&__sub {
+		&-list {
+			background-color: $quinary-color;
+			padding: 0 24px;
+			margin: 0;
+			list-style-type: none;
+			display: none;
+
+			&.js-active {
+				display: block;
+			}
+		}
+
+		&-item {
+			padding: 0;
+			margin: 0;
+			list-style-type: none;
+		}
+
+		&-link {
+			color: $mono-100;
+			font-weight: 400;
+			padding: 8px 0;
+			display: block;
+
+			&:hover {
+				color: $mono-50;
+			}
+
+			&.is-active {
+				color: $mono-0;
+			}
+		}
+	}
+}
