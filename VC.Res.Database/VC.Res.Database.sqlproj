@@ -78,6 +78,7 @@
     <None Include="ReleaseSettings.publish.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Security\Roles\db_executor.sql" />
