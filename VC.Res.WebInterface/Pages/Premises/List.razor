@@ -1,12 +1,43 @@
 ﻿@page "/properties"
 @layout Shared.Layouts.StandardLayout
 @inherits Bases.Component
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Http
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using Syncfusion.XlsIO;
-@inject Microsoft.JSInterop.IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Notifications
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.RichTextEditor
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.TreeGrid
+@using Syncfusion.XlsIO
+@using VC.Res.Core.Common
+@using VC.Res.Core.Premises
+@using VC.Res.Core.Utilities
+@using VC.Res.WebInterface
+@using VC.Res.WebInterface.Models
+@using VC.Res.WebInterface.Models.PageFilters
+@using VC.Res.WebInterface.Services
+@using VC.Res.WebInterface.Shared
+@using VC.Res.WebInterface.Shared.Modals
+@using VC.Res.WebInterface.Shared.Modals.Premises
+@using TModel = System.Object
+@inject IJSRuntime JS
 @inject NiceUIService niceUIService
 @inject NavigationManager NavigationManager
-@inject Services.SessionInfoService SessionInfo
+@inject SessionInfoService SessionInfo
 @inject ProtectedSessionStorage ProtectedSessionStore
 
 <style>
@@ -33,7 +64,6 @@
 </style>
 
 <PageTitle>Properties</PageTitle>
-
 
 
 <section class="sub-header dragscroll" data-hScroll-wrapper>
@@ -71,7 +101,9 @@
                 <span class="sub-header__btn-text">Hide</span>
             </a>
         </li>
-        <li data-hScroll-item><a href="javascript:;">Properties</a></li>
+        <li data-hScroll-item>
+            <a href="javascript:;">Properties</a>
+        </li>
         <li data-hScroll-item>
             <a href="javascript:;" @onclick="(() => RequestAddAsync())" @onclick:preventDefault>
                 <svg class="icon">
@@ -96,8 +128,8 @@
             <EditForm Model="@_frmFilters" OnValidSubmit="@Premises_RefreshAsync">
                 <div class="form__item">
                     <label class="form__label">Name</label>
-                    <InputText @bind-Value="_frmFilters.Name" class="form__input" maxlength="100" />
-                    <ValidationMessage For="@(() => _frmFilters.Name)" />
+                    <InputText @bind-Value="_frmFilters.Name" class="form__input" maxlength="100"/>
+                    <ValidationMessage For="@(() => _frmFilters.Name)"/>
                 </div>
                 <div class="form__item">
                     <label class="form__label">Group</label>
@@ -109,6 +141,7 @@
                                 {
                                     <option value="@group.Id">@(group.Name)</option>
                                 }
+
                             }
                         </InputSelect>
                     </div>
@@ -123,6 +156,7 @@
                                 {
                                     <option value="@country.Id">@(country.Name)</option>
                                 }
+
                             }
                         </InputSelect>
                     </div>
@@ -130,19 +164,21 @@
 
                 <div class="y-spacer y-spacer__16"></div>
 
-                <button type="submit" class="button" disabled=@_processing value="Filter">Filter</button>
-                <button type="button" class="button  button__outline" disabled=@_processing @onclick="@Filters_Clear" value="Clear">Clear</button>
+                <button type="submit" class="button" disabled="@_processing" value="Filter">Filter</button>
+                <button type="button" class="button  button__outline" disabled="@_processing "@onclick="@Filters_Clear" value="Clear">Clear</button>
             </EditForm>
         </div>
     </section>
 
     <div class="main-content">
-        <SfGrid DataSource="@_pagedData.ExportElements" @ref=@DefaultGrid AllowTextWrap="true" Toolbar="@(new List<string>() { "Export to excel"})" AllowExcelExport="true">
-            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"></GridTextWrapSettings>
+        <SfGrid DataSource="@_pagedData.ExportElements" @ref="@DefaultGrid" AllowTextWrap="true" Height="500"
+                Toolbar="@(new List<string>() { "Export to excel" })" AllowExcelExport="true"
+                EnableVirtualization="true" AllowSorting="true" AllowMultiSorting="true">
+            <GridTextWrapSettings WrapMode="Syncfusion.Blazor.Grids.WrapMode.Content"/>
             <GridEvents ExcelQueryCellInfoEvent="ExcelQueryCellInfoHandler" OnToolbarClick="ToolbarClickHandler" TValue="Core.Premises.Premise"></GridEvents>
 
             <GridColumns>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Id) Visible=false HeaderText="tblProperty_id"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Id)" Visible="false" HeaderText="tblProperty_id"></GridColumn>
                 <GridColumn Width="42px">
                     <Template>
                         @{
@@ -158,6 +194,7 @@
                                     </a>
                                 }
                             }
+
                         }
                     </Template>
                 </GridColumn>
@@ -173,15 +210,16 @@
                                     </svg>
                                 </a>
                             }
+
                         }
                     </Template>
                 </GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Id) HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Display_Name) HeaderText="Display Name"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Name) HeaderText="Name"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Id) Visible=false HeaderText="tblProperty_websiteId"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_URL) Visible=false HeaderText="tblProperty_websiteURL"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.OtherWebsiteURLs) Visible=false HeaderText="tblProperty_otherWebsiteURLs">
+                <GridColumn Field="@nameof(Core.Premises.Premise.Id)" HeaderText="ID" Width="80px" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Display_Name)" HeaderText="Display Name"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Name)" HeaderText="Name"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Id)" Visible="false" HeaderText="tblProperty_websiteId"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_URL)" Visible="false" HeaderText="tblProperty_websiteURL"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.OtherWebsiteURLs)" Visible="false" HeaderText="tblProperty_otherWebsiteURLs">
                     <Template>
                         @{
                             var obj = (context as Core.Premises.Premise);
@@ -189,39 +227,41 @@
                             {
                                 string.Join(',', obj.OtherWebsiteURLs);
                             }
+
                         }
                     </Template>
                 </GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Channel) Visible=false HeaderText="tblProperty_channel"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line1) Visible=false HeaderText="tblProperty_addressLine1"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line2) Visible=false HeaderText="tblProperty_addressLine2"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Line3) Visible=false HeaderText="tblProperty_addressLine3"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Town) Visible=false HeaderText="tblProperty_addressTown"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_Region) Visible=false HeaderText="tblProperty_addressRegion"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Address_PostCode) Visible=false HeaderText="tblProperty_addressPostCode"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Country_Id) Visible=false HeaderText="tblCountry_id"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Region_Id) Visible=false HeaderText="tblRegion_id"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Latitude) Visible=false HeaderText="tblProperty_lat"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Longitude) Visible=false HeaderText="tblProperty_long"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Guests_Max) Visible=false HeaderText="tblProperty_maxGuests"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Guests_Additional) Visible=false HeaderText="tblProperty_maxGuestsAdditional"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Size) Visible=false HeaderText="tblProperty_size"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Rooms_NoBathrooms) Visible=false HeaderText="tblProperty_noBathrooms"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Group_Id) Visible=false HeaderText="tblPropertyGroup_id"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Group_Use_Contacts) Visible=false HeaderText="tblProperty_groupUseContacts"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.LicenceNo) Visible=false HeaderText="tblProperty_licenceNo"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbol) Visible=false HeaderText="tblProperty_webPriceCurrencySymb"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbolDisplay) Visible=false HeaderText="tblProperty_webPriceCurrencyDisplay"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Min) Visible=false HeaderText="tblProperty_webPriceMin"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Max) Visible=false HeaderText="tblProperty_webPriceMax"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Website_Pricing_Type) Visible=false HeaderText="tblProperty_webPriceType"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Created_UTC) Visible=false HeaderText="tblProperty_createdUTC"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Created_By) Visible=false HeaderText="tblProperty_createdBy"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Edited_UTC) Visible=false HeaderText="tblProperty_editedUTC"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Edited_By) Visible=false HeaderText="tblProperty_editedBy"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Deleted_UTC) Visible=false HeaderText="tblProperty_deletedUTC"></GridColumn>
-                <GridColumn Field=@nameof(Core.Premises.Premise.Deleted_By) Visible=false HeaderText="tblProperty_deletedBy"></GridColumn>
-                <GridColumn HeaderText="Country">
+                <GridColumn Field="@nameof(Core.Premises.Premise.Channel)" Visible="false" HeaderText="tblProperty_channel"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_Line1)" Visible="false" HeaderText="tblProperty_addressLine1"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_Line2)" Visible="false" HeaderText="tblProperty_addressLine2"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_Line3)" Visible="false" HeaderText="tblProperty_addressLine3"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_Town)" Visible="false" HeaderText="tblProperty_addressTown"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_Region)" Visible="false" HeaderText="tblProperty_addressRegion"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Address_PostCode)" Visible="false" HeaderText="tblProperty_addressPostCode"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Country_Id)" Visible="false" HeaderText="tblCountry_id"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Region_Id)" Visible="false" HeaderText="tblRegion_id"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Latitude)" Visible="false" HeaderText="tblProperty_lat"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Longitude)" Visible="false" HeaderText="tblProperty_long"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Guests_Max)" Visible="false" HeaderText="tblProperty_maxGuests"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Guests_Additional)" Visible="false" HeaderText="tblProperty_maxGuestsAdditional"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Size)" Visible="false" HeaderText="tblProperty_size"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Rooms_NoBathrooms)" Visible="false" HeaderText="tblProperty_noBathrooms"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Group_Id)" Visible="false" HeaderText="tblPropertyGroup_id"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Group_Use_Contacts)" Visible="false" HeaderText="tblProperty_groupUseContacts"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.LicenceNo)" Visible="false" HeaderText="tblProperty_licenceNo"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbol)" Visible="false" HeaderText="tblProperty_webPriceCurrencySymb"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Pricing_CurrencySymbolDisplay)" Visible="false" HeaderText="tblProperty_webPriceCurrencyDisplay"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Pricing_Min)" Visible="false" HeaderText="tblProperty_webPriceMin"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Pricing_Max)" Visible="false" HeaderText="tblProperty_webPriceMax"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Website_Pricing_Type)" Visible="false" HeaderText="tblProperty_webPriceType"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Created_UTC)" Visible="false" HeaderText="tblProperty_createdUTC"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Created_By)" Visible="false" HeaderText="tblProperty_createdBy"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Edited_UTC)" Visible="false" HeaderText="tblProperty_editedUTC"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Edited_By)" Visible="false" HeaderText="tblProperty_editedBy"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Deleted_UTC)" Visible="false" HeaderText="tblProperty_deletedUTC"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Deleted_By)" Visible="false" HeaderText="tblProperty_deletedBy"></GridColumn>
+                <GridColumn Field="@nameof(Core.Premises.Premise.Country_Name)" HeaderText="Country" AllowSorting="true">
+                    @*
                     <Template>
                         @{
                             var obj = (context as Core.Premises.Premise);
@@ -229,16 +269,19 @@
                             {
                                 if (obj.Country_Id.HasValue)
                                 {
-                                    var objCountry = _countries.FirstOrDefault(r => r.Id == obj.Country_Id.Value);
+                                    var objCountry = _countries.FirstOrDefault((Country r) => r.Id == obj.Country_Id.Value);
                                     if (objCountry != null)
                                     {
                                         @objCountry.Name
                                     }
+
                                     objCountry = null;
                                 }
                             }
+
                         }
                     </Template>
+                *@
                 </GridColumn>
                 <GridColumn Width="42px">
                     <Template>
@@ -252,11 +295,13 @@
                                     </svg>
                                 </a>
                             }
+
                         }
                     </Template>
                 </GridColumn>
             </GridColumns>
         </SfGrid>
+        @*
         @if (_pagedData.TotalPages > 1)
         {
             <div class="pagination">
@@ -266,37 +311,40 @@
                 }
             </div>
         }
+        *@
     </div>
 </section>
 
-<VC.Res.WebInterface.Shared.Modals.Premises.PremiseAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler" />
-
-<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this property?" OnClosed="ModalDeleteConfirmClosedHandler" />
+<VC.Res.WebInterface.Shared.Modals.Premises.PremiseAdd @ref="_modalAdd" OnClosed="ModalAddClosedHandler"/>
+<VC.Res.WebInterface.Shared.Modals.Confirmation @ref="_modalDeleteConfirm" Message="Are you sure you wish to delete this property?" OnClosed="ModalDeleteConfirmClosedHandler"/>
 
 @code {
-    private SfGrid<Core.Premises.Premise> DefaultGrid;
+    private SfGrid<Premise> DefaultGrid;
 
-    private Shared.Modals.Premises.PremiseAdd? _modalAdd = null;
-    private Shared.Modals.Confirmation? _modalDeleteConfirm = null;
+    private PremiseAdd? _modalAdd = null;
 
-    private List<Core.Premises.Group> _groups = new();
-    private List<Core.Common.Country> _countries = new();
-    private List<Core.Common.Region> _regions = new();
+    private Confirmation? _modalDeleteConfirm = null;
 
-    private Core.Utilities.PagedData<Core.Premises.Premise> _pagedData = new Core.Utilities.PagedData<Core.Premises.Premise>(0);
+    private List<Group> _groups = new();
 
-    private Models.PageFilters.Premises_List _frmFilters = new Models.PageFilters.Premises_List();
+    private List<Country> _countries = new();
+
+    private List<Region> _regions = new();
+
+    private PagedData<Premise> _pagedData = new Core.Utilities.PagedData<Premise>(0);
+
+    private Premises_List _frmFilters = new Models.PageFilters.Premises_List();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // populate lists
+    // populate lists
             _groups = await Core.Premises.Group.FindAllAsync();
             _countries = await Core.Common.Country.FindAllAsync();
             _regions = await Core.Common.Region.FindAllAsync();
 
-            var previousFilters = await ProtectedSessionStore.GetAsync<Models.PageFilters.Premises_List>("Filters_Premises");
+            var previousFilters = await ProtectedSessionStore.GetAsync<Premises_List>("Filters_Premises");
 
             if (previousFilters.Success)
             {
@@ -308,7 +356,6 @@
         }
         catch (Exception)
         {
-
         }
         finally
         {
@@ -316,12 +363,14 @@
         }
     }
 
-
     private async Task Premises_RefreshAsync()
     {
-        if (!(await StartProcessingAsync())) { return; }
+        if (!(await StartProcessingAsync()))
+        {
+            return;
+        }
 
-        var lstFilters_Premises = new Core.Utilities.FilterList<Core.Premises.Premise.FilterOption>();
+        var lstFilters_Premises = new Core.Utilities.FilterList<Premise.FilterOption>();
         lstFilters_Premises.Add(Core.Premises.Premise.FilterOption.Date_Deleted_UTC, new Core.Utilities.DateFilter(bEqualNull: true));
 
         if (!string.IsNullOrWhiteSpace(_frmFilters.Name))
@@ -342,7 +391,10 @@
         _pagedData = await Core.Premises.Premise.ListPagedAsync(lstFilters_Premises.Filters, iPage: _frmFilters.CurrentPage);
         lstFilters_Premises = null;
 
-        if (_pagedData.CurrentPage != _frmFilters.CurrentPage) { _frmFilters.CurrentPage = _pagedData.CurrentPage; }
+        if (_pagedData.CurrentPage != _frmFilters.CurrentPage)
+        {
+            _frmFilters.CurrentPage = _pagedData.CurrentPage;
+        }
 
         await ProtectedSessionStore.SetAsync("Filters_Premises", _frmFilters);
 
@@ -353,7 +405,10 @@
 
     private async Task Filters_Clear()
     {
-        if (_processing) { return; }
+        if (_processing)
+        {
+            return;
+        }
 
         _frmFilters = new();
         await Premises_RefreshAsync();
@@ -361,7 +416,10 @@
 
     private async Task ChangePage(int iPage)
     {
-        if (_processing) { return; }
+        if (_processing)
+        {
+            return;
+        }
 
         _frmFilters.CurrentPage = iPage;
         await Premises_RefreshAsync();
@@ -369,12 +427,18 @@
 
     private async Task RequestAddAsync()
     {
-        if (_processing) { return; }
+        if (_processing)
+        {
+            return;
+        }
 
-        if (_modalAdd != null) { await _modalAdd.OpenAsync(); }
+        if (_modalAdd != null)
+        {
+            await _modalAdd.OpenAsync();
+        }
     }
 
-    private async Task ModalAddClosedHandler(Models.ModalResponse objResponse)
+    private async Task ModalAddClosedHandler(ModalResponse objResponse)
     {
         if (!objResponse.Cancelled)
         {
@@ -393,22 +457,27 @@
 
     private void RequestDelete(int iId)
     {
-        if (_processing) { return; }
+        if (_processing)
+        {
+            return;
+        }
 
-        if (_modalDeleteConfirm != null) { _modalDeleteConfirm.Open(iId); }
+        if (_modalDeleteConfirm != null)
+        {
+            _modalDeleteConfirm.Open(iId);
+        }
     }
 
-    private async Task ModalDeleteConfirmClosedHandler(Models.ModalResponse objResponse)
+    private async Task ModalDeleteConfirmClosedHandler(ModalResponse objResponse)
     {
         if (objResponse.Successful && objResponse.Selected_Id.HasValue)
         {
-            if (!(await StartProcessingAsync())) { return; }
+            if (!(await StartProcessingAsync()))
+            {
+                return;
+            }
 
-            var objMessage = new Models.ToastNotification
-                {
-                    Type = Models.ToastNotification.Types.Error,
-                    Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance."
-                };
+            var objMessage = new Models.ToastNotification { Type = Models.ToastNotification.Types.Error, Message = "We're sorry but there has been a problem deleting the selected item, please try again or contact support for further assistance." };
 
             if (await Core.Premises.Premise.DeleteAsync(objResponse.Selected_Id.Value, strBy: SessionInfo.Current_User.Name_Full))
             {
@@ -426,48 +495,33 @@
         }
     }
 
-
-    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    public async Task ToolbarClickHandler(ClickEventArgs args)
     {
-        if (args.Item.Text.Equals("Export to excel")) //Id is combination of Grid's ID and itemname
+        if (args.Item.Text.Equals("Export to excel"))
         {
+    // Id is combination of Grid's ID and itemname
             ExcelExportProperties prop = new ExcelExportProperties();
             prop.IncludeHiddenColumn = true;
             ExcelHeader header = new ExcelHeader();
             header.HeaderRows = 3;
-            List<ExcelCell> cell = new List<ExcelCell>
-            {
-                new ExcelCell() { Index= 2, Value= "",  } ,
-                new ExcelCell() { Index= 3, Value= "Corfu", Style = new ExcelStyle() { BackColor="#ffe599" }  },
-                new ExcelCell() { Index= 4, Value= "Ionian Sea", Style = new ExcelStyle() { BackColor="#c9daf8" }  },
-                new ExcelCell() { Index= 4, Value= "Aegean Sea", Style = new ExcelStyle() { BackColor="#d9d2e9" }  },
-                new ExcelCell() { Index= 4, Value= "The Peloponnesse", Style = new ExcelStyle() { BackColor="#00ffff" }  },
-                new ExcelCell() { Index= 4, Value= "France", Style = new ExcelStyle() { BackColor="#d0e0e3" }  },
-                new ExcelCell() { Index= 4, Value= "Italy", Style = new ExcelStyle() { BackColor="#93c47d" }  },
-                new ExcelCell() { Index= 4, Value= "Spain", Style = new ExcelStyle() { BackColor="#f6b26b" }  },
-                new ExcelCell() { Index= 4, Value= "Morocco", Style = new ExcelStyle() { BackColor="#dd7e6b" }  },
-            };
+            List<ExcelCell> cell = new List<ExcelCell> { new ExcelCell() { Index = 2, Value = string.Empty, }, new ExcelCell() { Index = 3, Value = "Corfu", Style = new ExcelStyle() { BackColor = "#ffe599" } }, new ExcelCell() { Index = 4, Value = "Ionian Sea", Style = new ExcelStyle() { BackColor = "#c9daf8" } }, new ExcelCell() { Index = 4, Value = "Aegean Sea", Style = new ExcelStyle() { BackColor = "#d9d2e9" } }, new ExcelCell() { Index = 4, Value = "The Peloponnesse", Style = new ExcelStyle() { BackColor = "#00ffff" } }, new ExcelCell() { Index = 4, Value = "France", Style = new ExcelStyle() { BackColor = "#d0e0e3" } }, new ExcelCell() { Index = 4, Value = "Italy", Style = new ExcelStyle() { BackColor = "#93c47d" } }, new ExcelCell() { Index = 4, Value = "Spain", Style = new ExcelStyle() { BackColor = "#f6b26b" } }, new ExcelCell() { Index = 4, Value = "Morocco", Style = new ExcelStyle() { BackColor = "#dd7e6b" } }, };
 
-            List<ExcelRow> HeaderContent = new List<ExcelRow>
-            {
-                new ExcelRow() {  Cells = new List<ExcelCell>(), Index = 2 },
-                new ExcelRow() {  Cells = cell, Index = 5 }
-            };
+            List<ExcelRow> HeaderContent = new List<ExcelRow> { new ExcelRow() { Cells = new List<ExcelCell>(), Index = 2 }, new ExcelRow() { Cells = cell, Index = 5 } };
             header.Rows = HeaderContent;
             prop.Header = header;
             await this.DefaultGrid.ExcelExport(prop, true);
         }
     }
 
-    public void ExcelQueryCellInfoHandler(ExcelQueryCellInfoEventArgs<Core.Premises.Premise> args)
+    public void ExcelQueryCellInfoHandler(ExcelQueryCellInfoEventArgs<Premise> args)
     {
-        // Here you can customize your code
-        //if (args.Column.Field == "Country_Id")
-        //{
-        //if (args.Data.Country_Id == 1)
-        //{
-        //    args.Style.BackColor = "#DC143C";
-        //}
+    // Here you can customize your code
+    // if (args.Column.Field == "Country_Id")
+    // {
+    // if (args.Data.Country_Id == 1)
+    // {
+    // args.Style.BackColor = "#DC143C";
+    // }
         if (args.Data.Country_Id == 2)
         {
             args.Style.BackColor = "#93c47d";
@@ -493,14 +547,18 @@
     private async void ExportPremise()
     {
         var lstPremise = _pagedData.Elements;
-        if (!(await StartProcessingAsync())) { return; }
+        if (!(await StartProcessingAsync()))
+        {
+            return;
+        }
+
         using (ExcelEngine excelEngine = new ExcelEngine())
         {
-            //Step 2 : Instantiate the excel application object
+    // Step 2 : Instantiate the excel application object
             IApplication application = excelEngine.Excel;
             application.DefaultVersion = ExcelVersion.Excel2016;
 
-            //Creating new workbook
+    // Creating new workbook
             var workbook = application.Workbooks.Create(1);
             var sheet = workbook.Worksheets[0];
 
@@ -510,14 +568,13 @@
 
             sheet.UsedRange.AutofitColumns();
 
-            //Save the document as a stream and retrun the stream
+    // Save the document as a stream and retrun the stream
             using (MemoryStream stream = new MemoryStream())
             {
-                //Save the created Excel document to MemoryStream
+    // Save the created Excel document to MemoryStream
                 workbook.SaveAs(stream);
 
-                //await JS.SaveAs("Sample.xlsx", excelStream.ToArray());
-
+    // await JS.SaveAs("Sample.xlsx", excelStream.ToArray());
                 await JS.InvokeAsync<object>("SaveAsFile", strFileName, Convert.ToBase64String(stream.ToArray()));
             }
 
@@ -526,8 +583,10 @@
 
             application = null;
         }
+
         await EndProcessingAsync();
     }
+
 
 }
 

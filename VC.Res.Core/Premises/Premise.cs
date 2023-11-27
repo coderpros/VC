@@ -55,6 +55,9 @@ namespace VC.Res.Core.Premises
         public string Address_Town { get; set; } = "";
         public string Address_Region { get; set; } = "";
         public string Address_PostCode { get; set; } = "";
+
+        public string? Country_Name { get; set; } = string.Empty;
+
         public int? Country_Id { get; set; } = null;
         public int? Region_Id { get; set; } = null;
         public int NumberOfCollections { get; set; } = 0;
@@ -130,10 +133,14 @@ namespace VC.Res.Core.Premises
 
                 dB.ChangeTracker.AutoDetectChangesEnabled = false;
 
-                var efmObject = await dB.tblProperties.AsNoTracking().Include(t => t.tblPropertyCollections).FirstOrDefaultAsync(r => r.tblProperty_id == iId);
+                var efmObject = await dB.tblProperties.AsNoTracking()
+                                    .Include(t => t.tblPropertyCollections)
+                                    .FirstOrDefaultAsync(r => r.tblProperty_id == iId);
 
                 if (efmObject != null)
                 {
+                    efmObject.tblCountry = await dB.tblCountries.FirstOrDefaultAsync(r => r.tblCountry_id == efmObject.tblCountry_id);
+
                     bReturn = this.Load(efmObject);
                 }
 
@@ -157,10 +164,12 @@ namespace VC.Res.Core.Premises
                 if (efmObject != null)
                 {
                     var dB = Settings.Config.DBPooledConnection();
-                    dB.ChangeTracker.AutoDetectChangesEnabled = false;
-
-                    var efmPropertyCollectionsCount = dB.tblPropertyCollections.AsNoTracking().Count(r => r.tblProperty_id == efmObject.tblProperty_id);
                     
+                    dB.ChangeTracker.AutoDetectChangesEnabled = false;
+                    
+                    var efmPropertyCollectionsCount = dB.tblPropertyCollections.AsNoTracking().Count(r => r.tblProperty_id == efmObject.tblProperty_id);
+                    efmObject.tblCountry = dB.tblCountries.First(r => r.tblCountry_id == efmObject.tblCountry_id);
+
                     this.Id = efmObject.tblProperty_id;
 
                     this.Name = efmObject.tblProperty_name;
@@ -181,6 +190,7 @@ namespace VC.Res.Core.Premises
                     this.Address_PostCode = efmObject.tblProperty_addressPostCode;
 
                     this.Country_Id = efmObject.tblCountry_id;
+                    this.Country_Name = efmObject.tblCountry?.tblCountry_name;
                     this.Region_Id = efmObject.tblRegion_id;
 
                     this.Group_Id = efmObject.tblPropertyGroup_id;
